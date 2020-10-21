@@ -96,8 +96,9 @@ Symbols:
 
 
 
-Whitespace:
+Whitespace (will be ignored):
 
   - /*<whatever>*/
   - /+<whatever nested>+/
   - //<whatever until new line>
+  - (\r)?\n
