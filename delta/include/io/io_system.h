@@ -6,12 +6,18 @@
  * @brief This utility allows reading an input file, character by character.
  *
  * @details
- *  This utility allows reading a desired input file, character by character,
- *  therefore providing every utility that the lexical analyzer may require.
+ *  This utility allows reading the desired input file, character by
+ *  character, in order to provide every utility that the delta's lexical
+ *  analyzer may require to do its job. As of now, only one source file is
+ *  supported.
  *
- *  Its design follows the "sentinel buffer" method explained in the book
- *  "Compilers: Principles, Techniques, and Tools" by Alfred Aho et al.
+ *  This system's design follows the "sentinel buffer" method explained in the
+ *  book "Compilers: Principles, Techniques, and Tools" by Alfred Aho et al.
  */
+
+
+#ifndef D_IO_SYSTEM
+#define D_IO_SYSTEM 
 
 
 #include <stddef.h>
@@ -23,7 +29,7 @@
  * @details
  *  Opaque data type which represents an I/O system.
  */
-struct io_system;
+struct d_io_system;
 
 
 /**
@@ -42,8 +48,8 @@ struct io_system;
  *
  * @return 0 if successful, any other value otherwise.
  */
-int io_system_initialize(
-    struct io_system **io_system,
+int d_io_system_initialize(
+    struct d_io_system **io_system,
     const size_t buffer_size
 );
 
@@ -60,8 +66,8 @@ int io_system_initialize(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int io_system_open_file(
-    struct io_system *io_system,
+int d_io_system_open_file(
+    struct d_io_system *io_system,
     const char *file_path
 );
 
@@ -78,8 +84,8 @@ int io_system_open_file(
  *
  * @return The next character that can be found.
  */
-unsigned char io_system_get_next_char(
-    struct io_system *io_system,
+unsigned char d_io_system_get_next_char(
+    struct d_io_system *io_system,
     char *next_character
 );
 
@@ -102,8 +108,8 @@ unsigned char io_system_get_next_char(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int io_system_return_char(
-    struct io_system *io_system,
+int d_io_system_return_char(
+    struct d_io_system *io_system,
     char character
 );
 
@@ -120,6 +126,9 @@ int io_system_return_char(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int io_system_destroy(
-    struct io_system **io_system
+int d_io_system_destroy(
+    struct d_io_system **io_system
 );
+
+
+#endif //D_IO_SYSTEM

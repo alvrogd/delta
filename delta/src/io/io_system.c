@@ -3,7 +3,7 @@
  * @author Álvaro Goldar Dieste
  * @date Oct 2020
  *
- * @brief Implementation of io_system.h
+ * @brief Implementation of io/io_system.h
  * 
  * @details
  *  It is worth noting that the input file will be mapped to memory as this
@@ -40,9 +40,9 @@
  * @brief Represents an I/O system.
  *
  * @details
- *  Opaque data type which represents an I/O system.
+ *  Data type which represents an I/O system.
  */
-struct io_system {
+struct d_io_system {
 
     /** Pointer to the A buffer required by the sentinel method. */
     uint8_t *buffer_a;
@@ -84,14 +84,14 @@ struct io_system {
 /**
  * @brief Implementation of io_system.h/io_system_initialize
  */
-int io_system_initialize(
-    struct io_system **io_system,
+int d_io_system_initialize(
+    struct d_io_system **io_system,
     const size_t buffer_size
 )
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
 
@@ -105,9 +105,9 @@ int io_system_initialize(
     // The structure that represents the I/O system gets initialized, as well
     // as all of its members
 
-    if((*io_system = malloc(sizeof(struct io_system))) == NULL) {
+    if((*io_system = malloc(sizeof(struct d_io_system))) == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Could not allocate a struct io_system");
+        perror("ERROR::IO_SYSTEM::Could not allocate a struct d_io_system");
         return -1;
     }
 
@@ -165,8 +165,8 @@ int io_system_initialize(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int _io_system_fill_buffer(
-    struct io_system *io_system,
+int _d_io_system_fill_buffer(
+    struct d_io_system *io_system,
     uint8_t *buffer
 )
 {
@@ -175,7 +175,7 @@ int _io_system_fill_buffer(
 
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
     
@@ -223,8 +223,8 @@ int _io_system_fill_buffer(
 /**
  * @brief Implementation of io_system.h/io_system_open_file
  */
-int io_system_open_file(
-    struct io_system *io_system,
+int d_io_system_open_file(
+    struct d_io_system *io_system,
     const char *file_path
 )
 {
@@ -234,7 +234,7 @@ int io_system_open_file(
 
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
     
@@ -285,7 +285,7 @@ int io_system_open_file(
     io_system->input_file_size = (size_t) input_file_stats.st_size;
 
     // And the A buffer is the first to be filled with data from the file
-    if(_io_system_fill_buffer(io_system, io_system->buffer_a) != 0) {
+    if(_d_io_system_fill_buffer(io_system, io_system->buffer_a) != 0) {
 
         perror("ERROR::IO_SYSTEM::Could not fill contents of buffer A");
         return -1;
@@ -308,13 +308,13 @@ int io_system_open_file(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int _io_system_move_forward(
-    struct io_system *io_system
+int _d_io_system_move_forward(
+    struct d_io_system *io_system
 )
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
 
@@ -337,13 +337,13 @@ int _io_system_move_forward(
             // End of buffer A -> load data in buffer B if not present yet
             if(io_system->forward + 1 == io_system->buffer_a_end) {
 
-                _io_system_fill_buffer(io_system, io_system->buffer_b);
+                _d_io_system_fill_buffer(io_system, io_system->buffer_b);
                 io_system->forward = io_system->buffer_b;
             }
 
             // End of buffer B -> load data in buffer A if not present yet
             else {
-                _io_system_fill_buffer(io_system, io_system->buffer_a);
+                _d_io_system_fill_buffer(io_system, io_system->buffer_a);
                 io_system->forward = io_system->buffer_a;
             }
         }
@@ -359,14 +359,14 @@ int _io_system_move_forward(
 /**
  * @brief Implementation of io_system.h/io_system_get_next_chat
  */
-unsigned char io_system_get_next_char(
-    struct io_system *io_system,
+unsigned char d_io_system_get_next_char(
+    struct d_io_system *io_system,
     char *next_character
 )
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
     
@@ -383,21 +383,21 @@ unsigned char io_system_get_next_char(
 
     // And the pointer will always automatically move ahead with each
     // character read
-    _io_system_move_forward(io_system);
+    _d_io_system_move_forward(io_system);
 }
 
 
 /**
  * @brief Implementation of io_system.h/io_system_return_char
  */
-int io_system_return_char(
-    struct io_system *io_system,
+int d_io_system_return_char(
+    struct d_io_system *io_system,
     char character
 )
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
 
@@ -434,13 +434,13 @@ int io_system_return_char(
 /**
  * @brief Implementation of io_system.h/io_system_destroy
  */
-int io_system_destroy(
-    struct io_system **io_system
+int d_io_system_destroy(
+    struct d_io_system **io_system
 )
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct io_system is NULL");
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
         return -1;
     }
 
