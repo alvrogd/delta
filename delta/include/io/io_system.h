@@ -35,8 +35,10 @@ struct io_system;
  *
  * @param[out] io_system Reference to the pointer where the address of the new
  *                       I/O system will be stored.
- * @param[in] buffer_size Size of the two internal buffers that the I/O system
- *                        will use; it must be a multiple of ...// TODO
+ * @param[in] buffer_size Size N of the two internal buffers that the I/O system
+ *                        will use; it must be multiple of ... // TODO. The
+ *                        usable space in each buffer will be N-1 bytes (=
+                          characters).
  *
  * @return 0 if successful, any other value otherwise.
  */
@@ -60,7 +62,7 @@ int io_system_initialize(
  */
 int io_system_open_file(
     struct io_system *io_system,
-    const char* file_path
+    const char *file_path
 );
 
 
@@ -83,20 +85,26 @@ unsigned char io_system_get_next_char(
 
 
 /**
- * @brief The I/O system goes backwards, so that it returns once again the
- *        last read character when requesting a new one.
+ * @brief Takes back the last character that has been found in the input file.
  *
  * @details
- *  The I/O system moves backwards its file position indicator, therefore
- *  setting it so that the next requested character is once again the last
- *  read character.
+ *  The I/O system takes back the last character that has been found in the
+ *  input file, therefore returning it the following time that the next
+ *  character in the file is requested.
+ *
+ *  Warning: this system supports returning up to N-1 characters at a time at
+ *           most, which will be enough in order to parse regression.d;
+ *           that is, returning N or more characters without retrieving any of
+ *           the first ones via "get_next_char" is undefined behaviour.
  *
  * @param[in,out] io_system The I/O system.
+ * @param[in] character The character which is being returned.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int io_system_go_backwards(
-    struct io_system *io_system
+int io_system_return_char(
+    struct io_system *io_system,
+    char character
 );
 
 
