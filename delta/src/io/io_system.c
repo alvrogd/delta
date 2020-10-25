@@ -341,8 +341,17 @@ int _d_io_system_move_forward(
         // End of input file
         //
         // In order to have reached the end of the input file, the "current
-        // position" pointer must be right where the "end" position was set
-        if(io_system->input_file_position == io_system->input_file_end) {
+        // position" pointer must be right where the "end" position was set.
+        //
+        // Furthermore, if the "I have moved backwards attribute" is active,
+        // while the previous condition is met, it will mean that the next
+        // buffer already contains any remaining contents from the input file,
+        // but they have not been parsed yet as the I/O system moved backwards
+        // from it, to the current buffer. Therefore, the system must not
+        // report EOF as the currently read sentinel character would belong to
+        // penultimate buffer, instead of the last one.
+        if(io_system->input_file_position == io_system->input_file_end &&
+           !io_system->gone_backwards_buffer) {
             
             io_system->eof_reached = 1;
         }
@@ -421,8 +430,10 @@ int d_io_system_return_char(
 
 
     --(io_system->forward);
+    // Going backwards will always mean that eof has not been reached yet
+    io_system->eof_reached = 0;
 
-    // The problem with going bakwards is that the I/O system may need to go
+    // The problem with going backwards is that the I/O system may need to go
     // to the previous buffer if it is right at the beginning of the current
     // one
 

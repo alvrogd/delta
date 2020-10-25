@@ -32,26 +32,52 @@ int main(int argc, char *argv[])
     // Some tests
 
     // 1. If the keywords have been properly added to the symbol table
-    printf("Searching for \"double\": %d\n",
-           d_symbol_table_search(symbol_table, "double") != NULL);
-    printf("Searching for \"int\": %d\n",
-           d_symbol_table_search(symbol_table, "int") != NULL);
-    printf("Searching for \"potato\": %d\n",
-           d_symbol_table_search(symbol_table, "potato") != NULL);
+    // printf("Searching for \"double\": %d\n",
+    //        d_symbol_table_search(symbol_table, "double") != NULL);
+    // printf("Searching for \"int\": %d\n",
+    //        d_symbol_table_search(symbol_table, "int") != NULL);
+    // printf("Searching for \"potato\": %d\n",
+    //        d_symbol_table_search(symbol_table, "potato") != NULL);
 
 
     // 2. Printing the first characters of the input file
-    /*for(i = 0; i < 20; ++i) {
-        d_io_system_get_next_char(io_system, &tmp_char);
-        printf("Char %d: %c\n", i, tmp_char);
-    }*/
+    // for(i = 0; i < 20; ++i) {
+    //     d_io_system_get_next_char(io_system, &tmp_char);
+    //     printf("Char %d: %c\n", i, tmp_char);
+    // }
 
 
     // 3. Printing all characters in the input file
+    // while(!d_io_system_is_eof(io_system)) {
+
+    //     d_io_system_get_next_char(io_system, &tmp_char);
+    //     printf("%c", tmp_char);
+    // }
+
+
+    // 4. Print the first character
+    //    For every remaining character
+    //      Read it
+    //      Turn it back
+    //      Read it once more and print it
+
+    i = 0; // First character will not be returned
+
     while(!d_io_system_is_eof(io_system)) {
 
         d_io_system_get_next_char(io_system, &tmp_char);
-        printf("%c", tmp_char);
+
+        // Print
+        if(i == 0) {
+            printf("%c", tmp_char);
+            i = 1;
+        }
+
+        // Return
+        else {
+            d_io_system_return_char(io_system, tmp_char);
+            i = 0;
+        }
     }
 
 
