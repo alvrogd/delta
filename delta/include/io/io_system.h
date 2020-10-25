@@ -82,11 +82,11 @@ int d_io_system_open_file(
  * @param[in,out] io_system The I/O system.
  * @param[out] character Reference to which the next character will be copied.
  *
- * @return The next character that can be found.
+ * @return 0 if successful, any other value otherwise.
  */
-unsigned char d_io_system_get_next_char(
+int d_io_system_get_next_char(
     struct d_io_system *io_system,
-    char *next_character
+    unsigned char *next_character
 );
 
 

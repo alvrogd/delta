@@ -138,6 +138,9 @@ int d_io_system_initialize(
 
     // No file is opened yet
     (*io_system)->input_file = NULL;
+    (*io_system)->input_file_position = NULL;
+    (*io_system)->input_file_end = NULL;
+    (*io_system)->input_file_size = 0;
 
 
     return 0;
@@ -284,6 +287,10 @@ int d_io_system_open_file(
 
     io_system->input_file_size = (size_t) input_file_stats.st_size;
 
+    io_system->input_file_position = io_system->input_file;
+    io_system->input_file_end = io_system->input_file +
+                                io_system->input_file_size;
+
     // And the A buffer is the first to be filled with data from the file
     if(_d_io_system_fill_buffer(io_system, io_system->buffer_a) != 0) {
 
@@ -357,11 +364,11 @@ int _d_io_system_move_forward(
 
 
 /**
- * @brief Implementation of io_system.h/io_system_get_next_chat
+ * @brief Implementation of io_system.h/io_system_get_next_char
  */
-unsigned char d_io_system_get_next_char(
+int d_io_system_get_next_char(
     struct d_io_system *io_system,
-    char *next_character
+    unsigned char *next_character
 )
 {
     if(io_system == NULL) {
@@ -384,6 +391,9 @@ unsigned char d_io_system_get_next_char(
     // And the pointer will always automatically move ahead with each
     // character read
     _d_io_system_move_forward(io_system);
+
+
+    return 0;
 }
 
 

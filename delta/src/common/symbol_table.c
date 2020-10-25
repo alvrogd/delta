@@ -73,7 +73,7 @@ int d_symbol_table_initialize(
 
         // The lexeme is the keyword itself; a '\0' char must be present at
         // the end
-        if((tmp_entry.lexeme = malloc(strlen(D_LANG_KEYWORDS[i]) + 1) ==
+        if((tmp_entry_lexeme = malloc(strlen(D_LANG_KEYWORDS[i]) + 1)) ==
             NULL) {
 
             perror("ERROR::SYMBOL_TABLE::Could not allocate a keyword "
@@ -81,11 +81,12 @@ int d_symbol_table_initialize(
             return -1;
         }
 
-        strcpy(tmp_entry.lexeme, D_LANG_KEYWORDS[i]);
+        strcpy(tmp_entry_lexeme, D_LANG_KEYWORDS[i]);
+        tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_KEYWORD;
 
-        d_symbol_table_add((*symbol_table)->table, &tmp_entry);
+        d_symbol_table_add(*symbol_table, &tmp_entry);
     }
     
 
@@ -128,7 +129,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
 
 
     // Returns NULL if no corresponding entry is found
-    HASH_FIND_KEYPTR(symbol_table->table, key, entry);
+    HASH_FIND_STR(symbol_table->table, key, entry);
 
 
     return entry;
@@ -177,14 +178,14 @@ int d_symbol_table_add(
 
 
     // No entry with the same key can be already present in the table
-    if(d_symbol_table_search(symbol_table, entry->key) != NULL) {
+    if(d_symbol_table_search(symbol_table, entry->lexeme) != NULL) {
 
         perror("ERROR::SYMBOL_TABLE::Duped key");
         return -1;
     }
 
     // With each new entry, a new internally-managed structure is allocated
-    if((*internal_entry = malloc(sizeof(struct d_symbol_table_entry))) ==
+    if((internal_entry = malloc(sizeof(struct d_symbol_table_entry))) ==
        NULL) {
 
         perror("ERROR::SYMBOL_TABLE::Could not allocate a struct "
@@ -242,7 +243,7 @@ int d_symbol_table_destroy(
         HASH_DEL((*symbol_table)->table, current_entry);
 
         // Each internally-managed entry must be properly freed
-        free(current_entry->lexeme);
+        free((char *) current_entry->lexeme);
         free(current_entry);
     }
 
