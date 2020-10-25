@@ -115,6 +115,23 @@ int d_io_system_return_char(
 
 
 /**
+ * @brief Checks if the I/O system has reached the end of the input file.
+ *
+ * @details
+ *  Checks if the file position pointer has reached the end of the file; that
+ *  is, there are no more characters to be read.
+ * 
+ * @param[in] io_system The I/O system.
+ *
+ * @return 0 if eof has not been reached, 1 if true, any negative value
+ *         otherwise.
+ */
+int d_io_system_is_eof(
+    struct d_io_system *io_system
+);
+
+
+/**
  * @brief Destroys an I/O system.
  *
  * @details

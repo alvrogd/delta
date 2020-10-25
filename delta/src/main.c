@@ -2,28 +2,36 @@
 
 #include "io/io_system.h"
 #include "common/symbol_table.h"
+#include "analyzers/lexical.h"
 
 
 int main(int argc, char *argv[])
 {
     struct d_io_system *io_system = NULL;
     struct d_symbol_table *symbol_table = NULL;
+    struct d_lexical_analyzer *lexical_analyzer = NULL;
+    struct d_lexical_component tmp_lexical_component;
 
     int i = 0;
     unsigned char tmp_char = 0;
 
 
     // Initializing the I/O system
-    d_io_system_initialize(&io_system, 8192);
+    d_io_system_initialize(&io_system, 8);
     d_io_system_open_file(io_system, "regression.d");
 
     // Initializing the symbol table
     d_symbol_table_initialize(&symbol_table);
 
+    // Initializing the lexical analyzer
+    d_lexical_analyzer_initialize(&lexical_analyzer);
+    d_lexical_analyzer_prepare_for_parsing(lexical_analyzer, io_system,
+                                           symbol_table);
 
-    // Some testing
-    printf("Excuse me\n");
 
+    // Some tests
+
+    // 1. If the keywords have been properly added to the symbol table
     printf("Searching for \"double\": %d\n",
            d_symbol_table_search(symbol_table, "double") != NULL);
     printf("Searching for \"int\": %d\n",
@@ -31,9 +39,19 @@ int main(int argc, char *argv[])
     printf("Searching for \"potato\": %d\n",
            d_symbol_table_search(symbol_table, "potato") != NULL);
 
-    for(i = 0; i < 20; ++i) {
+
+    // 2. Printing the first characters of the input file
+    /*for(i = 0; i < 20; ++i) {
         d_io_system_get_next_char(io_system, &tmp_char);
         printf("Char %d: %c\n", i, tmp_char);
+    }*/
+
+
+    // 3. Printing all characters in the input file
+    while(!d_io_system_is_eof(io_system)) {
+
+        d_io_system_get_next_char(io_system, &tmp_char);
+        printf("%c", tmp_char);
     }
 
 

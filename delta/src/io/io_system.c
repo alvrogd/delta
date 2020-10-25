@@ -78,6 +78,9 @@ struct d_io_system {
 
     /** Size in bytes of the input file. */
     size_t input_file_size;
+
+    /** Bool that tells if the end of the input file has been reached. */
+    int eof_reached;
 };
 
 
@@ -141,6 +144,7 @@ int d_io_system_initialize(
     (*io_system)->input_file_position = NULL;
     (*io_system)->input_file_end = NULL;
     (*io_system)->input_file_size = 0;
+    (*io_system)->eof_reached = 0;
 
 
     return 0;
@@ -335,8 +339,12 @@ int _d_io_system_move_forward(
     if((unsigned char) *(io_system->forward) == IO_SYSTEM_SENTINEL_EOF) {
 
         // End of input file
+        //
+        // In order to have reached the end of the input file, the "current
+        // position" pointer must be right where the "end" position was set
         if(io_system->input_file_position == io_system->input_file_end) {
-            // TODO return no more characters
+            
+            io_system->eof_reached = 1;
         }
 
         else {
@@ -438,6 +446,24 @@ int d_io_system_return_char(
 
 
     return 0;    
+}
+
+
+/**
+ * @brief Implementation of io_system.h/d_io_system_is_eof
+ */
+int d_io_system_is_eof(
+    struct d_io_system *io_system
+)
+{
+    if(io_system == NULL) {
+
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        return -1;
+    }
+
+
+    return io_system->eof_reached;
 }
 
 
