@@ -1,22 +1,38 @@
 # List of all lexical components that can be found in regression.d
-  
+#
+# References:
+#  - regression.d
+#  - "Compilers: Principles, Techniques, and Tools" by Alfred Aho et al.
+#  - https://www.brainkart.com/article/Lexical-Units-(Tokens)---C---program_36566/
+#
 
-Floating Point Literals (w/ token value):
+## Keywords
 
-  - 1.0e+03
-  - 3.2
-  - 3.4
-  - 4.2
-  - 4.3
-  - 4.35
-  - 4.37
-  - 6.5
-  - 7.5
-  - 8.5
-  - 40e-1
+They are reserved words that mean something specific in the D language.
+
+Each one will be given its own lexical component, so no value needs to be
+associated with them when returned by the lexical analyzer.
+
+  - import
+  - double
+  - int
+  - while
+  - foreach
+  - return
+  - void
+  - cast
+
+The regular expression that will identify them will be the same as the one
+that recognizes identifiers. Keywords will be told apart from identifiers by
+checking the symbol table.
 
 
-Identifiers (w/ token value):
+## Identifiers
+
+They are user-given names that identify variables, functions, libraries...
+
+There will be just one lexical component for all identifiers. Therefore, each
+one that is found must carry along a value which uniquely identifies it.
 
   - std
   - stdio
@@ -39,8 +55,46 @@ Identifiers (w/ token value):
   - sum
   - writefln
 
+They can be recognized using the following regular expression:
 
-Integer literals (w/ token value):
+  (_ | letter)(_ | letter | digit)*
+
+
+## Literals
+
+They are fixed values that will not change during execution.
+
+### Floating Poing Literals
+
+Any number that has a fractional component.
+
+There will be just one lexical component for them, so each one that is found
+must carry along its value.
+
+  - 1.0e+03
+  - 3.2
+  - 3.4
+  - 4.2
+  - 4.3
+  - 4.35
+  - 4.37
+  - 6.5
+  - 7.5
+  - 8.5
+  - 40e-1
+
+They can be recognized using the following regular expressions:
+
+  digit(_ | digit)*\.{digit(_ | digit)*{(e | E)(+ | -)?digit(_ | digit)*}?}?
+  \.digit(_ | digit)*{(e | E)(+ | -)?digit(_ | digit)*}?
+  digit(_ | digit)*(e | E)(+ | -)?digit(_ | digit)*
+
+### Integer Literals
+
+Any number that does not have a fractional component.
+
+There will be just one lexical component for them, so each one that is found
+must carry along its value.
 
   - 0
   - 0b1
@@ -52,40 +106,90 @@ Integer literals (w/ token value):
   - 7
   - 8_000
 
+They can be recognized using the following regular expressions (for binary and
+hexadecimal integers respectively):
 
-Keywords:
+  0(b | B){(0 | 1 | _)*(0 | 1)(0 | 1 | _)*}
+  0 | [1-9](_ | digit)*
 
-  - import
-  - double
-  - int
-  - while
-  - foreach
-  - return
-  - void
-  - cast
+### String Literals:
+
+Any sequence of individual characters.
+
+There will be just one lexical component for them, so each one that is found
+must carry along its value.
+
+They are identified by the following regular expression.
+
+  "(character | escape sequence | eol)+"
+
   
-  
-Operators:
+## Operators:
 
-  - .
-  - [
-  - ]
-  - ==
-  - =
-  - <
+They are characters that allow performing mathematical or logical operations.
+
+### Arithmetic Operators
+
+They perform basic math operations.
+
+Each one will be given its own lexical component, so no value needs to be
+associated with them when returned by the lexical analyzer.
+
   - -
-  - +=
   - *
   - ++
   - /
 
-  
-String literals (w/ token value):
+The regular expression that will identify them will directly search for these
+individual operators.
 
-  - "<characters | escape sequence | eol>"
+### Relational Operators
+
+They determine the relationship between their operands.
+
+Each one will be given its own lexical component, so no value needs to be
+associated with them when returned by the lexical analyzer.
+
+  - <
+  - ==
+
+The regular expression that will identify them will directly search for these
+individual operators.
+
+### Assignment Operators
+
+They write a value to a certain variable.
+
+Each one will be given its own lexical component, so no value needs to be
+associated with them when returned by the lexical analyzer.
+
+  - =
+  - +=
+
+The regular expression that will identify them will directly search for these
+individual operators.
+
+### Access Operators
+
+They determine the way in which a certain data is accessed.
+
+Each one will be given its own lexical component, so no value needs to be
+associated with them when returned by the lexical analyzer.
+
+  - .
+  - [
+  - ]
+
+The regular expression that will identify them will directly search for these
+individual characters.
 
 
-Symbols:
+## Separators
+
+They are characters which serve as delimiters.
+
+Each one will be given its own lexical component, so no value needs to be
+associated with them when returned by the lexical analyzer.
 
   - ;
   - (
@@ -94,11 +198,20 @@ Symbols:
   - {
   - }
 
+The regular expression that will identify them will directly search for these
+individual characters.
 
 
-Whitespace (will be ignored):
+## Whitespace:
 
-  - /*<whatever>*/
-  - /+<whatever nested>+/
-  - //<whatever until new line>
-  - (\r)?\n
+Includes blank space between lexical components, comments, and end of line.
+
+It will just be ignored by the lexical analyzer as they are of no interest to
+generate the resulting object code.
+
+It can be identified by the following regular expressions:
+
+  /\*{(character)*}\*/
+  /\+{(character)*}\+/
+  //(character)*(\r)?\n
+  {(\r)?\n}+

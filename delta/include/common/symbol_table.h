@@ -15,6 +15,10 @@
  *  The symbol table is internally represented by a single hash table, as
  *  there is no scoping at the moment. Specifically, the "uthash" library by
  *  Troy D. Hanson is the one who provides the whole hash table functionality.
+ *
+ *  It is also worth noting that, once the symbol table is created, its
+ *  initial contents are the keywords in common/keywords.h, which need to be
+ *  present in order to tell them apart from the source code's identifiers.
  */
 
 
@@ -46,7 +50,8 @@ struct d_symbol_table;
 struct d_symbol_table_entry {
 
     /** '\0' terminated string which representes the lexeme that originated
-        the entry. It also serves as its key. */
+        the entry, as well as serving as its key. It will be auomatically
+        freed once the entry is deleted. */
     const char *lexeme;
     /** Lexical component which corresponds to the entry's lexeme. */
     int lexical_component;

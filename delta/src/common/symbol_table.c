@@ -8,12 +8,14 @@
 
 
 #include "common/symbol_table.h"
+#include "common/keywords.h"
+#include "common/lexical_components.h"
 
 
 #include <stdio.h>
 #include <stdlib.h>
 
-// strlen
+// strcpy, strlen
 #include <string.h>
 
 
@@ -37,6 +39,14 @@ int d_symbol_table_initialize(
     struct d_symbol_table **symbol_table
 )
 {
+    size_t i = 0;
+    size_t keyword_count = sizeof(D_LANG_KEYWORDS) /
+                           sizeof(D_LANG_KEYWORDS[0]);
+
+    struct d_symbol_table_entry tmp_entry;
+    char *tmp_entry_lexeme = NULL;
+
+
     if(symbol_table == NULL) {
 
         perror("ERROR::SYMBOL_TABLE::Reference to struct d_symbol_table is "
@@ -57,9 +67,27 @@ int d_symbol_table_initialize(
 
     (*symbol_table)->table = NULL;
 
+    // And the symbol table initialization will be completed once all of the
+    // registered keywords are put into it
+    for(i = 0; i < keyword_count; ++i) {
 
+        // The lexeme is the keyword itself; a '\0' char must be present at
+        // the end
+        if((tmp_entry.lexeme = malloc(strlen(D_LANG_KEYWORDS[i]) + 1) ==
+            NULL) {
 
-    // TODO fill w/ all keywords
+            perror("ERROR::SYMBOL_TABLE::Could not allocate a keyword "
+                   "lexeme");
+            return -1;
+        }
+
+        strcpy(tmp_entry.lexeme, D_LANG_KEYWORDS[i]);
+
+        tmp_entry.lexical_component = D_LC_KEYWORD;
+
+        d_symbol_table_add((*symbol_table)->table, &tmp_entry);
+    }
+    
 
     return 0;
 }
@@ -214,6 +242,7 @@ int d_symbol_table_destroy(
         HASH_DEL((*symbol_table)->table, current_entry);
 
         // Each internally-managed entry must be properly freed
+        free(current_entry->lexeme);
         free(current_entry);
     }
 
