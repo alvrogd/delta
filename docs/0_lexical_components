@@ -110,7 +110,7 @@ They can be recognized using the following regular expressions (for binary and
 hexadecimal integers respectively):
 
   0(b | B){(0 | 1 | _)*(0 | 1)(0 | 1 | _)*}
-  0 | [1-9](_ | digit)*
+  digit(_ | digit)*
 
 ### String Literals:
 

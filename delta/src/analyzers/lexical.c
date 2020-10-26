@@ -4,14 +4,23 @@
  * @date Oct 2020
  *
  * @brief Implementation of analyzers/lexical.h
+ *
+ * @details
+ *  All regular expressions that have been used here are detailed in
+ *  0_lexical_components
  */
 
 
 #include "analyzers/lexical.h"
 
+#include "common/lexical_components.h" 
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+// Character categorizing functions such as "isalpha()"
+#include <ctype.h>
 
 
 /**
@@ -111,6 +120,909 @@ int d_lexical_analyzer_prepare_for_parsing(
 
 
 /**
+ * @brief Updates the parsing stats depending on the last read character.
+ *
+ * @details
+ *  Updates the parsing stats depending on the last read character. These
+ *  stats are useful for error raising purposes, in order to point out to
+ *  the user the error's precise location:
+ *
+ *    - Current line in the input file.
+ *    - Current character in the current line.
+ *
+ *  The stats reflect the next character's properties; i.e. if an EOL is
+ *  recognized, the line counter will already be incremented by 1 so that if
+ *  the stats are used anytime in the future when parsing that next character,
+ *  its corresponding line number is properly set.
+ *
+ * @param[in,out] lexical_analyzer The lexical analyzer.
+ * @param[in] character The last character that has been read.
+ * @param[in] has_been_returned If the last character had to be returned.
+ */
+void _d_lexical_analyzer_update_parsing_stats(
+    struct d_lexical_analyzer *lexical_analyzer,
+    unsigned char character,
+    int has_been_returned
+)
+{
+    // No error checking as this function is only called in this translation
+    // unit, whose public functions have already made any relevant checks
+
+
+    // If the character had to be returned, there is no need to update the
+    // parsing stats, as they belong to that character, which will be read
+    // once again later on
+    if(!has_been_returned) {
+
+        if(character == '\n') {
+            ++(lexical_analyzer->current_line);
+            lexical_analyzer->current_character = 1;
+        }
+
+        else {
+            ++(lexical_analyzer->current_character);
+        }
+    }   
+}
+
+
+/**
+ * @brief Processes a certain character according to the double quoted commnet
+ *        automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes double quoted comments. The decision is also determined
+ *  depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_double_quoted_comment(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            // TODO escape sequences are not supported at the moment
+            if(input_symbol != '"') {
+                // go to state 1
+                *new_state = 1;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Failure
+                continue_parsing = 0;
+                
+                return -1;
+            }
+
+        case 1:
+
+            // TODO escape sequences are not supported at the moment
+            if(input_symbol != '"') {
+                // loop
+                *new_state = 1;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Successful recognition
+                *continue_parsing = 0;
+                *save_lexeme = 1;
+                
+                return D_LC_LITERAL_STR;
+            }
+    }
+}
+
+
+/**
+ * @brief Processes a certain character according to the equals and assignment
+ *        automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes equals and assigment operators. The decision is also determined
+ *  depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_equals_and_assign(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            switch (input_symbol) {
+            
+                case '=':
+                    // Successful "equals" recognition
+                    *continue_parsing = 0;
+
+                    return D_LC_OP_RELATIONAL_EQUALS;
+
+                default:
+                    // Successful "assignment" recognition
+                    *continue_parsing = 0;
+                    *return_character = 1;
+
+                    return D_LC_OP_ASSIGNMENT_ASSIGN;
+            }
+    }
+}
+
+
+/**
+ * @brief Processes a certain character according to the increment and
+ *        plus-assignment automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes increment and plus-assigment operators. The decision is also
+ *  determined depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_increment_and_plus_assign(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            switch (input_symbol) {
+            
+                case '+':
+                    // Successful "increment" recognition
+                    *continue_parsing = 0;
+
+                    return D_LC_OP_ARITHMETIC_INCREMENT;
+
+                case '=':
+                    // Successful "plus-assignment" recognition
+                    *continue_parsing = 0;
+
+                    return D_LC_OP_ASSIGNMENT_PLUS_ASSIGN;
+
+                default:
+                    // failure
+                    *continue_parsing = 0;
+                    *return_character = 1;
+
+                    return -1;
+            }
+    }
+}
+
+
+/**
+ * @brief Processes a certain character according to the whitespace automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes whitespace characters ('\f', '\n', '\r', '\t', '\v', ' '). The
+ *  decision is also determined depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_whitespace(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            if(isblank(input_symbol)) {
+                // loop
+                *new_state = 0;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Successful recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return D_LC_WHITESPACE;
+            }
+    }
+}
+
+
+/**
+ * @brief Processes a certain character according to the identifiers and
+ *        keywords operator automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes both identifiers and keywords operators. The decision is also
+ *  determined depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_id_and_kwd(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            if(isalnum(input_symbol) || input_symbol == '_') {
+                // loop
+                *new_state = 0;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Successful recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+                *add_to_symbol_table = 1;
+
+                // The calling function must take care of telling keywords
+                // apart from IDs, depending on what the symbol table reports
+                return 0;
+            }
+    }
+}
+
+
+/**
+ * @brief Processes a certain character according to the number and dot
+ *        operator automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes both numbers and dots operators. The decision is also
+ *  determined depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_number_and_dot(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            if(isdigit(input_symbol)) {
+                // go to state 31
+                *new_state = 31;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Successful "dot operator" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return D_LC_OP_ACCESS_DOT;
+            }
+
+
+        case 10:
+
+            if(input_symbol == 'B' || input_symbol == 'b') {
+                // go to state 11
+                *new_state = 11;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(isdigit(input_symbol) || input_symbol == '_') {
+                // go to state 20
+                *new_state = 20;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == '.') {
+                // go to state 30
+                *new_state = 30;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == 'E' || input_symbol == 'e') {
+                // go to state 32
+                *new_state = 32;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal integer" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_INT;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+        
+
+        case 11:
+
+            switch (input_symbol) {
+            
+                case '_':
+                    // loop
+                    *new_state = 11;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                case '0':
+                case '1':
+                    // go to state 12
+                    *new_state = 12;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                default:
+                    // Failure
+                    *continue_parsing = 0;
+                    *return_character = 1;
+
+                    return -1;
+            }
+
+
+        case 12:
+
+            if(input_symbol == '0' || input_symbol == '1' || input_symbol ==
+               '_') {
+
+                // loop
+                *new_state = 12;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "binary integer" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_INT;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+
+
+        case 20:
+
+            if(isdigit(input_symbol) || input_symbol == '_') {
+                // loop
+                *new_state = 20;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == '.') {
+                // go to state 30
+                *new_state = 30;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == 'E' || input_symbol == 'e') {
+                // go to state 32
+                *new_state = 32;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal integer" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_INT;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+
+
+        case 30:
+
+            if(isdigit(input_symbol)) {
+                // go to state 31
+                *new_state = 31;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal float" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_FP;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+
+
+        case 31:
+
+            if(isdigit(input_symbol) || input_symbol == '_') {
+                // loop
+                *new_state = 31;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == 'E' || input_symbol == 'e') {
+                // go to state 32
+                *new_state = 32;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal float" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_FP;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+
+
+        case 32:
+
+            if(isdigit(input_symbol)) {
+                // go to state 34
+                *new_state = 34;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(input_symbol == '+' || input_symbol == '-') {
+                // go to state 33
+                *new_state = 33;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+
+
+        case 33:
+
+            if(isdigit(input_symbol)) {
+                // go to state 34
+                *new_state = 34;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+
+
+        case 34:
+
+            if(isdigit(input_symbol) || input_symbol == '_') {
+                // loop
+                *new_state = 34;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal float" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_FP;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return -1;
+            }
+    }
+}
+
+
+/**
+ * @brief Tries to recognize a certain lexical component via a predefined
+ *        automata.
+ *
+ * @details
+ *  A specified finite automata is used to try to recognize its corresponding
+ *  lexical components, by parsing the next characters that the I/O system
+ *  provides.
+ *
+ *  This function will also take care of storing the component's lexeme and/or
+ *  creating its entry in the symbol table if needed.
+ *
+ * @param[in,out] lexical_analyzer The lexical analyzer.
+ * @param[out] lexical_analyzer Pointer to a struct d_lexical_analyzer to
+ *                              which the lexical component's data will be
+ *                              written.
+ * @param[in] transition_function Pointer to the function that contains all
+ *            the logical processes of the automata.
+ * @param[in] initial_state Starting state of the automata.
+ */
+void _d_lexical_analyzer_run_automata(
+    struct d_lexical_analyzer *lexical_analyzer,
+    struct d_lexical_component *lexical_component,
+    int (*transition_function)(int, unsigned char, int *, int *, int *,
+                                int *, int *),
+    int initial_state
+)
+{
+    unsigned char current_character = 0;
+    int return_character = 0;
+
+    int current_automata_state = initial_state;
+
+    int continue_parsing = 1; // As long as the automata desires to continue
+
+    int save_lexeme = 0;
+    const unsigned char *lexeme = NULL;
+
+    int add_to_symbol_table = 0;
+    struct d_symbol_table_entry entry;
+    struct d_symbol_table_entry *entry_in_table = NULL;
+
+    int lexical_component_id = 0;
+
+
+    // No error checking as this function is only called in this translation
+    // unit, whose public functions have already made any relevant checks
+
+
+    if(d_io_system_is_eof(lexical_analyzer->io_system)) {
+
+        perror("ERROR:LEXICAL_ANALYZER::EOF has been reached");
+        continue_parsing = 0;
+    }
+
+
+    while(continue_parsing) {
+
+        /* 0. Resetting some flags */
+        return_character = 0;
+        save_lexeme = 0;
+        add_to_symbol_table = 0;
+        lexical_component_id = 0;
+
+
+        /* 1. Retrieve the next character */
+        d_io_system_get_next_char(lexical_analyzer->io_system,
+                                  &current_character);
+
+        // TODO remove
+        printf("[D_LA] Line %zu, Col %zu: %c\n",
+               lexical_analyzer->current_line,
+               lexical_analyzer->current_character, current_character);
+
+
+        /* 2. State transitioning depending on the retrieved character */
+        lexical_component_id = (*transition_function)(current_automata_state,
+                                current_character, &current_automata_state,
+                                &continue_parsing, &return_character,
+                                &save_lexeme, &add_to_symbol_table);
+
+        if(return_character) {
+            d_io_system_return_char(lexical_analyzer->io_system,
+                                    current_character);
+        }
+
+        if(save_lexeme) {
+
+            lexeme =
+                 d_io_system_save_current_lexeme(lexical_analyzer->io_system);
+                 
+            // If the lexeme needed to be saved, at first it also needs to be
+            // set as the component's attribute
+            // If the component turns out to be an ID/keyword, this will just
+            // get overwritten with a reference to its entry in the symbol
+            // table, so everything would be still fine
+            lexical_component->attributes = lexeme;
+        }
+
+        if(add_to_symbol_table) {
+
+            // The symbol table requires the entry to be initialized before
+            // adding it
+
+            // In order to do so, let's check first if a corresponding entry
+            // is already present
+            entry_in_table = d_symbol_table_search(
+                                               lexical_analyzer->symbol_table,
+                                               lexeme);
+
+            if(entry_in_table == NULL) {
+                // If it is not already present, it definitely cannot be a
+                // keyword
+                entry.lexeme = lexeme;
+                entry.lexical_component = D_LC_IDENTIFIER;
+
+                d_symbol_table_add(lexical_analyzer->symbol_table,
+                                   &entry);
+
+                // Due to "entry" being restricted to this function's scope
+                entry_in_table = d_symbol_table_search(
+                                               lexical_analyzer->symbol_table,
+                                               lexeme);
+            }
+
+            // Anyways, if the component deserves an entry in the symbol
+            // table, its attribute will always be a reference to that entry
+            lexical_component->attributes = entry_in_table;
+
+            lexical_component_id = entry_in_table->lexical_component;
+        }
+
+        // Updating the output lexical_component...
+        // If a lexical component has been successfully recognized, the value
+        // in component ID will be >0
+        if(lexical_component_id > 0 ) {
+            lexical_component->category = lexical_component_id;
+
+            // Its attributes would already been set if required
+        }
+
+        
+        /* 3. Update parsing stats */
+        _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                 current_character,
+                                                 return_character);
+
+
+        /* 4. Checking if the parsing process may continue */
+        if(d_io_system_is_eof(lexical_analyzer->io_system)) {
+
+            perror("ERROR:LEXICAL_ANALYZE::EOF has been reached");
+            continue_parsing = 0;
+        }
+    }
+}
+
+
+/**
  * @brief Implementation of lexical.h/d_lexical_analyzer_get_next_lexical_comp
  */
 int d_lexical_analyzer_get_next_lexical_comp(
@@ -119,6 +1031,8 @@ int d_lexical_analyzer_get_next_lexical_comp(
 )
 {
     unsigned char character;
+
+    int parsing_stats_updated = 0;
 
 
     if(lexical_analyzer == NULL) {
@@ -136,32 +1050,248 @@ int d_lexical_analyzer_get_next_lexical_comp(
     }
 
 
-    while(!d_io_system_is_eof(lexical_analyzer->io_system)) {
+    // If no more characters remain unparsed in the input file
+    if(d_io_system_is_eof(lexical_analyzer->io_system)) {
 
-        d_io_system_get_next_char(lexical_analyzer->io_system,
-                                  &character);
-
-        printf("[D_LA] Line %zu, Col %zu: %c\n",
-               lexical_analyzer->current_line,
-               lexical_analyzer->current_character, character);
-
-        // TODO automatas
-
-
-        // Useful info for error raising purposes
-        // These stats are updated to reflect the next character's ones
-        if(character == '\n') {
-            ++(lexical_analyzer->current_line);
-            lexical_analyzer->current_character = 1;
-        }
-
-        else {
-            ++(lexical_analyzer->current_character);
-        }
+        perror("ERROR:LEXICAL_ANALYZE::EOF has been reached");
+        return -1;
     }
 
 
-    return 0;
+    // The lexical component's category is set to an invalid state for the
+    // time being
+    //
+    // This value can be set to a valid state either by this function (which
+    // recognizes 1-char components) or by a finite automata which gets called
+    // by this function (these automatas recognize longer components)
+    //
+    // When this function is about to exit, the return value will be decided
+    // by the following expression:
+    //
+    //   return lexical_analyzer->category < 0
+    //
+    // That is, the function will report a failure if it could not recognize a
+    // new component, and no automata was able either
+    lexical_analyzer->category = -1;
+    lexical_analyzer->attributes = NULL;
+
+
+    /* 1. Retrieve the next character */
+    d_io_system_get_next_char(lexical_analyzer->io_system, &character);
+
+    // TODO remove
+    printf("[D_LA] Line %zu, Col %zu: %c\n", lexical_analyzer->current_line,
+           lexical_analyzer->current_character, character);
+
+
+    /* 2. Parse the character using the global finite automata */
+    // TODO add reference to global automata doc
+
+    // Depending on the input character:
+    //
+    //   - A new lexical component could be inmediately recognized by this
+    //     function if it had just 1 char.
+    //
+    //     Every 1 char component can be identified just by its category's
+    //     value. Therefore, no attributes will be appended.
+    //
+    //   - A certain finite automata will be called in order to recognize a
+    //     longer component.
+    //
+    //     Some of these components can also be identified by their
+    //     categories; i.e. the "==" equals relational operator. However, most
+    //     of the components will be identifiers, keywords and numbers. As
+    //     these cannot be properly identified just by using their categories,
+    //     the corresponding automatas will take care of appending any
+    //     required attributes to them, just as explained in the header of
+    //     lexical.h
+
+    switch (character) {
+
+            /** 1-char components **/
+
+            case '-':
+                lexical_component->category = D_LC_OP_ARITHMETIC_MINUS;
+                break;
+
+            case '*':
+                lexical_component->category = D_LC_OP_ARITHMETIC_TIMES;
+                break;
+
+            case '<':
+                lexical_component->category = D_LC_OP_RELATIONAL_LESS_THAN;
+                break;
+
+            case '[':
+                lexical_component->category = D_LC_OP_ACCESS_L_BRACKET;
+                break;
+
+            case ']':
+                lexical_component->category = D_LC_OP_ACCESS_R_BRACKET;
+                break;
+
+            case ',':
+                lexical_component->category = D_LC_SEPARATOR_COMMA;
+                break;
+
+            case ';':
+                lexical_component->category = D_LC_SEPARATOR_SEMICOL;                
+                break;
+
+            case '(':
+                lexical_component->category = D_LC_SEPARATOR_L_PARENTHESIS;
+                break;
+
+            case ')':
+                lexical_component->category = D_LC_SEPARATOR_R_PARENTHESIS;
+                break;
+
+            case '{':
+                lexical_component->category = D_LC_SEPARATOR_L_CURLY;
+                break;
+
+            case '}':
+                lexical_component->category = D_LC_SEPARATOR_R_CURLY;
+                break;
+
+
+            /** Multiple-char components */
+            
+            case '"':
+                /* 3. Update parsing stats prematuraly as the control is being
+                      given up to an automata */
+                _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                parsing_stats_updated = 1;
+                
+                _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                 lexical_component,
+                                                 &_d_lexical_analyzer_automata_double_quoted_comment,
+                                                 int 0);
+                break;
+                
+            case '=':
+                /* 3. Update parsing stats prematuraly as the control is being
+                      given up to an automata */
+                _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                parsing_stats_updated = 1;
+                
+                _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                 lexical_component,
+                                                 &_d_lexical_analyzer_automata_equals_and_assign,
+                                                 int 0);
+                break;
+
+            case '+':
+                /* 3. Update parsing stats prematuraly as the control is being
+                      given up to an automata */
+                _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                parsing_stats_updated = 1;
+                
+                _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                 lexical_component,
+                                                 &_d_lexical_analyzer_automata_increment_and_plus_assign,
+                                                 int 0);
+                break;
+
+            case '/':
+                /* 3. Update parsing stats prematuraly as the control is being
+                      given up to an automata */
+                _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                parsing_stats_updated = 1;
+                
+                // TODO implement and call comments and division automata
+                lexical_component->category = D_LC_OP_ARITHMETIC_DIV;
+                break;
+
+            default:
+                // (these three cases cannot be represented through a
+                // switch-case construct)
+
+                if(isalpha(character) || character == '_') {
+
+                    /* 3. Update parsing stats prematuraly as the control is
+                          being given up to an automata */
+                    _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                    parsing_stats_updated = 1;
+                
+                    _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                     lexical_component,
+                                                     &_d_lexical_analyzer_automata_id_and_kwd,
+                                                     0);
+                }
+
+                else if(isdigit(character) || character == '.') {
+
+                    /* 3. Update parsing stats prematuraly as the control is
+                          being given up to an automata */
+                    _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                    parsing_stats_updated = 1;
+                
+                    _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                     lexical_component,
+                                                     &_d_lexical_analyzer_automata_number_and_dot,
+                                                     0);
+                }
+
+                else if(isblank(character)) {
+                    
+                    /* 3. Update parsing stats prematuraly as the control is
+                          being given up to an automata */
+                    _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                         character, 0);
+                    parsing_stats_updated = 1;
+
+                    _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                     lexical_component,
+                                                     &_d_lexical_analyzer_automata_whitespace,
+                                                     0);
+                }
+
+                else {
+                    // If the parsing reaches this point, the current lexical
+                    // component must be invalid or not supported yet
+                    // Therefore, it will be nice to raise an error message
+                    // warning about it
+                    perror("ERROR::LEXICAL_ANALYZER::Wrong lex. comp.");
+                    // The lexical component's category is already set to
+                    // '-1', which is an invalid value
+
+                    // NOTE: there will be no need to raise an error message
+                    //       beyond this point in this function, as if any
+                    //       automata were to fail, it is its duty to take
+                    //       care of showing the error all by itself
+                }                
+        }
+    
+
+    // They will have already been updated if the control was given up to any
+    // automata
+    if(!parsing_stats_updated) {
+        _d_lexical_analyzer_update_parsing_stats(lexical_analyzer, character,
+                                                 0);
+    }
+
+    // Particular situation:
+    //
+    // If the recognized lexical component turned out to be whitespace, the
+    // analyzer will try to get the next component that will actually be
+    // meaninful during the compilation process
+    if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
+       D_LC_WHITESPACE / D_LC_DISTANCE_CATEGORY) {
+
+        return d_lexical_analyzer_get_next_lexical_comp(lexical_analyzer,
+                                                        lexical_component);
+    }
+
+    else {
+        return lexical_component->category < 0;
+    }
 }
 
 

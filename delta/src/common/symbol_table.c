@@ -44,7 +44,7 @@ int d_symbol_table_initialize(
                            sizeof(D_LANG_KEYWORDS[0]);
 
     struct d_symbol_table_entry tmp_entry;
-    char *tmp_entry_lexeme = NULL;
+    unsigned char *tmp_entry_lexeme = NULL;
 
 
     if(symbol_table == NULL) {
@@ -81,7 +81,7 @@ int d_symbol_table_initialize(
             return -1;
         }
 
-        strcpy(tmp_entry_lexeme, D_LANG_KEYWORDS[i]);
+        strcpy(tmp_entry_lexeme, D_LANG_KEYWORDS[i]); // TODO may break signed -> unsigned?
         tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_KEYWORD;
@@ -108,7 +108,7 @@ int d_symbol_table_initialize(
  */
 struct d_symbol_table_entry *d_symbol_table_search(
     struct d_symbol_table *symbol_table,
-    const char* key
+    const unsigned char* key
 )
 {
     struct d_symbol_table_entry *entry = NULL;
@@ -181,7 +181,7 @@ int d_symbol_table_add(
     if(d_symbol_table_search(symbol_table, entry->lexeme) != NULL) {
 
         perror("ERROR::SYMBOL_TABLE::Duped key");
-        return -1;
+        return 1;
     }
 
     // With each new entry, a new internally-managed structure is allocated
@@ -243,7 +243,7 @@ int d_symbol_table_destroy(
         HASH_DEL((*symbol_table)->table, current_entry);
 
         // Each internally-managed entry must be properly freed
-        free((char *) current_entry->lexeme);
+        free((unsigned char *) current_entry->lexeme);
         free(current_entry);
     }
 

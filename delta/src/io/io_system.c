@@ -66,6 +66,9 @@ struct d_io_system {
     /** Pointer which is moved forward while reading characters in order to
      *  recognize the current lexeme. */
     uint8_t *forward;
+    /** How many characters the forward pointer has moved without recognizing
+        a new lexeme. */
+    size_t lexeme_length;
 
     /** Pointer to the address to which the input file's contents can be
      *  found, as the file will be memory-mapped. */
@@ -137,6 +140,7 @@ int d_io_system_initialize(
     // A
     (*io_system)->lexeme_begin = (*io_system)->buffer_a;
     (*io_system)->forward = (*io_system)->buffer_a;
+    (*io_system)->lexeme_length = 0;
     (*io_system)->gone_backwards_buffer = 0;
 
     // No file is opened yet
@@ -331,6 +335,7 @@ int _d_io_system_move_forward(
 
 
     ++(io_system->forward);
+    ++(io_system->lexeme_length);
 
     // If an EOF is found at the next position, it could mean that:
     //  - You have reached the end of the buffer A.
@@ -430,6 +435,7 @@ int d_io_system_return_char(
 
 
     --(io_system->forward);
+    --(io_system->lexeme_length);
     // Going backwards will always mean that eof has not been reached yet
     io_system->eof_reached = 0;
 
@@ -475,6 +481,70 @@ int d_io_system_is_eof(
 
 
     return io_system->eof_reached;
+}
+
+
+/**
+ * @brief Implementation of io_system.h/d_io_system_save_current_lexeme
+ */
+const unsigned char *d_io_system_save_current_lexeme(
+    struct d_io_system *io_system
+)
+{
+    unsigned char *lexeme = NULL;
+    uint8_t *tmp_pointer = NULL;
+
+    int i = 0;
+
+
+    if(io_system == NULL) {
+
+        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        return -1;
+    }
+
+
+    // +1 in order to fit '\0' at the end
+    if((lexeme = malloc((io_system->lexeme_length + 1) *
+        sizeof(unsigned char))) == NULL) {
+
+        perror("ERROR::IO_SYSTEM::Could not allocate memory for the current "
+               "lexeme");
+        return -1;
+    }
+
+    lexeme[io_system->lexeme_length] = '\0';
+
+
+    // Each character between the "lexeme start" and "forward" pointers will
+    // be copied one by one
+    tmp_pointer = io_system->lexeme_begin;
+
+    while(tmp_pointer != io_system->forward) {
+
+        // "lexeme start" and "forward" pointers may not be in the same buffer
+        if((unsigned char) *tmp_pointer == IO_SYSTEM_SENTINEL_EOF) {
+
+            // End of buffer A -> tmp_pointer jumps to start of buffer B
+            if(tmp_pointer + 1 == io_system->buffer_a_end) {
+
+                tmp_pointer = io_system->buffer_b;
+            }
+
+            // End of buffer B -> tmp_pointer jumps to start of buffer A
+            else {
+                tmp_pointer = io_system->buffer_a;
+            }
+        }
+
+        else {
+            lexeme[i++] = *(tmp_pointer++);
+        }
+    }
+
+    // Once finished, the "lexeme start" pointer can now move to were the
+    // "forward" pointer is in order to mark the start of the next lexeme
+    io_system->lexeme_begin = io_system->forward;
 }
 
 

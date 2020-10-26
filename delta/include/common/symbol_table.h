@@ -54,7 +54,7 @@ struct d_symbol_table_entry {
     /** '\0' terminated string which represents the lexeme that originated the
         entry, as well as serving as its key. It will be automatically freed
         once the entry is deleted. */
-    const char *lexeme;
+    const unsigned char *lexeme;
     /** Lexical component which corresponds to the entry's lexeme. */
     int lexical_component;
     /** Makes this structure hashable by the library. */
@@ -93,7 +93,7 @@ int d_symbol_table_initialize(
  */
 struct d_symbol_table_entry *d_symbol_table_search(
     struct d_symbol_table *symbol_table,
-    const char* key
+    const unsigned char* key
 );
 
 
@@ -114,7 +114,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
  * @param[in,out] symbol_table The symbol table.
  * @param[in] The entry.
  *
- * @return 0 if successful, any other value otherwise.
+ * @return 0 if successful, 1 if the key is duped, any other value otherwise.
  */
 int d_symbol_table_add(
     struct d_symbol_table *symbol_table,

@@ -61,23 +61,33 @@ int main(int argc, char *argv[])
     //      Turn it back
     //      Read it once more and print it
 
-    i = 0; // First character will not be returned
+    // i = 0; // First character will not be returned
 
+    // while(!d_io_system_is_eof(io_system)) {
+
+    //     d_io_system_get_next_char(io_system, &tmp_char);
+
+    //     // Print
+    //     if(i == 0) {
+    //         printf("%c", tmp_char);
+    //         i = 1;
+    //     }
+
+    //     // Return
+    //     else {
+    //         d_io_system_return_char(io_system, tmp_char);
+    //         i = 0;
+    //     }
+    // }
+
+
+    // 5. Print out all lexical components
     while(!d_io_system_is_eof(io_system)) {
 
-        d_io_system_get_next_char(io_system, &tmp_char);
+        d_lexical_analyzer_get_next_lexical_comp(lexical_analyzer,
+                                                 &tmp_lexical_component);
 
-        // Print
-        if(i == 0) {
-            printf("%c", tmp_char);
-            i = 1;
-        }
-
-        // Return
-        else {
-            d_io_system_return_char(io_system, tmp_char);
-            i = 0;
-        }
+        printf("Lex. comp.: %d\n", tmp_lexical_component.category);
     }
 
 

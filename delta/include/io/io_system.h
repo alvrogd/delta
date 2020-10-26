@@ -132,6 +132,25 @@ int d_io_system_is_eof(
 
 
 /**
+ * @brief Saves the currently iterated lexeme.
+ *
+ * @details
+ *  Copies the current lexeme's contents into a new region of memory. The
+ *  resulting string will be null terminated ('\0').
+ *
+ *  The caller must take responsability of freeing this data when it is no
+ *  longer needed.
+ * 
+ * @param[in] io_system The I/O system.
+ *
+ * @return Pointer to the resulting string; NULL if failed.
+ */
+const unsigned char *d_io_system_save_current_lexeme(
+    struct d_io_system *io_system
+);
+
+
+/**
  * @brief Destroys an I/O system.
  *
  * @details
