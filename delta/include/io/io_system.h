@@ -132,6 +132,23 @@ int d_io_system_is_eof(
 
 
 /**
+ * @brief The I/O system performs any required actions when the currently
+ *        iterated lexeme is successfully recognized.
+ *
+ * @details
+ *  The I/O system updates its internal state to aknowledge the recognition of
+ *  the current lexeme.
+ * 
+ * @param[in] io_system The I/O system.
+ *            
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_io_system_current_lexeme_recognized(
+    struct d_io_system *io_system
+);
+
+
+/**
  * @brief Saves the currently iterated lexeme.
  *
  * @details

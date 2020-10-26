@@ -76,7 +76,7 @@ struct d_lexical_component {
               (there is no need to free it as the symbol table is responsible
                of it)
     */
-    void *attributes;
+    const void *attributes;
 };
 
 

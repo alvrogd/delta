@@ -81,7 +81,7 @@ int d_symbol_table_initialize(
             return -1;
         }
 
-        strcpy(tmp_entry_lexeme, D_LANG_KEYWORDS[i]); // TODO may break signed -> unsigned?
+        strcpy((char *)tmp_entry_lexeme, D_LANG_KEYWORDS[i]); // TODO may break signed -> unsigned?
         tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_KEYWORD;
@@ -129,7 +129,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
 
 
     // Returns NULL if no corresponding entry is found
-    HASH_FIND_STR(symbol_table->table, key, entry);
+    HASH_FIND_STR(symbol_table->table, (const char *)key, entry);
 
 
     return entry;
@@ -201,7 +201,7 @@ int d_symbol_table_add(
 
     // As previously said, the "lexeme" member is used as the key
     HASH_ADD_KEYPTR(hh, symbol_table->table, internal_entry->lexeme,
-                    strlen(internal_entry->lexeme), internal_entry);
+                    strlen((const char *)internal_entry->lexeme), internal_entry);
 
 
     return 0;

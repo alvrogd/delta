@@ -487,6 +487,22 @@ int d_io_system_is_eof(
 /**
  * @brief Implementation of io_system.h/d_io_system_save_current_lexeme
  */
+int d_io_system_current_lexeme_recognized(
+    struct d_io_system *io_system
+)
+{
+    // The "lexeme start" pointer can now move to were the "forward" pointer
+    // is in order to mark the start of the next lexeme
+    io_system->lexeme_begin = io_system->forward;
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Implementation of io_system.h/d_io_system_save_current_lexeme
+ */
 const unsigned char *d_io_system_save_current_lexeme(
     struct d_io_system *io_system
 )
@@ -500,7 +516,7 @@ const unsigned char *d_io_system_save_current_lexeme(
     if(io_system == NULL) {
 
         perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
-        return -1;
+        return NULL;
     }
 
 
@@ -510,7 +526,7 @@ const unsigned char *d_io_system_save_current_lexeme(
 
         perror("ERROR::IO_SYSTEM::Could not allocate memory for the current "
                "lexeme");
-        return -1;
+        return NULL;
     }
 
     lexeme[io_system->lexeme_length] = '\0';
@@ -542,9 +558,8 @@ const unsigned char *d_io_system_save_current_lexeme(
         }
     }
 
-    // Once finished, the "lexeme start" pointer can now move to were the
-    // "forward" pointer is in order to mark the start of the next lexeme
-    io_system->lexeme_begin = io_system->forward;
+
+    return lexeme;
 }
 
 

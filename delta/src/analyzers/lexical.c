@@ -243,6 +243,15 @@ int _d_lexical_analyzer_automata_double_quoted_comment(
                 
                 return D_LC_LITERAL_STR;
             }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
     }
 }
 
@@ -305,6 +314,15 @@ int _d_lexical_analyzer_automata_equals_and_assign(
 
                     return D_LC_OP_ASSIGNMENT_ASSIGN;
             }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
     }
 }
 
@@ -373,6 +391,15 @@ int _d_lexical_analyzer_automata_increment_and_plus_assign(
 
                     return -1;
             }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
     }
 }
 
@@ -419,7 +446,7 @@ int _d_lexical_analyzer_automata_whitespace(
         
         case 0:
 
-            if(isblank(input_symbol)) {
+            if(isblank(input_symbol) | isspace(input_symbol)) {
                 // loop
                 *new_state = 0;
                 *continue_parsing = 1;
@@ -434,6 +461,15 @@ int _d_lexical_analyzer_automata_whitespace(
 
                 return D_LC_WHITESPACE;
             }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
     }
 }
 
@@ -500,6 +536,15 @@ int _d_lexical_analyzer_automata_id_and_kwd(
                 // apart from IDs, depending on what the symbol table reports
                 return 0;
             }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
     }
 }
 
@@ -860,6 +905,15 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
                 return -1;
             }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
     }
 }
 
@@ -934,9 +988,9 @@ void _d_lexical_analyzer_run_automata(
                                   &current_character);
 
         // TODO remove
-        printf("[D_LA] Line %zu, Col %zu: %c\n",
-               lexical_analyzer->current_line,
-               lexical_analyzer->current_character, current_character);
+        // printf("[D_LA] Line %zu, Col %zu: %c\n",
+        //        lexical_analyzer->current_line,
+        //        lexical_analyzer->current_character, current_character);
 
 
         /* 2. State transitioning depending on the retrieved character */
@@ -968,6 +1022,9 @@ void _d_lexical_analyzer_run_automata(
             // The symbol table requires the entry to be initialized before
             // adding it
 
+            // TODO remove
+            printf("Key is: %s", lexeme);
+            printf("\tKey length: %zu\n", strlen((const char *)lexeme));
             // In order to do so, let's check first if a corresponding entry
             // is already present
             entry_in_table = d_symbol_table_search(
@@ -1072,16 +1129,16 @@ int d_lexical_analyzer_get_next_lexical_comp(
     //
     // That is, the function will report a failure if it could not recognize a
     // new component, and no automata was able either
-    lexical_analyzer->category = -1;
-    lexical_analyzer->attributes = NULL;
+    lexical_component->category = -1;
+    lexical_component->attributes = NULL;
 
 
     /* 1. Retrieve the next character */
     d_io_system_get_next_char(lexical_analyzer->io_system, &character);
 
     // TODO remove
-    printf("[D_LA] Line %zu, Col %zu: %c\n", lexical_analyzer->current_line,
-           lexical_analyzer->current_character, character);
+    // printf("[D_LA] Line %zu, Col %zu: %c\n", lexical_analyzer->current_line,
+    //       lexical_analyzer->current_character, character);
 
 
     /* 2. Parse the character using the global finite automata */
@@ -1167,7 +1224,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
                                                  &_d_lexical_analyzer_automata_double_quoted_comment,
-                                                 int 0);
+                                                 0);
                 break;
                 
             case '=':
@@ -1180,7 +1237,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
                                                  &_d_lexical_analyzer_automata_equals_and_assign,
-                                                 int 0);
+                                                 0);
                 break;
 
             case '+':
@@ -1193,7 +1250,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
                                                  &_d_lexical_analyzer_automata_increment_and_plus_assign,
-                                                 int 0);
+                                                 0);
                 break;
 
             case '/':
@@ -1208,15 +1265,15 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 break;
 
             default:
-                // (these three cases cannot be represented through a
-                // switch-case construct)
+                // (these cases cannot be represented through a switch-case
+                // construct)
 
                 if(isalpha(character) || character == '_') {
 
                     /* 3. Update parsing stats prematuraly as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
-                                                         character, 0);
+                                                             character, 0);
                     parsing_stats_updated = 1;
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
@@ -1225,12 +1282,26 @@ int d_lexical_analyzer_get_next_lexical_comp(
                                                      0);
                 }
 
-                else if(isdigit(character) || character == '.') {
+                else if(character == '0') {
 
                     /* 3. Update parsing stats prematuraly as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
-                                                         character, 0);
+                                                             character, 0);
+                    parsing_stats_updated = 1;
+                
+                    _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                     lexical_component,
+                                                     &_d_lexical_analyzer_automata_number_and_dot,
+                                                     10);
+                }
+
+                else if(character == '.') {
+
+                    /* 3. Update parsing stats prematuraly as the control is
+                          being given up to an automata */
+                    _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                             character, 0);
                     parsing_stats_updated = 1;
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
@@ -1239,12 +1310,27 @@ int d_lexical_analyzer_get_next_lexical_comp(
                                                      0);
                 }
 
-                else if(isblank(character)) {
-                    
+                else if(isdigit(character)) { // The remaning digits are [1,9]
+
                     /* 3. Update parsing stats prematuraly as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
-                                                         character, 0);
+                                                             character, 0);
+                    parsing_stats_updated = 1;
+                
+                    _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                     lexical_component,
+                                                     &_d_lexical_analyzer_automata_number_and_dot,
+                                                     20);
+                }
+
+                else if(isblank(character) | isspace(character)) {
+                    // TODO remove
+                    // printf("to blank auto\n");
+                    /* 3. Update parsing stats prematuraly as the control is
+                          being given up to an automata */
+                    _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
+                                                             character, 0);
                     parsing_stats_updated = 1;
 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
@@ -1259,6 +1345,8 @@ int d_lexical_analyzer_get_next_lexical_comp(
                     // Therefore, it will be nice to raise an error message
                     // warning about it
                     perror("ERROR::LEXICAL_ANALYZER::Wrong lex. comp.");
+                    // TODO remove
+                    // printf("Is %d,%c\n", character, character);
                     // The lexical component's category is already set to
                     // '-1', which is an invalid value
 
@@ -1268,7 +1356,6 @@ int d_lexical_analyzer_get_next_lexical_comp(
                     //       care of showing the error all by itself
                 }                
         }
-    
 
     // They will have already been updated if the control was given up to any
     // automata
@@ -1276,6 +1363,22 @@ int d_lexical_analyzer_get_next_lexical_comp(
         _d_lexical_analyzer_update_parsing_stats(lexical_analyzer, character,
                                                  0);
     }
+
+    // No matter if:
+    //
+    //   - 1. The component has been instantly recognized in this function.
+    //   - 2. The component has been recognized in any automata.
+    //   - 3. Any automata has failed recognizing the automata.
+    //   - 4. The component did not fit any condition and just failed in
+    //        this function's huge switch-case.
+    //
+    // The I/O system must always move its "begin lexeme" pointer to were
+    // the "forward" pointer currently is. That is, the lexical analyzer has
+    // already decided which characters have been parsed and which not by
+    // requesting and/or returning characters. Thus, the I/O system's internal
+    // state must be left properly accordingly so that the lexical analysis
+    // may proceed/ without additional inconveniences.
+    d_io_system_current_lexeme_recognized(lexical_analyzer->io_system);
 
     // Particular situation:
     //
@@ -1285,6 +1388,8 @@ int d_lexical_analyzer_get_next_lexical_comp(
     if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
        D_LC_WHITESPACE / D_LC_DISTANCE_CATEGORY) {
 
+        // TODO remove
+        // printf("ah shit here we go again\n");
         return d_lexical_analyzer_get_next_lexical_comp(lexical_analyzer,
                                                         lexical_component);
     }
