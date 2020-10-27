@@ -110,7 +110,7 @@ void _d_errors_show(
 
     printf(": ");
 
-    message_template = "patatas fritas [..] hola que [..] tal";// TODO retrieve,
+    message_template = d_errors_get_template(error_code);
     message_template_length = strlen(message_template);
     message_template_end = message_template + message_template_length;
 

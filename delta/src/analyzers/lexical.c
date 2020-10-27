@@ -470,7 +470,6 @@ int _d_lexical_analyzer_automata_double_quoted_string(
         
         case 0:
 
-            // TODO as of now, \" is the only supported escape sequence
             if(input_symbol != '"') {
 
                 if(input_symbol == '\\') {
@@ -503,7 +502,6 @@ int _d_lexical_analyzer_automata_double_quoted_string(
 
         case 1:
 
-            // TODO as of now, \" is the only supported escape sequence
             if(input_symbol != '"') {
 
                 if(input_symbol == '\\') {
@@ -533,26 +531,13 @@ int _d_lexical_analyzer_automata_double_quoted_string(
 
         case 2:
 
-            if(input_symbol == '"') {
-                // go to state 1
-                *new_state = 1;
-                *continue_parsing = 1;
+            // No matter what character goes in, it will always be valid
 
-                return -1;
-            }
+            // go to state 1
+            *new_state = 1;
+            *continue_parsing = 1;
 
-            else {
-                // Failure
-                continue_parsing = 0;
-
-                d_errors_parse_show(4,
-                                    D_ERR_LEX_LITERALS_STRING_UNSUPPORTED_ESCAPE,
-                                    input_symbol_line,
-                                    input_symbol_character, "\\\"");
-                
-                return -1;
-            }
-
+            return -1;
 
         default: // Just so that the compiler does not panic
 
