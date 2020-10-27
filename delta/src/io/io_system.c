@@ -197,7 +197,7 @@ int _d_io_system_fill_buffer(
     }
 
     // TODO remove
-    printf("Back: %d\t", (int)io_system->gone_backwards_buffer);
+    // printf("Back: %d\t", (int)io_system->gone_backwards_buffer);
     // If the I/O system had to move to the previous buffer due to returning
     // characters, the next buffer has already the expected file contents
     if(io_system->gone_backwards_buffer) {
@@ -229,12 +229,12 @@ int _d_io_system_fill_buffer(
 
 
     // TODO REMOVE
-    printf("Buffer contents: ");
+    // printf("Buffer contents: ");
 
-    while(*buffer != IO_SYSTEM_SENTINEL_EOF){
-        printf("%c, ", *buffer++);
-    }
-    printf("\n");
+    // while(*buffer != IO_SYSTEM_SENTINEL_EOF){
+    //     printf("%c, ", *buffer++);
+    // }
+    // printf("\n");
 
     return 0;
 }
@@ -417,12 +417,12 @@ int d_io_system_get_next_char(
     }
 
     // TODO REMOVE
-    printf("READ %c BUF B contents: ", *(io_system->forward));
+    // printf("READ %c BUF B contents: ", *(io_system->forward));
 
-    while(*buffer != IO_SYSTEM_SENTINEL_EOF){
-        printf("%c, ", *buffer++);
-    }
-    printf("\n");
+    // while(*buffer != IO_SYSTEM_SENTINEL_EOF){
+    //     printf("%c, ", *buffer++);
+    // }
+    // printf("\n");
 
 
     // The "forward" pointer will already be right on top of the next
@@ -556,7 +556,7 @@ const unsigned char *d_io_system_save_current_lexeme(
     tmp_pointer = io_system->lexeme_begin;
 
     // TODO remove
-    printf("First save: %d\t%p\t%p\t%p\n", *tmp_pointer, tmp_pointer, io_system->buffer_a, io_system->buffer_b);
+    // printf("First save: %d\t%p\t%p\t%p\n", *tmp_pointer, tmp_pointer, io_system->buffer_a, io_system->buffer_b);
 
     while(tmp_pointer != io_system->forward) {
 

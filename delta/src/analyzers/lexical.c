@@ -209,8 +209,66 @@ int _d_lexical_analyzer_automata_double_quoted_comment(
         
         case 0:
 
-            // TODO escape sequences are not supported at the moment
+            // TODO as of now, \" is the only supported escape sequence
             if(input_symbol != '"') {
+
+                if(input_symbol == '\\') {
+                    // go to state 2
+                    *new_state = 2;
+                    *continue_parsing = 1;
+
+                    return -1;
+                }
+
+                else {
+                    // go to state 1
+                    *new_state = 1;
+                    *continue_parsing = 1;
+
+                    return -1;
+                }
+            }
+
+            else {
+                // Failure
+                continue_parsing = 0;
+                
+                return -1;
+            }
+
+        case 1:
+
+            // TODO as of now, \" is the only supported escape sequence
+            if(input_symbol != '"') {
+
+                if(input_symbol == '\\') {
+                    // go to state 2
+                    *new_state = 2;
+                    *continue_parsing = 1;
+
+                    return -1;
+                }
+
+                else {
+                    // loop
+                    *new_state = 1;
+                    *continue_parsing = 1;
+
+                    return -1;
+                }
+            }
+
+            else {
+                // Successful recognition
+                *continue_parsing = 0;
+                *save_lexeme = 1;
+                
+                return D_LC_LITERAL_STR;
+            }
+
+        case 2:
+
+            if(input_symbol == '"') {
                 // go to state 1
                 *new_state = 1;
                 *continue_parsing = 1;
@@ -223,25 +281,6 @@ int _d_lexical_analyzer_automata_double_quoted_comment(
                 continue_parsing = 0;
                 
                 return -1;
-            }
-
-        case 1:
-
-            // TODO escape sequences are not supported at the moment
-            if(input_symbol != '"') {
-                // loop
-                *new_state = 1;
-                *continue_parsing = 1;
-
-                return -1;
-            }
-
-            else {
-                // Successful recognition
-                *continue_parsing = 0;
-                *save_lexeme = 1;
-                
-                return D_LC_LITERAL_STR;
             }
 
 
@@ -1023,8 +1062,8 @@ void _d_lexical_analyzer_run_automata(
             // adding it
 
             // TODO remove
-            printf("Key is: %s", lexeme);
-            printf("\tKey length: %zu\n", strlen((const char *)lexeme));
+            // printf("Key is: %s", lexeme);
+            // printf("\tKey length: %zu\n", strlen((const char *)lexeme));
             // In order to do so, let's check first if a corresponding entry
             // is already present
             entry_in_table = d_symbol_table_search(
