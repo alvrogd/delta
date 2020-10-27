@@ -88,15 +88,24 @@ int d_symbol_table_initialize(
 
         d_symbol_table_add(*symbol_table, &tmp_entry);
 
-        // TODO remove
-        printf("added kwd: %s\n", tmp_entry.lexeme);
+        #ifdef DEBUG
+        printf("[symbol_table][initialize] Added kwd.: %s\n",
+               tmp_entry.lexeme);
+        #endif
     }
     
 
-    // TODO remove
-    printf("int is present: %d\n", d_symbol_table_search(*symbol_table, "int") != NULL);
-    printf("patata is present: %d\n", d_symbol_table_search(*symbol_table, "patata") != NULL);
-    printf("string is present: %d\n", d_symbol_table_search(*symbol_table, "string") != NULL);
+    #ifdef DEBUG
+    printf("[symbol_table][initialize] Added kwd.: %s\n",
+            tmp_entry.lexeme);
+    printf("[symbol_table][initialize] Kwd. \"int\" present: %d\n",
+           d_symbol_table_search(*symbol_table, "int") != NULL);
+    printf("[symbol_table][initialize] Kwd. \"potato\" present: %d\n",
+           d_symbol_table_search(*symbol_table, "potato") != NULL);
+    printf("[symbol_table][initialize] Kwd. \"string\" present: %d\n",
+           d_symbol_table_search(*symbol_table, "string") != NULL);
+    #endif
+    
 
     return 0;
 }

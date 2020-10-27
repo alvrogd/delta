@@ -196,8 +196,11 @@ int _d_io_system_fill_buffer(
         return -1;
     }
 
-    // TODO remove
-    // printf("Back: %d\t", (int)io_system->gone_backwards_buffer);
+    #ifdef D_DEBUG
+    printf("[io_system][fill buffer] Next buffer already loaded: %d\n",
+           io_system->gone_backwards_buffer);
+    #endif
+
     // If the I/O system had to move to the previous buffer due to returning
     // characters, the next buffer has already the expected file contents
     if(io_system->gone_backwards_buffer) {
@@ -227,14 +230,16 @@ int _d_io_system_fill_buffer(
         buffer[size_to_read] = IO_SYSTEM_SENTINEL_EOF;
     }
 
+    #ifdef D_DEBUG
+    printf("[io_system][fill buffer] Loaded contents: ");
 
-    // TODO REMOVE
-    // printf("Buffer contents: ");
+    while(*buffer != IO_SYSTEM_SENTINEL_EOF){
+        printf("%c, ", *buffer++);
+    }
 
-    // while(*buffer != IO_SYSTEM_SENTINEL_EOF){
-    //     printf("%c, ", *buffer++);
-    // }
-    // printf("\n");
+    printf("\n");
+    #endif
+
 
     return 0;
 }
@@ -416,15 +421,6 @@ int d_io_system_get_next_char(
         return -1;
     }
 
-    // TODO REMOVE
-    // printf("READ %c BUF B contents: ", *(io_system->forward));
-
-    // while(*buffer != IO_SYSTEM_SENTINEL_EOF){
-    //     printf("%c, ", *buffer++);
-    // }
-    // printf("\n");
-
-
     // The "forward" pointer will already be right on top of the next
     // character
     *next_character = (unsigned char) *(io_system->forward);
@@ -555,8 +551,11 @@ const unsigned char *d_io_system_save_current_lexeme(
     // be copied one by one
     tmp_pointer = io_system->lexeme_begin;
 
-    // TODO remove
-    // printf("First save: %d\t%p\t%p\t%p\n", *tmp_pointer, tmp_pointer, io_system->buffer_a, io_system->buffer_b);
+    #ifdef D_DEBUG
+    printf("[io_system][save lexeme] First char: %d\tFirst char address: "
+           "%p\tBuffer A address: %p\tBuffer B address:%p\n", *tmp_pointer,
+           tmp_pointer, io_system->buffer_a, io_system->buffer_b);
+    #endif
 
     while(tmp_pointer != io_system->forward) {
 

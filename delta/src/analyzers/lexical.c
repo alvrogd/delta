@@ -415,12 +415,12 @@ int _d_lexical_analyzer_automata_comment_and_div(
 
 
 /**
- * @brief Processes a certain character according to the double quoted commnet
+ * @brief Processes a certain character according to the double quoted string
  *        automata.
  *
  * @details
  *  Processes a certain character according to the finite automata which 
- *  recognizes double quoted comments. The decision is also determined
+ *  recognizes double quoted strings. The decision is also determined
  *  depending on the automata's current state.
  * 
  * @param[in] current_state Which state the automata is currently in.
@@ -443,7 +443,7 @@ int _d_lexical_analyzer_automata_comment_and_div(
  * @return < 0 if no lexical component has been recognized, or its value
  *         otherwise, according to lexical_components.h
  */
-int _d_lexical_analyzer_automata_double_quoted_comment( // TODO change to double_quoted_string
+int _d_lexical_analyzer_automata_double_quoted_string(
     int current_state,
     unsigned char input_symbol,
     int *new_state,
@@ -1274,10 +1274,11 @@ void _d_lexical_analyzer_run_automata(
         d_io_system_get_next_char(lexical_analyzer->io_system,
                                   &current_character);
 
-        // TODO remove
-        // printf("[D_LA] Line %zu, Col %zu: %c\n",
-        //        lexical_analyzer->current_line,
-        //        lexical_analyzer->current_character, current_character);
+        #ifdef D_DEBUG
+        printf("[lexical_analyzer][run automata][continue parsing] Char "
+               "%zu:%zu: %c\n", lexical_analyzer->current_line,
+               lexical_analyzer->current_character, current_character);
+        #endif
 
 
         /* 2. State transitioning depending on the retrieved character */
@@ -1302,6 +1303,11 @@ void _d_lexical_analyzer_run_automata(
             // get overwritten with a reference to its entry in the symbol
             // table, so everything would be still fine
             lexical_component->attributes = lexeme;
+
+            #ifdef D_DEBUG
+            printf("[lexical_analyzer][run automata][continue parsing] Saved "
+               "lexeme: %s\n", lexeme);
+            #endif
         }
 
         if(add_to_symbol_table) {
@@ -1309,11 +1315,11 @@ void _d_lexical_analyzer_run_automata(
             // The symbol table requires the entry to be initialized before
             // adding it
 
-            // TODO remove
-            //printf("Key is: %s", lexeme);
-            //printf("\tKey length: %zu\n", strlen((const char *)lexeme));
-            //printf("\tOther length: %zu\n", strlen("string"));
-            //printf("comparison: %d\n", strcmp(lexeme, "string"));
+            #ifdef D_DEBUG
+            printf("[lexical_analyzer][run automata][continue parsing] "
+                   "Symbol table entry key: %s\tKey length: %zu\n", lexeme,
+                   strlen((const char *)lexeme));
+            #endif
             // In order to do so, let's check first if a corresponding entry
             // is already present
             entry_in_table = d_symbol_table_search(
@@ -1321,7 +1327,12 @@ void _d_lexical_analyzer_run_automata(
                                                lexeme);
 
             if(entry_in_table == NULL) {
-                printf("Not present yet\n");
+
+                #ifdef D_DEBUG
+                printf("[lexical_analyzer][run automata][continue parsing] "
+                       "Key not present yet\n");
+                #endif
+
                 // If it is not already present, it definitely cannot be a
                 // keyword
                 entry.lexeme = lexeme;
@@ -1426,9 +1437,11 @@ int d_lexical_analyzer_get_next_lexical_comp(
     /* 1. Retrieve the next character */
     d_io_system_get_next_char(lexical_analyzer->io_system, &character);
 
-    // TODO remove
-    // printf("[D_LA] Line %zu, Col %zu: %c\n", lexical_analyzer->current_line,
-    //       lexical_analyzer->current_character, character);
+    #ifdef D_DEBUG
+    printf("[lexical_analyzer][get next component] Char %zu:%zu: %c\n",
+           lexical_analyzer->current_line,
+           lexical_analyzer->current_character, character);
+    #endif
 
 
     /* 2. Parse the character using the global finite automata */
@@ -1513,7 +1526,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 &_d_lexical_analyzer_automata_double_quoted_comment,
+                                                 &_d_lexical_analyzer_automata_double_quoted_string,
                                                  0);
                 break;
                 
@@ -1617,8 +1630,12 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 }
 
                 else if(isblank(character) | isspace(character)) {
-                    // TODO remove
-                    // printf("to blank auto\n");
+
+                    #ifdef D_DEBUG
+                    printf("[lexical_analyzer][get next component] Entering "
+                           "in whitespace automata\n");
+                    #endif
+
                     /* 3. Update parsing stats prematuraly as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
@@ -1680,8 +1697,11 @@ int d_lexical_analyzer_get_next_lexical_comp(
     if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
        D_LC_WHITESPACE / D_LC_DISTANCE_CATEGORY) {
 
-        // TODO remove
-        // printf("ah shit here we go again\n");
+        #ifdef D_DEBUG
+        printf("[lexical_analyzer][get next component] Last comp. was "
+               "whitespace, trying again...\n");
+        #endif
+
         return d_lexical_analyzer_get_next_lexical_comp(lexical_analyzer,
                                                         lexical_component);
     }
