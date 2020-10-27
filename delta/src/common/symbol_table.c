@@ -105,23 +105,14 @@ int d_symbol_table_initialize(
     printf("[symbol_table][initialize] Kwd. \"string\" present: %d\n",
            d_symbol_table_search(*symbol_table, "string") != NULL);
     #endif
-    
+
 
     return 0;
 }
 
 
 /**
- * @brief Searches in the symbol table for the specified entry.
- *
- * @details
- *  Searches in the symbol table an entry identified by the given key, and
- *  returning it if found.
- *
- * @param[in,out] symbol_table The symbol table.
- * @param[in] '\0' terminated string which represents the key of the entry.
- *
- * @return Pointer to the requested entry, or NULL if not found.
+ * @brief Implementation of symbol_table.h/d_symbol_table_search
  */
 struct d_symbol_table_entry *d_symbol_table_search(
     struct d_symbol_table *symbol_table,
@@ -154,23 +145,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
 
 
 /**
- * @brief Adds a new entry to the symbol table.
- *
- * @details
- *  Adds the specified entry to the symbol table. The entry's key must NOT be
- *  already present.
- *
- *  Every member in the given entry will be copied to a new entry internally
- *  managed by the symbol table.
- *
- *  WARNING: if any member points to a certain memory region, just the pointer
- *           itself will be copied, whereas the contents of the region will
- *           not.
- *
- * @param[in,out] symbol_table The symbol table.
- * @param[in] The entry.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of symbol_table.h/d_symbol_table_add
  */
 int d_symbol_table_add(
     struct d_symbol_table *symbol_table,
@@ -226,15 +201,7 @@ int d_symbol_table_add(
 
 
 /**
- * @brief Destroys a symbol table.
- *
- * @details
- *  Destroys the specified symbol table, as well as all of its entries.
- *
- * @param[out] symbol_table Reference to the pointer where the address of the
- *                          symbol table can be found.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of symbol_table.h/d_symbol_table_destroy
  */
 int d_symbol_table_destroy(
     struct d_symbol_table **symbol_table

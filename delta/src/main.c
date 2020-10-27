@@ -1,8 +1,11 @@
 #include <stdio.h>
 
+
 #include "io/io_system.h"
 #include "common/symbol_table.h"
 #include "analyzers/lexical.h"
+#include "common/lexical_components.h"
+#include "common/errors.h"
 
 
 int main(int argc, char *argv[])
@@ -17,7 +20,7 @@ int main(int argc, char *argv[])
 
 
     // Initializing the I/O system
-    d_io_system_initialize(&io_system, 16);
+    d_io_system_initialize(&io_system, 64);
     d_io_system_open_file(io_system, "regression.d");
 
     // Initializing the symbol table
@@ -81,14 +84,49 @@ int main(int argc, char *argv[])
     // }
 
 
-    // 5. Print out all lexical components
+    // 5. Print out all lexical components as their category's ID
+    // while(!d_io_system_is_eof(io_system)) {
+
+    //     d_lexical_analyzer_get_next_lexical_comp(lexical_analyzer,
+    //                                              &tmp_lexical_component);
+
+    //     printf("Lex. comp.: %d\n", tmp_lexical_component.category);
+    // }
+
+
+    // 6. Print out all lexical components:
+    //      - String that represents the category.
+    //      - Corresponding lexeme if it had to be saved
     while(!d_io_system_is_eof(io_system)) {
 
         d_lexical_analyzer_get_next_lexical_comp(lexical_analyzer,
                                                  &tmp_lexical_component);
 
-        printf("Lex. comp.: %d\n", tmp_lexical_component.category);
+        printf("<%s", d_lc_to_string(tmp_lexical_component.category));
+
+        // If its attribute is its lexeme
+        if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+           D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
+
+            printf(", %s", (const char *)tmp_lexical_component.attributes);
+        }
+
+        // If its attribute is a pointer to its entry in the symbol table
+        else if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+                D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
+                tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+                D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
+
+            printf(", %s",
+                   ((struct d_symbol_table_entry *)tmp_lexical_component.attributes)->lexeme);
+        }
+
+        printf(">\n");
     }
+
+
+    // 7. Error utility testing
+    //d_errors_parse_show(4, 10, 2, 3, "una", "prueba");
 
 
     return 0;

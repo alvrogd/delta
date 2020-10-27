@@ -106,4 +106,16 @@
 #define D_LC_WHITESPACE_EOL 6002
 
 
+/**
+ * @brief Returns the string that represents the specified lexical component
+ *        (sub)category.
+ * 
+ * @param lexical_component The category.
+ * @return const char* The string that represents the category.
+ */
+const char *d_lc_to_string(
+    int lexical_component
+);
+
+
 #endif //D_LEXICAL_COMPONENTS

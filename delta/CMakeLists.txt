@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(delta VERSION 0.1.0)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -O3 -I../include -Wno-unused-parameter -DD_DEBUG")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -O3 -g -I../include -Wno-unused-parameter")
 
-add_executable(delta src/main.c src/io/io_system.c include/io/io_system.h src/common/symbol_table.c include/common/symbol_table.h src/analyzers/lexical.c include/analyzers/lexical.h include/common/keywords.h include/common/lexical_components.h include/common/uthash.h)
+add_executable(delta src/main.c src/io/io_system.c include/io/io_system.h src/common/symbol_table.c include/common/symbol_table.h src/common/errors.c include/common/errors.h src/analyzers/lexical.c include/analyzers/lexical.h include/common/keywords.h src/common/lexical_components.c include/common/lexical_components.h include/common/uthash.h)
 
