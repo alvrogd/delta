@@ -25,6 +25,7 @@ const char *D_LANG_KEYWORDS[] = {
     "return",
     "void",
     "cast",
+    "string",
 };
 
 

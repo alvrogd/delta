@@ -87,8 +87,16 @@ int d_symbol_table_initialize(
         tmp_entry.lexical_component = D_LC_KEYWORD;
 
         d_symbol_table_add(*symbol_table, &tmp_entry);
+
+        // TODO remove
+        printf("added kwd: %s\n", tmp_entry.lexeme);
     }
     
+
+    // TODO remove
+    printf("int is present: %d\n", d_symbol_table_search(*symbol_table, "int") != NULL);
+    printf("patata is present: %d\n", d_symbol_table_search(*symbol_table, "patata") != NULL);
+    printf("string is present: %d\n", d_symbol_table_search(*symbol_table, "string") != NULL);
 
     return 0;
 }

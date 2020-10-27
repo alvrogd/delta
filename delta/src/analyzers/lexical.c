@@ -21,6 +21,7 @@
 
 // Character categorizing functions such as "isalpha()"
 #include <ctype.h>
+#include <string.h>
 
 
 /**
@@ -167,6 +168,253 @@ void _d_lexical_analyzer_update_parsing_stats(
 
 
 /**
+ * @brief Processes a certain character according to the comment and division
+ *        operator automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes comments and division operators. The decision is also
+ *  determined depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_comment_and_div(
+    int current_state,
+    unsigned char input_symbol,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    // Because a standard finite automata will not be able to detect nested
+    // comments
+    static int active_nested_comments = 0;
+
+
+    switch (current_state) {
+        
+        case 0:
+
+            switch (input_symbol) {
+            
+                case '/':
+                    // go to state 10
+                    *new_state = 10;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                case '*':
+                    // go to state 20
+                    *new_state = 20;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                case '+':
+                    ++active_nested_comments;
+
+                    // go to state 30
+                    *new_state = 30;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+
+                default:
+                    // Successful recognition
+                    *continue_parsing = 0;
+                    *return_character = 1;
+                    
+                    return D_LC_OP_ARITHMETIC_DIV;
+            }
+
+
+        case 10:
+
+            switch (input_symbol) {
+            
+                case '\n':
+                    // Successful recognition
+                    *continue_parsing = 0;
+                    
+                    return D_LC_WHITESPACE_COMMENT;
+
+                default:
+                    // loop
+                    *new_state = 10;
+                    *continue_parsing = 1;
+
+                    return -1;
+            }
+
+
+        case 20:
+
+            switch (input_symbol) {
+            
+                case '*':
+                    // go to state 21
+                    *new_state = 21;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                default:
+                    // loop
+                    *new_state = 20;
+                    *continue_parsing = 1;
+
+                    return -1;
+            }
+
+
+        case 21:
+
+            switch (input_symbol) {
+            
+                case '/':
+                    // Successful recognition
+                    *continue_parsing = 0;
+                    
+                    return D_LC_WHITESPACE_COMMENT;
+
+                case '*':
+                    // loop
+                    *new_state = 21;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                default:
+                    // go to state 20
+                    *new_state = 20;
+                    *continue_parsing = 1;
+
+                    return -1;
+            }
+
+
+        case 30:
+
+            switch (input_symbol) {
+            
+                case '+':
+                    // go to state 31
+                    *new_state = 31;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                case '/':
+                    // go to state 32
+                    *new_state = 32;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                default:
+                    // loop
+                    *new_state = 30;
+                    *continue_parsing = 1;
+
+                    return -1;
+            }
+
+
+        case 31:
+
+            switch (input_symbol) {
+            
+                case '/':
+                    --active_nested_comments;
+
+                    if(active_nested_comments == 0) {
+
+                        // Successful recognition
+                        *continue_parsing = 0;
+                        
+                        return D_LC_WHITESPACE_COMMENT;
+                    }
+
+                    else {
+                        // go to state 30
+                        *new_state = 30;
+                        *continue_parsing = 1;
+
+                        return -1;
+                    }
+
+                case '+':
+                    // loop
+                    *new_state = 31;
+                    *continue_parsing = 1;
+
+                    return -1;
+                    
+                default:
+                    // go to state 30
+                    *new_state = 30;
+                    *continue_parsing = 1;
+
+                    return -1;
+            }
+
+
+        case 32:
+
+            switch (input_symbol) {
+            
+                case '+':
+                    ++active_nested_comments;
+
+                    // go to state 30
+                    *new_state = 30;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                default:
+                    // go to state 30
+                    *new_state = 30;
+                    *continue_parsing = 1;
+
+                    return -1;
+            }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
+    }
+}
+
+
+/**
  * @brief Processes a certain character according to the double quoted commnet
  *        automata.
  *
@@ -195,7 +443,7 @@ void _d_lexical_analyzer_update_parsing_stats(
  * @return < 0 if no lexical component has been recognized, or its value
  *         otherwise, according to lexical_components.h
  */
-int _d_lexical_analyzer_automata_double_quoted_comment(
+int _d_lexical_analyzer_automata_double_quoted_comment( // TODO change to double_quoted_string
     int current_state,
     unsigned char input_symbol,
     int *new_state,
@@ -1062,8 +1310,10 @@ void _d_lexical_analyzer_run_automata(
             // adding it
 
             // TODO remove
-            // printf("Key is: %s", lexeme);
-            // printf("\tKey length: %zu\n", strlen((const char *)lexeme));
+            //printf("Key is: %s", lexeme);
+            //printf("\tKey length: %zu\n", strlen((const char *)lexeme));
+            //printf("\tOther length: %zu\n", strlen("string"));
+            //printf("comparison: %d\n", strcmp(lexeme, "string"));
             // In order to do so, let's check first if a corresponding entry
             // is already present
             entry_in_table = d_symbol_table_search(
@@ -1071,6 +1321,7 @@ void _d_lexical_analyzer_run_automata(
                                                lexeme);
 
             if(entry_in_table == NULL) {
+                printf("Not present yet\n");
                 // If it is not already present, it definitely cannot be a
                 // keyword
                 entry.lexeme = lexeme;
@@ -1299,8 +1550,10 @@ int d_lexical_analyzer_get_next_lexical_comp(
                                                          character, 0);
                 parsing_stats_updated = 1;
                 
-                // TODO implement and call comments and division automata
-                lexical_component->category = D_LC_OP_ARITHMETIC_DIV;
+                _d_lexical_analyzer_run_automata(lexical_analyzer,
+                                                 lexical_component,
+                                                 &_d_lexical_analyzer_automata_comment_and_div,
+                                                 0);
                 break;
 
             default:

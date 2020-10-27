@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 
     // Initializing the I/O system
     d_io_system_initialize(&io_system, 16);
-    d_io_system_open_file(io_system, "regression_no_comments.d");
+    d_io_system_open_file(io_system, "regression_fixed.d");
 
     // Initializing the symbol table
     d_symbol_table_initialize(&symbol_table);
