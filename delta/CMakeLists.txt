@@ -3,10 +3,14 @@ cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(delta VERSION 0.1.0)
+project(delta VERSION 0.0.1)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -O3 -g -I../include -Wno-unused-parameter")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -O3 -Wno-unused-parameter")
 
-add_executable(delta src/main.c src/io/io_system.c include/io/io_system.h src/common/symbol_table.c include/common/symbol_table.h src/common/errors.c include/common/errors.h src/analyzers/lexical.c include/analyzers/lexical.h include/common/keywords.h src/common/lexical_components.c include/common/lexical_components.h include/common/uthash.h)
+set(HEADERS include/io/io_system.h include/common/symbol_table.h include/common/errors.h include/analyzers/lexical.h include/common/keywords.h include/common/lexical_components.h include/lib/uthash.h)
+set(SOURCES src/main.c src/io/io_system.c src/common/symbol_table.c src/common/errors.c src/analyzers/lexical.c src/common/lexical_components.c)
 
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE include)
