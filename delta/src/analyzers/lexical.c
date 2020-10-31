@@ -25,152 +25,14 @@
 #include <string.h>
 
 
-typedef int (*funcptr)();	  /* generic function pointer */
-typedef int (*transition_function)(int, unsigned char, size_t, size_t, funcptr *, int *,
-                                   int *, int *, int *, int *);
+// ═══════════════════════════════════════════════════════════════════════════
+// ════════════════════════ SECTION: Finite Automatas ════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 
-
-/**
- * @brief Represents a lexical analyzer.
- *
- * @details
- *  Data type which represents a lexical analyzer.
- */
-struct d_lexical_analyzer {
-    /** How many eol have been seen in the input file that is being
-        analyzed. */
-    size_t current_line;
-    /** How many characters have been seen in the current line. */
-    size_t current_character;
-    /** Which I/O system will provide the source file that will be
-        analyzed. */
-    struct d_io_system *io_system;
-    /** Which symbol table will be used during the compilation process. */
-    struct d_symbol_table *symbol_table;
-};
-
-
-/**
- * @brief Implementation of lexical.h/d_lexical_analyzer_initialize
- */
-int d_lexical_analyzer_initialize(
-    struct d_lexical_analyzer **lexical_analyzer
-)
-{
-    if(lexical_analyzer == NULL) {
-
-        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
-               "d_lexical_analyzer is NULL");
-        return -1;
-    }
-
-
-    // The structure that represents the lexical analyzer must be allocated
-    if((*lexical_analyzer = malloc(sizeof(struct d_lexical_analyzer))) ==
-       NULL) {
-
-        perror("ERROR::LEXICAL_ANALYZER::Could not allocate a struct "
-               "d_lexical_analyzer");
-        return -1;
-    }
-
-    // The "current_line" and "current_character" members will be initialized
-    // each time that the lexical analyzer parses a certain source file.
-
-    // The I/O system and symbol table will be provided later on.
-
-
-    return 0;
-}
-
-
-/**
- * @brief Implementation of lexical.h/d_lexical_analyzer_prepare_for_parsing
- */
-int d_lexical_analyzer_prepare_for_parsing(
-    struct d_lexical_analyzer *lexical_analyzer,
-    struct d_io_system *io_system,
-    struct d_symbol_table *symbol_table
-)
-{
-    if(lexical_analyzer == NULL) {
-
-        perror("ERROR::LEXICAL_ANALYZER::Reference to lexical analyzer is "
-               "NULL");
-        return -1;
-    }
-
-    if(io_system == NULL) {
-
-        perror("ERROR::LEXICAL_ANALYZER::Reference to I/O system is NULL");
-        return -1;
-    }
-
-    if(symbol_table == NULL) {
-
-        perror("ERROR::LEXICAL_ANALYZER::Reference to symbol table is NULL");
-        return -1;
-    }
-
-
-    // The current parsing stats are reset
-    lexical_analyzer->current_line = 1;
-    lexical_analyzer->current_character = 1;
-
-    // The referenced utilities just need to be stored in the lexical analyzer
-    lexical_analyzer->io_system = io_system;
-    lexical_analyzer->symbol_table = symbol_table;
-
-
-    return 0;
-}
-
-
-/**
- * @brief Updates the parsing stats depending on the last read character.
- *
- * @details
- *  Updates the parsing stats depending on the last read character. These
- *  stats are useful for error raising purposes, in order to point out to
- *  the user the error's precise location:
- *
- *    - Current line in the input file.
- *    - Current character in the current line.
- *
- *  The stats reflect the next character's properties; i.e. if an EOL is
- *  recognized, the line counter will already be incremented by 1 so that if
- *  the stats are used anytime in the future when parsing that next character,
- *  its corresponding line number is properly set.
- *
- * @param[in,out] lexical_analyzer The lexical analyzer.
- * @param[in] character The last character that has been read.
- * @param[in] has_been_returned If the last character had to be returned.
- */
-void _d_lexical_analyzer_update_parsing_stats(
-    struct d_lexical_analyzer *lexical_analyzer,
-    unsigned char character,
-    int has_been_returned
-)
-{
-    // No error checking as this function is only called in this translation
-    // unit, whose public functions have already made any relevant checks
-
-
-    // If the character had to be returned, there is no need to update the
-    // parsing stats, as they belong to that character, which will be read
-    // once again later on
-    if(!has_been_returned) {
-
-        if(character == '\n') {
-            ++(lexical_analyzer->current_line);
-            lexical_analyzer->current_character = 1;
-        }
-
-        else {
-            ++(lexical_analyzer->current_character);
-        }
-    }   
-}
+typedef int (*d_generic_function)();	  /* generic function pointer */
+typedef int (*d_transition_function)(int, unsigned char, size_t, size_t,
+                                     d_generic_function *, int *, int *,
+                                     int *, int *, int *);
 
 
 /**
@@ -213,7 +75,7 @@ int _d_lexical_analyzer_automata_comment_and_div(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -469,7 +331,7 @@ int _d_lexical_analyzer_automata_double_quoted_string(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -601,7 +463,7 @@ int _d_lexical_analyzer_automata_equals_and_assign(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -681,7 +543,7 @@ int _d_lexical_analyzer_automata_increment_and_plus_assign(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -770,7 +632,7 @@ int _d_lexical_analyzer_automata_whitespace(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -850,7 +712,7 @@ int _d_lexical_analyzer_automata_id_and_kwd(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -934,7 +796,7 @@ int _d_lexical_analyzer_automata_binary_number(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -1067,7 +929,7 @@ int _d_lexical_analyzer_automata_floating_number(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -1301,7 +1163,7 @@ int _d_lexical_analyzer_automata_number_and_dot(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
-    funcptr *tfunction,
+    d_generic_function *transition_function,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -1315,7 +1177,8 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
             if(isdigit(input_symbol)) {
                 // go to state 31 (and switch to another automata)
-                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *transition_function = (d_generic_function)
+                                 _d_lexical_analyzer_automata_floating_number;
                 *new_state = 31;
                 *continue_parsing = 1;
 
@@ -1335,7 +1198,8 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
             if(input_symbol == 'B' || input_symbol == 'b') {
                 // go to state 11 (and switch to another automata)
-                *tfunction = (funcptr)_d_lexical_analyzer_automata_binary_number;
+                *transition_function = (d_generic_function)
+                                   _d_lexical_analyzer_automata_binary_number;
                 *new_state = 11;
                 *continue_parsing = 1;
 
@@ -1352,7 +1216,8 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
             else if(input_symbol == '.') {
                 // go to state 30 (and switch to another automata)
-                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *transition_function = (d_generic_function)
+                                 _d_lexical_analyzer_automata_floating_number;
                 *new_state = 30;
                 *continue_parsing = 1; 
             
@@ -1361,7 +1226,8 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
             else if(input_symbol == 'E' || input_symbol == 'e') {
                 // go to state 32 (and switch to another automata)
-                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *transition_function = (d_generic_function)
+                                 _d_lexical_analyzer_automata_floating_number;
                 *new_state = 32;
                 *continue_parsing = 1;
 
@@ -1478,7 +1344,8 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
             else if(input_symbol == '.') {
                 // go to state 30 (and switch to another automata)
-                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *transition_function = (d_generic_function)
+                                 _d_lexical_analyzer_automata_floating_number;
                 *new_state = 30;
                 *continue_parsing = 1;    
             
@@ -1487,7 +1354,8 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
             else if(input_symbol == 'E' || input_symbol == 'e') {
                 // go to state 32 (and switch to another automata)
-                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *transition_function = (d_generic_function)
+                                 _d_lexical_analyzer_automata_floating_number;
                 *new_state = 32;
                 *continue_parsing = 1;
 
@@ -1532,6 +1400,162 @@ int _d_lexical_analyzer_automata_number_and_dot(
 }
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ═════════════════════ END OF SECTION: Finite Automatas ════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ════════════════════════ SECTION: Lexical Analyzer ════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * @brief Represents a lexical analyzer.
+ *
+ * @details
+ *  Data type which represents a lexical analyzer.
+ */
+struct d_lexical_analyzer {
+    /** How many eol have been seen in the input file that is being
+        analyzed. */
+    size_t current_line;
+    /** How many characters have been seen in the current line. */
+    size_t current_character;
+    /** Which I/O system will provide the source file that will be
+        analyzed. */
+    struct d_io_system *io_system;
+    /** Which symbol table will be used during the compilation process. */
+    struct d_symbol_table *symbol_table;
+};
+
+
+/**
+ * @brief Implementation of lexical.h/d_lexical_analyzer_initialize
+ */
+int d_lexical_analyzer_initialize(
+    struct d_lexical_analyzer **lexical_analyzer
+)
+{
+    if(lexical_analyzer == NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
+               "d_lexical_analyzer is NULL");
+        return -1;
+    }
+
+
+    // The structure that represents the lexical analyzer must be allocated
+    if((*lexical_analyzer = malloc(sizeof(struct d_lexical_analyzer))) ==
+       NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Could not allocate a struct "
+               "d_lexical_analyzer");
+        return -1;
+    }
+
+    // The "current_line" and "current_character" members will be initialized
+    // each time that the lexical analyzer parses a certain source file.
+
+    // The I/O system and symbol table will be provided later on.
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Implementation of lexical.h/d_lexical_analyzer_prepare_for_parsing
+ */
+int d_lexical_analyzer_prepare_for_parsing(
+    struct d_lexical_analyzer *lexical_analyzer,
+    struct d_io_system *io_system,
+    struct d_symbol_table *symbol_table
+)
+{
+    if(lexical_analyzer == NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Reference to lexical analyzer is "
+               "NULL");
+        return -1;
+    }
+
+    if(io_system == NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Reference to I/O system is NULL");
+        return -1;
+    }
+
+    if(symbol_table == NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Reference to symbol table is NULL");
+        return -1;
+    }
+
+
+    // The current parsing stats are reset
+    lexical_analyzer->current_line = 1;
+    lexical_analyzer->current_character = 1;
+
+    // The referenced utilities just need to be stored in the lexical analyzer
+    lexical_analyzer->io_system = io_system;
+    lexical_analyzer->symbol_table = symbol_table;
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Updates the parsing stats depending on the last read character.
+ *
+ * @details
+ *  Updates the parsing stats depending on the last read character. These
+ *  stats are useful for error raising purposes, in order to point out to
+ *  the user the error's precise location:
+ *
+ *    - Current line in the input file.
+ *    - Current character in the current line.
+ *
+ *  The stats reflect the next character's properties; i.e. if an EOL is
+ *  recognized, the line counter will already be incremented by 1 so that if
+ *  the stats are used anytime in the future when parsing that next character,
+ *  its corresponding line number is properly set.
+ *
+ * @param[in,out] lexical_analyzer The lexical analyzer.
+ * @param[in] character The last character that has been read.
+ * @param[in] has_been_returned If the last character had to be returned.
+ */
+void _d_lexical_analyzer_update_parsing_stats(
+    struct d_lexical_analyzer *lexical_analyzer,
+    unsigned char character,
+    int has_been_returned
+)
+{
+    // No error checking as this function is only called in this translation
+    // unit, whose public functions have already made any relevant checks
+
+
+    // If the character had to be returned, there is no need to update the
+    // parsing stats, as they belong to that character, which will be read
+    // once again later on
+    if(!has_been_returned) {
+
+        if(character == '\n') {
+            ++(lexical_analyzer->current_line);
+            lexical_analyzer->current_character = 1;
+        }
+
+        else {
+            ++(lexical_analyzer->current_character);
+        }
+    }   
+}
+
+
+
+
+
 /**
  * @brief Tries to recognize a certain lexical component via a predefined
  *        automata.
@@ -1555,7 +1579,7 @@ int _d_lexical_analyzer_automata_number_and_dot(
 void _d_lexical_analyzer_run_automata(
     struct d_lexical_analyzer *lexical_analyzer,
     struct d_lexical_component *lexical_component,
-    transition_function tfunction,
+    d_transition_function transition_function,
     int initial_state
 )
 {
@@ -1608,11 +1632,11 @@ void _d_lexical_analyzer_run_automata(
 
 
         /* 2. State transitioning depending on the retrieved character */
-        lexical_component_id = (tfunction)(current_automata_state,
+        lexical_component_id = (transition_function)(current_automata_state,
                                 current_character,
                                 lexical_analyzer->current_line,
                                 lexical_analyzer->current_character,
-                                (funcptr *) &tfunction,
+                                (d_generic_function *) &transition_function,
                                 &current_automata_state, &continue_parsing,
                                 &return_character, &save_lexeme,
                                 &add_to_symbol_table);
@@ -2115,3 +2139,7 @@ int d_lexical_analyzer_destroy(
 
     return 0;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ═════════════════════ END OF SECTION: Lexical Analyzer ════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
