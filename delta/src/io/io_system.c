@@ -140,7 +140,8 @@ int d_io_system_initialize(
     // WARNING: this does not equal "(buffer_size + IO_SYSTEM_BLOCK_SIZE - 1)"
     //          due to the integer division
     #ifdef D_DEBUG
-    printf("Block size: %zu\n", (*io_system)->buffer_size);
+    printf("[io_system][initialize] Block size: %zu\n",
+           (*io_system)->buffer_size);
     #endif
 
     if(((*io_system)->buffer_a = malloc((*io_system)->buffer_size)) == NULL) {
@@ -536,6 +537,7 @@ int d_io_system_current_lexeme_recognized(
     // is in order to mark the start of the next lexeme
     io_system->lexeme_begin = io_system->forward;
 
+    io_system->lexeme_length = 0;
 
     return 0;
 }
@@ -571,6 +573,11 @@ const unsigned char *d_io_system_save_current_lexeme(
     }
 
     lexeme[io_system->lexeme_length] = '\0';
+    
+    #ifdef D_DEBUG
+    printf("[io_system][save lexeme] Lexeme length: %d\n", (int)
+           io_system->lexeme_length);
+    #endif
 
 
     // Each character between the "lexeme start" and "forward" pointers will

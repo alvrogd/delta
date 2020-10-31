@@ -83,4 +83,17 @@ int d_syntactic_analyzer_parse(
 );
 
 
+/**
+ * @brief Destroys a syntactic analyzer.
+ *
+ * @param[out] syntactic_analyzer Reference to the pointer where the address
+ *                                of the syntactic analyzer can be found.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_syntactic_analyzer_destroy(
+    struct d_syntactic_analyzer **syntactic_analyzer
+);
+
+
 #endif

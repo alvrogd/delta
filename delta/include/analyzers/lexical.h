@@ -70,7 +70,8 @@ struct d_lexical_component {
     /** Any attributes that the lexical component may carry along:
           
           - char * to its lexeme if the component is a literal.
-              (must be manually freed once de component is no longer needed)
+              (must be manually freed once de component is no longer needed,
+               using the d_lexical_analyzer_destroy_lexical_comp function)
               
           - struct d_symbol_table_entry * if the component is an identifier.
               (there is no need to free it as the symbol table is responsible
@@ -138,10 +139,31 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
 
 /**
+ * @brief The lexical analyzer destroys a lexical component that has
+ *        previously created.
+ *
+ * @details
+ *  The lexical analyzer frees any resources that may have allocated
+ *  previously for a given lexical component, as some of them may carry
+ *  attributes.
+ * 
+ * @param[in,out] lexical_analyzer The lexical analyzer.
+ * @param[in,out] lexical_analyzer Pointer to the lexical component that will
+ *                                 be freed.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_lexical_analyzer_destroy_lexical_com(
+    struct d_lexical_analyzer *lexical_analyzer,
+    struct d_lexical_component *lexical_component
+);
+
+
+/**
  * @brief Destroys a lexical analyzer.
  *
  * @param[out] lexical_analyzer Reference to the pointer where the address of
- *                              the symbol table can be found.
+ *                              the lexical analyzer can be found.
  *
  * @return 0 if successful, any other value otherwise.
  */

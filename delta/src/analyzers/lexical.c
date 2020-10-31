@@ -1817,6 +1817,58 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
 
 /**
+ * @brief Implementation of lexical.h/d_lexical_analyzer_destroy_lexical_com
+ *
+ * @details
+ *  Specifically, according to the different types of lexical components that
+ *  have attributes:
+ *    - Those that have an entry in the symbol table are already memory
+ *      managed by it.
+ *    - Regarding the other components that also have attributes, but no
+ *      entry, these attributes have been reserved on purpose when recognizing
+ *      the lex. comp. from the input file, so they will not be freed unless
+ *      the consumer requests it.
+ */
+int d_lexical_analyzer_destroy_lexical_com(
+    struct d_lexical_analyzer *lexical_analyzer,
+    struct d_lexical_component *lexical_component
+)
+{
+    if(lexical_analyzer == NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
+               "d_lexical_analyzer is NULL");
+        return -1;
+    }
+
+    if(lexical_component == NULL) {
+
+        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
+               "d_lexical_component is NULL");
+        return -1;
+    }
+
+
+    if(lexical_component->attributes != NULL) {
+
+        // If its attribute is its lexeme...
+        //   no entry in symbol table -> must be freed by the lex. analyzer
+        if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
+           D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
+
+            free((void *) lexical_component->attributes);
+        }
+
+        // If its attribute is a pointer to its entry in the symbol table...
+        //   entry in the symbol table -> the table will take care of it
+    }
+
+
+    return 0;
+}
+
+
+/**
  * @brief Implementation of lexical.h/d_lexical_analyzer_destroy
  */
 int d_lexical_analyzer_destroy(

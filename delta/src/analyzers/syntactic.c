@@ -11,6 +11,7 @@
 #include "common/lexical_components.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 
 /**
@@ -141,25 +142,58 @@ int d_syntactic_analyzer_parse(
 
         printf("<%s", d_lc_to_string(tmp_lexical_component.category));
 
-        // If its attribute is its lexeme
-        if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
-           D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
 
-            printf(", %s", (const char *)tmp_lexical_component.attributes);
+        // The lexeme will be stored as its attribute, if any
+        if(tmp_lexical_component.attributes != NULL) {
+
+            // If its attribute is its lexeme
+            if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+            D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
+
+                printf(", %s", (const char *)tmp_lexical_component.attributes);
+            }
+
+            // If its attribute is a pointer to its entry in the symbol table
+            else if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+                    D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
+                    tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+                    D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
+
+                printf(", %s",
+                    ((struct d_symbol_table_entry *)tmp_lexical_component.attributes)->lexeme);
+            }
         }
 
-        // If its attribute is a pointer to its entry in the symbol table
-        else if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
-                D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
-                tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
-                D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
-
-            printf(", %s",
-                   ((struct d_symbol_table_entry *)tmp_lexical_component.attributes)->lexeme);
-        }
 
         printf(">\n");
+
+        d_lexical_analyzer_destroy_lexical_com(
+                                         syntactic_analyzer->lexical_analyzer,
+                                         &tmp_lexical_component);
     }
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Implementation of syntactic.h/d_syntactic_analyzer_destroy
+ */
+int d_syntactic_analyzer_destroy(
+    struct d_syntactic_analyzer **syntactic_analyzer
+)
+{
+    if(syntactic_analyzer == NULL) {
+
+        perror("ERROR::SYNTACTIC_ANALYZER::Reference to struct "
+               "d_syntactic_analyzer is NULL");
+        return -1;
+    }
+
+
+    // The structure that represents the syntactic analyzer needs to be freed
+    free(*syntactic_analyzer);
 
 
     return 0;

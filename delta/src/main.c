@@ -19,28 +19,39 @@ int main(int argc, char *argv[])
     struct d_syntactic_analyzer *syntactic_analyzer = NULL;
 
 
-    // Initializing the I/O system
+    /* Initialization */
+
     d_io_system_initialize(&io_system, 4096);
     d_io_system_open_file(io_system, "regression_w_more_errors.d");
 
-    // Initializing the symbol table
     d_symbol_table_initialize(&symbol_table);
 
-    // Initializing the lexical analyzer
     d_lexical_analyzer_initialize(&lexical_analyzer);
     d_lexical_analyzer_prepare_for_parsing(lexical_analyzer, io_system,
                                            symbol_table);
 
-    // Initializing the syntactic analyzer
     d_syntactic_analyzer_initialize(&syntactic_analyzer);
     d_syntactic_analyzer_prepare_for_parsing(syntactic_analyzer, io_system,
                                              symbol_table, lexical_analyzer);
 
 
+    /* Input file parsing */
+
     // Running the syntactic analyzer, which will call by itself the lexical
     // analyzer
     d_syntactic_analyzer_parse(syntactic_analyzer);
 
+
+    /* Clean up */
+
+    d_io_system_destroy(&io_system);
+
+    d_symbol_table_destroy(&symbol_table);
+
+    d_lexical_analyzer_destroy(&lexical_analyzer);
+
+    d_syntactic_analyzer_destroy(&syntactic_analyzer);
+    
 
     return 0;
 }
