@@ -29,7 +29,12 @@
 // ════════════════════════ SECTION: Finite Automatas ════════════════════════
 // ═══════════════════════════════════════════════════════════════════════════
 
-typedef int (*d_generic_function)();	  /* generic function pointer */
+/** Generic function definition that allows transition functions to use
+    pointers to themselves. A "d_transition_function" cannot be present in its
+    prototype definition due to recursion definition errors. */
+typedef int (*d_generic_function)();
+/** Prototype definition for every function that represents a finite 
+    automata. **/
 typedef int (*d_transition_function)(int, unsigned char, size_t, size_t,
                                      d_generic_function *, int *, int *,
                                      int *, int *, int *);
@@ -1129,7 +1134,7 @@ int _d_lexical_analyzer_automata_floating_number(
  *
  * @details
  *  Processes a certain character according to the finite automata which 
- *  recognizes both numbers and dots operators. The decision is also
+ *  recognizes both numbers and dot operators. The decision is also
  *  determined depending on the automata's current state.
  * 
  * @param[in] current_state Which state the automata is currently in.
@@ -1872,7 +1877,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
             /** Multiple-char components */
             
             case '"':
-                /* 3. Update parsing stats prematuraly as the control is being
+                /* 3. Update parsing stats prematurely as the control is being
                       given up to an automata */
                 _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                          character, 0);
@@ -1885,7 +1890,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 break;
                 
             case '=':
-                /* 3. Update parsing stats prematuraly as the control is being
+                /* 3. Update parsing stats prematurely as the control is being
                       given up to an automata */
                 _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                          character, 0);
@@ -1898,7 +1903,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 break;
 
             case '+':
-                /* 3. Update parsing stats prematuraly as the control is being
+                /* 3. Update parsing stats prematurely as the control is being
                       given up to an automata */
                 _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                          character, 0);
@@ -1911,7 +1916,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 break;
 
             case '/':
-                /* 3. Update parsing stats prematuraly as the control is being
+                /* 3. Update parsing stats prematurely as the control is being
                       given up to an automata */
                 _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                          character, 0);
@@ -1929,7 +1934,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
                 if(isalpha(character) || character == '_') {
 
-                    /* 3. Update parsing stats prematuraly as the control is
+                    /* 3. Update parsing stats prematurely as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                              character, 0);
@@ -1943,7 +1948,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
                 else if(character == '0') {
 
-                    /* 3. Update parsing stats prematuraly as the control is
+                    /* 3. Update parsing stats prematurely as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                              character, 0);
@@ -1957,7 +1962,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
                 else if(character == '.') {
 
-                    /* 3. Update parsing stats prematuraly as the control is
+                    /* 3. Update parsing stats prematurely as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                              character, 0);
@@ -1971,7 +1976,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
                 else if(isdigit(character)) { // The remaning digits are [1,9]
 
-                    /* 3. Update parsing stats prematuraly as the control is
+                    /* 3. Update parsing stats prematurely as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                              character, 0);
@@ -1990,7 +1995,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                            "in whitespace automata\n");
                     #endif
 
-                    /* 3. Update parsing stats prematuraly as the control is
+                    /* 3. Update parsing stats prematurely as the control is
                           being given up to an automata */
                     _d_lexical_analyzer_update_parsing_stats(lexical_analyzer,
                                                              character, 0);

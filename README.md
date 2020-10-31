@@ -53,7 +53,17 @@ And the Delta's executable file will be generated right in the `build` directory
 
 ### Running Delta
 
-TODO
+Once compiled, you can use Delta just like any other compiler:
+
+```
+./delta <source file>
+```
+
+As previosly said, this project is focused on compiling a subset of the D language. In particular, Delta will be able to parse any of the source files that can be found in `delta/test`.
+
+The only module of the compiler that has been implemented for the time being is the lexical analyzer. Therefore, Delta will just output every lexical component that it can recognize in the given source file.
+
+There are definitely more modules cooming soon, so stay tuned!
 
 ## Built With
 

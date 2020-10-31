@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     /* Initialization */
 
     d_io_system_initialize(&io_system, 4096);
-    d_io_system_open_file(io_system, "regression_w_more_errors.d");
+    d_io_system_open_file(io_system, argv[1]);
 
     d_symbol_table_initialize(&symbol_table);
 
