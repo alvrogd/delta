@@ -895,13 +895,13 @@ int _d_lexical_analyzer_automata_id_and_kwd(
 
 
 /**
- * @brief Processes a certain character according to the number and dot
- *        operator automata.
+ * @brief Processes a certain character according to the binary integer
+ *        automata.
  *
  * @details
  *  Processes a certain character according to the finite automata which 
- *  recognizes both numbers and dots operators. The decision is also
- *  determined depending on the automata's current state.
+ *  recognizes binary integer numbers. The decision is also  determined
+ *  depending on the automata's current state.
  * 
  * @param[in] current_state Which state the automata is currently in.
  * @param[in] input_symbol Which symbol the automata must process.
@@ -929,7 +929,7 @@ int _d_lexical_analyzer_automata_id_and_kwd(
  * @return < 0 if no lexical component has been recognized, or its value
  *         otherwise, according to lexical_components.h
  */
-int _d_lexical_analyzer_automata_number_and_dot(
+int _d_lexical_analyzer_automata_binary_number(
     int current_state,
     unsigned char input_symbol,
     size_t input_symbol_line,
@@ -943,85 +943,6 @@ int _d_lexical_analyzer_automata_number_and_dot(
 )
 {
     switch (current_state) {
-        
-        case 0:
-
-            if(isdigit(input_symbol)) {
-                // go to state 31
-                *new_state = 31;
-                *continue_parsing = 1;
-
-                return -1;
-            }
-
-            else {
-                // Successful "dot operator" recognition
-                *continue_parsing = 0;
-                *return_character = 1;
-
-                return D_LC_OP_ACCESS_DOT;
-            }
-
-
-        case 10:
-
-            if(input_symbol == 'B' || input_symbol == 'b') {
-                // go to state 11
-                *new_state = 11;
-                *continue_parsing = 1;
-
-                return -1;
-            }
-
-            else if(isdigit(input_symbol) || input_symbol == '_') {
-                // go to state 20
-                *new_state = 20;
-                *continue_parsing = 1;    
-            
-                return -1;
-            }
-
-            else if(input_symbol == '.') {
-                // go to state 30
-                *new_state = 30;
-                *continue_parsing = 1;    
-            
-                return -1;
-            }
-
-            else if(input_symbol == 'E' || input_symbol == 'e') {
-                // go to state 32
-                *new_state = 32;
-                *continue_parsing = 1;
-
-                return -1;
-            }
-
-            else if(!isalpha(input_symbol)) {
-
-                // Successful "decimal integer" recognition
-                *continue_parsing = 0;
-                *return_character = 1;
-                *save_lexeme = 1;
-
-                return D_LC_LITERAL_INT;
-            }
-
-            else {
-                // Failure
-                *continue_parsing = 0;
-                *return_character = 1;
-
-                d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BAD,
-                                    input_symbol_line, input_symbol_character,
-                                    "the only letters that may follow an "
-                                    "integer number are E -OR- e for floats "
-                                    "(i.e. 10E+15) -AND- B -OR- b for "
-                                    "binaries (i.e. 0b011)");
-
-                return -1;
-            }
-        
 
         case 11:
 
@@ -1095,58 +1016,66 @@ int _d_lexical_analyzer_automata_number_and_dot(
             }
 
 
-        case 20:
+        default: // Just so that the compiler does not panic
 
-            if(isdigit(input_symbol) || input_symbol == '_') {
-                // loop
-                *new_state = 20;
-                *continue_parsing = 1;    
-            
-                return -1;
-            }
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
 
-            else if(input_symbol == '.') {
-                // go to state 30
-                *new_state = 30;
-                *continue_parsing = 1;    
-            
-                return -1;
-            }
+            return -1;
+    }
+}
 
-            else if(input_symbol == 'E' || input_symbol == 'e') {
-                // go to state 32
-                *new_state = 32;
-                *continue_parsing = 1;
 
-                return -1;
-            }
-
-            else if(!isalpha(input_symbol)) {
-
-                // Successful "decimal integer" recognition
-                *continue_parsing = 0;
-                *return_character = 1;
-                *save_lexeme = 1;
-
-                return D_LC_LITERAL_INT;
-            }
-
-            else {
-                // Failure
-                *continue_parsing = 0;
-                *return_character = 1;
-
-                d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_DECIMAL_BAD,
-                                    input_symbol_line, input_symbol_character,
-                                    "the only letter supported in this "
-                                    "integer number is E -OR- e for floats "
-                                    "(i.e. 10E+15); if you would like a "
-                                    "binary number, it must start by 0b "
-                                    "(i.e. 0b011)");
-
-                return -1;
-            }
-
+/**
+ * @brief Processes a certain character according to the floating number
+ *        automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes floating point numbers. The decision is also determined
+ *  depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[in] input_symbol_line In which line of the input file the symbol has
+ *                              been found.
+ * @param[in] input_symbol_character Which character the symbol is in its line
+ *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_floating_number(
+    int current_state,
+    unsigned char input_symbol,
+    size_t input_symbol_line,
+    size_t input_symbol_character,
+    funcptr *tfunction,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
 
         case 30:
 
@@ -1316,6 +1245,277 @@ int _d_lexical_analyzer_automata_number_and_dot(
                                     input_symbol_character,
                                     "a float's decimal number may only have "
                                     "digits -AND- _");
+
+                return -1;
+            }
+
+
+        default: // Just so that the compiler does not panic
+
+            // Failure
+            *continue_parsing = 0;
+            *return_character = 1;
+
+            return -1;
+    }
+}
+
+
+/**
+ * @brief Processes a certain character according to the number and dot
+ *        operator automata.
+ *
+ * @details
+ *  Processes a certain character according to the finite automata which 
+ *  recognizes both numbers and dots operators. The decision is also
+ *  determined depending on the automata's current state.
+ * 
+ * @param[in] current_state Which state the automata is currently in.
+ * @param[in] input_symbol Which symbol the automata must process.
+ * @param[in] input_symbol_line In which line of the input file the symbol has
+ *                              been found.
+ * @param[in] input_symbol_character Which character the symbol is in its line
+ *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
+ * @param[out] new_state To which state the automata has transitioned.
+ * @param[out] continue_parsing True if the automata has not recognized a
+ *                              lexeme yet (or is trying to recognize a longer
+ *                              one).
+ * @param[out] return_character If the character that has been processed must
+ *                              be returned to the I/O system in order to
+ *                              process it later on.
+ * @param[out] save_lexeme If the lexeme of the identified component needs to
+ *                         be preserved along it (just literals and IDs/
+                           keywords as of now).
+ * @param[out] add_to_symbol_table If the identified component must be checked
+ *                                 against the symbol table, in order to add
+ *                                 its entry if not present yet (just IDs/
+ *                                 keywords as of now).
+ *
+ * @return < 0 if no lexical component has been recognized, or its value
+ *         otherwise, according to lexical_components.h
+ */
+int _d_lexical_analyzer_automata_number_and_dot(
+    int current_state,
+    unsigned char input_symbol,
+    size_t input_symbol_line,
+    size_t input_symbol_character,
+    funcptr *tfunction,
+    int *new_state,
+    int *continue_parsing,
+    int *return_character,
+    int *save_lexeme,
+    int *add_to_symbol_table
+)
+{
+    switch (current_state) {
+        
+        case 0:
+
+            if(isdigit(input_symbol)) {
+                // go to state 31 (and switch to another automata)
+                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *new_state = 31;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else {
+                // Successful "dot operator" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                return D_LC_OP_ACCESS_DOT;
+            }
+
+
+        case 10:
+
+            if(input_symbol == 'B' || input_symbol == 'b') {
+                // go to state 11 (and switch to another automata)
+                *tfunction = (funcptr)_d_lexical_analyzer_automata_binary_number;
+                *new_state = 11;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(isdigit(input_symbol) || input_symbol == '_') {
+                // go to state 20
+                *new_state = 20;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == '.') {
+                // go to state 30 (and switch to another automata)
+                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *new_state = 30;
+                *continue_parsing = 1; 
+            
+                return -1;
+            }
+
+            else if(input_symbol == 'E' || input_symbol == 'e') {
+                // go to state 32 (and switch to another automata)
+                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *new_state = 32;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal integer" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_INT;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BAD,
+                                    input_symbol_line, input_symbol_character,
+                                    "the only letters that may follow an "
+                                    "integer number are E -OR- e for floats "
+                                    "(i.e. 10E+15) -AND- B -OR- b for "
+                                    "binaries (i.e. 0b011)");
+
+                return -1;
+            }
+        
+
+        case 11:
+
+            switch (input_symbol) {
+            
+                case '_':
+                    // loop
+                    *new_state = 11;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                case '0':
+                case '1':
+                    // go to state 12
+                    *new_state = 12;
+                    *continue_parsing = 1;
+
+                    return -1;
+
+                default:
+                    // Failure
+                    *continue_parsing = 0;
+                    *return_character = 1;
+
+                    d_errors_parse_show(4,
+                                        D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
+                                        input_symbol_line,
+                                        input_symbol_character,
+                                        "a binary number needs at least one "
+                                        "0 -OR- 1 (i.e. 0b1)");
+
+                    return -1;
+            }
+
+
+        case 12:
+
+            if(input_symbol == '0' || input_symbol == '1' || input_symbol ==
+               '_') {
+
+                // loop
+                *new_state = 12;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "binary integer" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_INT;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
+                                    input_symbol_line,
+                                    input_symbol_character,
+                                    "a binary number may only have 0s -AND- "
+                                    "1s -AND- _");
+
+                return -1;
+            }
+
+
+        case 20:
+
+            if(isdigit(input_symbol) || input_symbol == '_') {
+                // loop
+                *new_state = 20;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == '.') {
+                // go to state 30 (and switch to another automata)
+                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *new_state = 30;
+                *continue_parsing = 1;    
+            
+                return -1;
+            }
+
+            else if(input_symbol == 'E' || input_symbol == 'e') {
+                // go to state 32 (and switch to another automata)
+                *tfunction = (funcptr)_d_lexical_analyzer_automata_floating_number;
+                *new_state = 32;
+                *continue_parsing = 1;
+
+                return -1;
+            }
+
+            else if(!isalpha(input_symbol)) {
+
+                // Successful "decimal integer" recognition
+                *continue_parsing = 0;
+                *return_character = 1;
+                *save_lexeme = 1;
+
+                return D_LC_LITERAL_INT;
+            }
+
+            else {
+                // Failure
+                *continue_parsing = 0;
+                *return_character = 1;
+
+                d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_DECIMAL_BAD,
+                                    input_symbol_line, input_symbol_character,
+                                    "the only letter supported in this "
+                                    "integer number is E -OR- e for floats "
+                                    "(i.e. 10E+15); if you would like a "
+                                    "binary number, it must start by 0b "
+                                    "(i.e. 0b011)");
 
                 return -1;
             }
