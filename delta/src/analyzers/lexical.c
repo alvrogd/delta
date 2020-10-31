@@ -25,6 +25,11 @@
 #include <string.h>
 
 
+typedef int (*funcptr)();	  /* generic function pointer */
+typedef int (*transition_function)(int, unsigned char, size_t, size_t, funcptr *, int *,
+                                   int *, int *, int *, int *);
+
+
 /**
  * @brief Represents a lexical analyzer.
  *
@@ -183,6 +188,8 @@ void _d_lexical_analyzer_update_parsing_stats(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -206,6 +213,7 @@ int _d_lexical_analyzer_automata_comment_and_div(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -436,6 +444,8 @@ int _d_lexical_analyzer_automata_comment_and_div(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -459,6 +469,7 @@ int _d_lexical_analyzer_automata_double_quoted_string(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -565,6 +576,8 @@ int _d_lexical_analyzer_automata_double_quoted_string(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -588,6 +601,7 @@ int _d_lexical_analyzer_automata_equals_and_assign(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -642,6 +656,8 @@ int _d_lexical_analyzer_automata_equals_and_assign(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -665,6 +681,7 @@ int _d_lexical_analyzer_automata_increment_and_plus_assign(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -728,6 +745,8 @@ int _d_lexical_analyzer_automata_increment_and_plus_assign(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -751,6 +770,7 @@ int _d_lexical_analyzer_automata_whitespace(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -805,6 +825,8 @@ int _d_lexical_analyzer_automata_whitespace(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -828,6 +850,7 @@ int _d_lexical_analyzer_automata_id_and_kwd(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -886,6 +909,8 @@ int _d_lexical_analyzer_automata_id_and_kwd(
  *                              been found.
  * @param[in] input_symbol_character Which character the symbol is in its line
  *                                   in the input file.
+ * @param[out] new_transition_function Which automata will be able to continue
+ *                                     processing the input.
  * @param[out] new_state To which state the automata has transitioned.
  * @param[out] continue_parsing True if the automata has not recognized a
  *                              lexeme yet (or is trying to recognize a longer
@@ -909,6 +934,7 @@ int _d_lexical_analyzer_automata_number_and_dot(
     unsigned char input_symbol,
     size_t input_symbol_line,
     size_t input_symbol_character,
+    funcptr *tfunction,
     int *new_state,
     int *continue_parsing,
     int *return_character,
@@ -1329,8 +1355,7 @@ int _d_lexical_analyzer_automata_number_and_dot(
 void _d_lexical_analyzer_run_automata(
     struct d_lexical_analyzer *lexical_analyzer,
     struct d_lexical_component *lexical_component,
-    int (*transition_function)(int, unsigned char, size_t, size_t, int *,
-                               int *, int *, int *, int *),
+    transition_function tfunction,
     int initial_state
 )
 {
@@ -1383,10 +1408,11 @@ void _d_lexical_analyzer_run_automata(
 
 
         /* 2. State transitioning depending on the retrieved character */
-        lexical_component_id = (*transition_function)(current_automata_state,
+        lexical_component_id = (tfunction)(current_automata_state,
                                 current_character,
                                 lexical_analyzer->current_line,
                                 lexical_analyzer->current_character,
+                                (funcptr *) &tfunction,
                                 &current_automata_state, &continue_parsing,
                                 &return_character, &save_lexeme,
                                 &add_to_symbol_table);
@@ -1630,7 +1656,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 &_d_lexical_analyzer_automata_double_quoted_string,
+                                                 _d_lexical_analyzer_automata_double_quoted_string,
                                                  0);
                 break;
                 
@@ -1643,7 +1669,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 &_d_lexical_analyzer_automata_equals_and_assign,
+                                                 _d_lexical_analyzer_automata_equals_and_assign,
                                                  0);
                 break;
 
@@ -1656,7 +1682,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 &_d_lexical_analyzer_automata_increment_and_plus_assign,
+                                                 _d_lexical_analyzer_automata_increment_and_plus_assign,
                                                  0);
                 break;
 
@@ -1669,7 +1695,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 &_d_lexical_analyzer_automata_comment_and_div,
+                                                 _d_lexical_analyzer_automata_comment_and_div,
                                                  0);
                 break;
 
@@ -1687,7 +1713,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     &_d_lexical_analyzer_automata_id_and_kwd,
+                                                     _d_lexical_analyzer_automata_id_and_kwd,
                                                      0);
                 }
 
@@ -1701,7 +1727,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     &_d_lexical_analyzer_automata_number_and_dot,
+                                                     _d_lexical_analyzer_automata_number_and_dot,
                                                      10);
                 }
 
@@ -1715,7 +1741,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     &_d_lexical_analyzer_automata_number_and_dot,
+                                                     _d_lexical_analyzer_automata_number_and_dot,
                                                      0);
                 }
 
@@ -1729,7 +1755,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     &_d_lexical_analyzer_automata_number_and_dot,
+                                                     _d_lexical_analyzer_automata_number_and_dot,
                                                      20);
                 }
 
@@ -1748,7 +1774,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     &_d_lexical_analyzer_automata_whitespace,
+                                                     _d_lexical_analyzer_automata_whitespace,
                                                      0);
                 }
 
