@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
 
     // Initializing the I/O system
-    d_io_system_initialize(&io_system, 64);
+    d_io_system_initialize(&io_system, 4096);
     d_io_system_open_file(io_system, "regression_w_more_errors.d");
 
     // Initializing the symbol table

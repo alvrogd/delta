@@ -16,6 +16,17 @@
 /** Which character represents the EOF, according to the sentinel method. */
 #define IO_SYSTEM_SENTINEL_EOF '\0'
 
+/** Block size in bytes. The buffer size will always be forced to be a
+    multiple of this one in order to enhance the I/O performance. This is due
+    to the fact that the systemcalls that communicate with the filesystem will
+    use this block as the minimum tramission unit. */
+// TODO As of now, the block size has been set to 4096 bytes as the compiler
+//      is intended to be used in Linux, in which the most popular filesystem
+//      is ext4, whose default block size is 4096 bytes. However, it would be
+//      nice to automatically detect the block size of whichever filesystem
+//      lies under.
+#define IO_SYSTEM_BLOCK_SIZE 4096
+
 
 // TODO most functions in this file will break if the given struct is not
 // fully initialized
@@ -34,6 +45,9 @@
 
 // memcpy
 #include <string.h>
+
+// Block size
+#include <linux/fs.h>
 
 
 /**
@@ -117,24 +131,36 @@ int d_io_system_initialize(
         return -1;
     }
 
-    // TODO size must be multiple of... 
-    if(((*io_system)->buffer_a = malloc(buffer_size)) == NULL) {
+    // The buffer size is forced to be a multiple of the underlying block size
+    //
+    // If the specified size is not a multiple, the inmediate multiple that
+    // is bigger than the requested size is chosen 
+    (*io_system)->buffer_size = ((buffer_size + IO_SYSTEM_BLOCK_SIZE - 1) /
+                                IO_SYSTEM_BLOCK_SIZE) * IO_SYSTEM_BLOCK_SIZE;
+    // WARNING: this does not equal "(buffer_size + IO_SYSTEM_BLOCK_SIZE - 1)"
+    //          due to the integer division
+    #ifdef D_DEBUG
+    printf("Block size: %zu\n", (*io_system)->buffer_size);
+    #endif
+
+    if(((*io_system)->buffer_a = malloc((*io_system)->buffer_size)) == NULL) {
 
         perror("ERROR::IO_SYSTEM::Could not allocate buffer A");
         return -1;
     }
 
-    (*io_system)->buffer_a_end = (*io_system)->buffer_a + buffer_size;
+    (*io_system)->buffer_a_end = (*io_system)->buffer_a +
+                                 (*io_system)->buffer_size;
 
-    if(((*io_system)->buffer_b = malloc(buffer_size)) == NULL) {
+    if(((*io_system)->buffer_b = malloc((*io_system)->buffer_size)) == NULL) {
 
         perror("ERROR::IO_SYSTEM::Could not allocate buffer B");
         return -1;
     }
 
-    (*io_system)->buffer_b_end = (*io_system)->buffer_b + buffer_size;
+    (*io_system)->buffer_b_end = (*io_system)->buffer_b +
+                                 (*io_system)->buffer_size;
 
-    (*io_system)->buffer_size = buffer_size;
 
     // At first, both position pointers are set at the beginning of the buffer
     // A
