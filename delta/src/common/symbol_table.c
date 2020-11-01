@@ -81,7 +81,7 @@ int d_symbol_table_initialize(
             return -1;
         }
 
-        strcpy((char *)tmp_entry_lexeme, D_LANG_KEYWORDS[i]); // TODO may break signed -> unsigned?
+        strcpy((char *)tmp_entry_lexeme, D_LANG_KEYWORDS[i]);
         tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_KEYWORD;

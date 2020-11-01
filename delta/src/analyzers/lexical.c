@@ -581,7 +581,8 @@ int _d_lexical_analyzer_automata_increment_and_plus_assign(
 
                     d_errors_parse_show(4, D_ERR_LEX_OPERATORS_UNSUPPORTED,
                                        input_symbol_line,
-                                       input_symbol_character, "++ -OR- +=");
+                                       input_symbol_character, "'++' -OR- "
+                                                               "'+='");
 
                     return -1;
             }
@@ -836,11 +837,11 @@ int _d_lexical_analyzer_automata_binary_number(
                     *return_character = 1;
 
                     d_errors_parse_show(4,
-                                        D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
+                                       D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
                                         input_symbol_line,
                                         input_symbol_character,
                                         "a binary number needs at least one "
-                                        "0 -OR- 1 (i.e. 0b1)");
+                                        "'0' -OR- '1' (i.e. 0b1)");
 
                     return -1;
             }
@@ -876,8 +877,8 @@ int _d_lexical_analyzer_automata_binary_number(
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
                                     input_symbol_line,
                                     input_symbol_character,
-                                    "a binary number may only have 0s -AND- "
-                                    "1s -AND- _");
+                                    "a binary number may only have '0' -AND- "
+                                    "'1' -AND- '_'");
 
                 return -1;
             }
@@ -972,7 +973,7 @@ int _d_lexical_analyzer_automata_floating_number(
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
                                     input_symbol_line, input_symbol_character,
                                     "the only letter that may follow a "
-                                    "float's decimal dot is E -OR- e, "
+                                    "float's decimal dot is 'E' -OR- 'e', "
                                     "providing that there is at least a "
                                     "digit beforehand (i.e. 10.3E+15)");
 
@@ -1016,8 +1017,8 @@ int _d_lexical_analyzer_automata_floating_number(
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
                                     input_symbol_line, input_symbol_character,
                                     "the only letter that may be in a "
-                                    "float's decimal part is E -OR- e for "
-                                    "its exponent (i.e. 10.3E+15)");
+                                    "float's decimal part is 'E' -OR- 'e' "
+                                    "for its exponent (i.e. 10.3E+15)");
 
                 return -1;
             }
@@ -1049,8 +1050,9 @@ int _d_lexical_analyzer_automata_floating_number(
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
                                     input_symbol_line, input_symbol_character,
                                     "the only characters that may follow a "
-                                    "float's E -OR- e are + -OR- - -OR- a "
-                                    "digit (i.e. 10.3E+15, 10.3E10)");
+                                    "float's 'E' -OR- 'e' are '+' -OR- '-' "
+                                    "-OR- 'a digit' (i.e. 10.3E+15, "
+                                    "10.3E10)");
 
                 return -1;
             }
@@ -1074,9 +1076,8 @@ int _d_lexical_analyzer_automata_floating_number(
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
                                     input_symbol_line, input_symbol_character,
                                     "the only characters that may follow a "
-                                    "float's exponent and its sign "
-                                    "declaration are digits (i.e. 10.3E+15, "
-                                    "10.3E10)");
+                                    "float's exponent and sign declaration "
+                                    "are digits (i.e. 10.3E+15, 10.3E10)");
 
                 return -1;
             }
@@ -1111,7 +1112,7 @@ int _d_lexical_analyzer_automata_floating_number(
                                     input_symbol_line,
                                     input_symbol_character,
                                     "a float's decimal number may only have "
-                                    "digits -AND- _");
+                                    "'digits' -OR- '_'");
 
                 return -1;
             }
@@ -1257,81 +1258,9 @@ int _d_lexical_analyzer_automata_number_and_dot(
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BAD,
                                     input_symbol_line, input_symbol_character,
                                     "the only letters that may follow an "
-                                    "integer number are E -OR- e for floats "
-                                    "(i.e. 10E+15) -AND- B -OR- b for "
-                                    "binaries (i.e. 0b011)");
-
-                return -1;
-            }
-        
-
-        case 11:
-
-            switch (input_symbol) {
-            
-                case '_':
-                    // loop
-                    *new_state = 11;
-                    *continue_parsing = 1;
-
-                    return -1;
-
-                case '0':
-                case '1':
-                    // go to state 12
-                    *new_state = 12;
-                    *continue_parsing = 1;
-
-                    return -1;
-
-                default:
-                    // Failure
-                    *continue_parsing = 0;
-                    *return_character = 1;
-
-                    d_errors_parse_show(4,
-                                        D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
-                                        input_symbol_line,
-                                        input_symbol_character,
-                                        "a binary number needs at least one "
-                                        "0 -OR- 1 (i.e. 0b1)");
-
-                    return -1;
-            }
-
-
-        case 12:
-
-            if(input_symbol == '0' || input_symbol == '1' || input_symbol ==
-               '_') {
-
-                // loop
-                *new_state = 12;
-                *continue_parsing = 1;
-
-                return -1;
-            }
-
-            else if(!isalpha(input_symbol)) {
-
-                // Successful "binary integer" recognition
-                *continue_parsing = 0;
-                *return_character = 1;
-                *save_lexeme = 1;
-
-                return D_LC_LITERAL_INT;
-            }
-
-            else {
-                // Failure
-                *continue_parsing = 0;
-                *return_character = 1;
-
-                d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
-                                    input_symbol_line,
-                                    input_symbol_character,
-                                    "a binary number may only have 0s -AND- "
-                                    "1s -AND- _");
+                                    "integer number are 'E' -OR- 'e' for "
+                                    "floats (i.e. 10E+15) -AND- 'B' -OR- 'b' "
+                                    " for binaries (i.e. 0b011)");
 
                 return -1;
             }
@@ -1384,10 +1313,10 @@ int _d_lexical_analyzer_automata_number_and_dot(
 
                 d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_DECIMAL_BAD,
                                     input_symbol_line, input_symbol_character,
-                                    "the only letter supported in this "
-                                    "integer number is E -OR- e for floats "
-                                    "(i.e. 10E+15); if you would like a "
-                                    "binary number, it must start by 0b "
+                                    "the only letter supported a decimal "
+                                    "integer number is 'E' -OR- 'e' for "
+                                    "floats (i.e. 10E+15); if you would like "
+                                    "a binary number, it must start by '0b' "
                                     "(i.e. 0b011)");
 
                 return -1;
@@ -1804,7 +1733,9 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
 
     /* 2. Parse the character using the global finite automata */
-    // TODO add reference to global automata doc
+
+    // See docs/0_lexical_analysis/all_finite_automatas.pdf for visual
+    // representationa of this section
 
     // Depending on the input character:
     //
@@ -1929,7 +1860,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 break;
 
             default:
-                // (these cases cannot be represented through a switch-case
+                // (some of cases cannot be represented through a switch-case
                 // construct)
 
                 if(isalpha(character) || character == '_') {

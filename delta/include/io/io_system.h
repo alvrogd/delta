@@ -42,9 +42,15 @@ struct d_io_system;
  * @param[out] io_system Reference to the pointer where the address of the new
  *                       I/O system will be stored.
  * @param[in] buffer_size Size N of the two internal buffers that the I/O system
- *                        will use; it must be multiple of ... // TODO. The
- *                        usable space in each buffer will be N-1 bytes (=
-                          characters).
+ *                        will use. The usable space in each buffer will be
+ *                        N - 1 bytes (= characters).
+ *
+ *                        The buffer size will always be forced to be a
+ *                        multiple of the underlying block size in order to
+ *                        enhance the I/O performance. This is due to the fact
+ *                        that the systemcalls that communicate with the
+ *                        filesystem will use this block as the minimum
+ *                        tramission unit.
  *
  * @return 0 if successful, any other value otherwise.
  */

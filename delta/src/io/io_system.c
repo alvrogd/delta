@@ -16,10 +16,7 @@
 /** Which character represents the EOF, according to the sentinel method. */
 #define IO_SYSTEM_SENTINEL_EOF '\0'
 
-/** Block size in bytes. The buffer size will always be forced to be a
-    multiple of this one in order to enhance the I/O performance. This is due
-    to the fact that the systemcalls that communicate with the filesystem will
-    use this block as the minimum tramission unit. */
+/** Block size in bytes. */
 // TODO As of now, the block size has been set to 4096 bytes as the compiler
 //      is intended to be used in Linux, in which the most popular filesystem
 //      is ext4, whose default block size is 4096 bytes. However, it would be
@@ -102,7 +99,7 @@ struct d_io_system {
 
 
 /**
- * @brief Implementation of io_system.h/io_system_initialize
+ * @brief Implementation of io_system.h/d_io_system_initialize
  */
 int d_io_system_initialize(
     struct d_io_system **io_system,
@@ -273,7 +270,7 @@ int _d_io_system_fill_buffer(
 
 
 /**
- * @brief Implementation of io_system.h/io_system_open_file
+ * @brief Implementation of io_system.h/d_io_system_open_file
  */
 int d_io_system_open_file(
     struct d_io_system *io_system,
@@ -427,7 +424,7 @@ int _d_io_system_move_forward(
 
 
 /**
- * @brief Implementation of io_system.h/io_system_get_next_char
+ * @brief Implementation of io_system.h/d_io_system_get_next_char
  */
 int d_io_system_get_next_char(
     struct d_io_system *io_system,
@@ -462,7 +459,7 @@ int d_io_system_get_next_char(
 
 
 /**
- * @brief Implementation of io_system.h/io_system_return_char
+ * @brief Implementation of io_system.h/d_io_system_return_char
  */
 int d_io_system_return_char(
     struct d_io_system *io_system,
@@ -618,7 +615,7 @@ const unsigned char *d_io_system_save_current_lexeme(
 
 
 /**
- * @brief Implementation of io_system.h/io_system_destroy
+ * @brief Implementation of io_system.h/d_io_system_destroy
  */
 int d_io_system_destroy(
     struct d_io_system **io_system

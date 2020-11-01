@@ -51,6 +51,10 @@ And the Delta's executable file will be generated right in the `build` directory
 
 #### Regarding any warnings that show up during compilation
 
+Due to the warning-related compiler flags, GCC will report non harmful warnings; specifically, several _unused parameter_ warnings. These unused parameters have been left this way on purpose, in order to define more comprehensive function interfaces that would ease the task of extending its module's functionality in the future.
+
+Therefore, you may just ignore this kind of warnings without any problems.
+
 ### Running Delta
 
 Once compiled, you can use Delta just like any other compiler:

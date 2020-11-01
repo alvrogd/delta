@@ -44,13 +44,13 @@ int main(int argc, char *argv[])
 
     /* Clean up */
 
-    d_io_system_destroy(&io_system);
-
-    d_symbol_table_destroy(&symbol_table);
+    d_syntactic_analyzer_destroy(&syntactic_analyzer);
 
     d_lexical_analyzer_destroy(&lexical_analyzer);
 
-    d_syntactic_analyzer_destroy(&syntactic_analyzer);
+    d_io_system_destroy(&io_system);
+
+    d_symbol_table_destroy(&symbol_table);
     
 
     return 0;
