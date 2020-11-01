@@ -4,6 +4,8 @@
  * @date Oct 2020
  *
  * @brief Implementation of common/errors.h
+ *
+ * // TODO add color codes
  */
 
 
@@ -31,10 +33,18 @@ const char *d_errors_get_template(
     switch (error_code) {
     
         /* Category: internal errors */
-        // #define D_ERR_INTERN 1000
-        // #define D_ERR_INTERN_ARGUMENT_INVALID 1001
-        // #define D_ERR_INTERN_ARGUMENT_NULL 1002
-        // #define D_ERR_INTERN_SYSCALL_FAILED 1003
+
+        case D_ERR_INTERN_ARGUMENT_INVALID:
+            return "invalid argument, [..]";
+        
+        case D_ERR_INTERN_ARGUMENT_NULL:
+            return "NULL argument, [..]";
+        
+        case D_ERR_INTERN_SYSCALL_FAILED:
+            return "failed syscall, [..]";
+
+        case D_ERR_INTERN_LOGIC:
+            return "logical error, [..]";
 
 
         /* Category: lexical analysis errors */
@@ -61,10 +71,20 @@ const char *d_errors_get_template(
         // Subcategory: operators errors
         case D_ERR_LEX_OPERATORS_UNSUPPORTED:
             return "as of now, the only two supported operators starting by "
-                   "+ are ";
+                   "+ are [..]";
+
+
+        /* Category: user errors */
+
+        case D_ERR_USER_INPUT_FILE_INACCESSIBLE:
+            return "the input file is inaccessible; check if the path is "
+                   "right, and if its permissions allow reading it";
 
 
         default:
+            perror("error: invalid argument, 'error_code' not recognized\n"
+                   " --> internal file : errors.c : d_errors_get_template()");
+
             return "no template defined for the specified error code";
     }
 }
@@ -186,17 +206,27 @@ void d_errors_parse_show(
 {
     // List that contains all variable arguments
     va_list valist;
+    
     int error_code = 0;
+    size_t line;
+    size_t col;
+
+    
+    if(arg_count < 3) {
+        perror("error: invalid argument, 'arg_count' must be >= 3\n"
+               " --> internal file : errors.c : d_errors_parse_show()");
+    }
 
 
     // Parsing arguments...
     va_start(valist, arg_count);
     error_code = va_arg(valist, int);
-    printf("error code is %d\n", error_code);
 
     // Generating metadata about the error...
+    line = va_arg(valist, size_t);
+    col = va_arg(valist, size_t);
     snprintf(char_buffer, sizeof(char_buffer), "input file : ln %zu : col "
-             "%zu", va_arg(valist, size_t), va_arg(valist, size_t));
+             "%zu", line, col);
 
     // Showing the whole error...
     _d_errors_show(error_code, char_buffer, arg_count - 3, &valist);
@@ -216,7 +246,16 @@ void d_errors_internal_show(
 {
     // List that contains all variable arguments
     va_list valist;
+    
     int error_code = 0;
+    char file[32];
+    char function[64];
+
+
+    if(arg_count < 3) {
+        perror("error: invalid argument, 'arg_count' must be >= 3\n"
+               " --> internal file : errors.c : d_errors_internal_show()");
+    }
 
 
     // Parsing arguments...
@@ -224,8 +263,10 @@ void d_errors_internal_show(
     error_code = va_arg(valist, int);
 
     // Generating metadata about the error...
+    strncpy(file, va_arg(valist, const char *), sizeof(file) - 1);
+    strncpy(function, va_arg(valist, const char *), sizeof(function) - 1);
     snprintf(char_buffer, sizeof(char_buffer), "internal file : %s : %s()",
-             va_arg(valist, const char *), va_arg(valist, const char *));
+             file, function);
 
     // Showing the whole error...
     _d_errors_show(error_code, char_buffer, arg_count - 3, &valist);

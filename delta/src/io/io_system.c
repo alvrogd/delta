@@ -25,10 +25,8 @@
 #define IO_SYSTEM_BLOCK_SIZE 4096
 
 
-// TODO most functions in this file will break if the given struct is not
-// fully initialized
-
 #include "io/io_system.h"
+#include "common/errors.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -108,13 +106,17 @@ int d_io_system_initialize(
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_initialize",
+                               "'io_system'");
         return -1;
     }
 
     if(buffer_size <= 0) {
 
-        perror("ERROR::IO_SYSTEM::Requested buffer size is <= 0");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_INVALID,
+                               "io_system.c", "d_io_system_initialize",
+                               "'buffer_size' must be > 0");
         return -1;
     }
 
@@ -124,7 +126,9 @@ int d_io_system_initialize(
 
     if((*io_system = malloc(sizeof(struct d_io_system))) == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Could not allocate a struct d_io_system");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_initialize",
+                               "'malloc' for struct d_io_system");
         return -1;
     }
 
@@ -143,7 +147,9 @@ int d_io_system_initialize(
 
     if(((*io_system)->buffer_a = malloc((*io_system)->buffer_size)) == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Could not allocate buffer A");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_initialize",
+                               "'malloc' for buffer_a");
         return -1;
     }
 
@@ -152,7 +158,9 @@ int d_io_system_initialize(
 
     if(((*io_system)->buffer_b = malloc((*io_system)->buffer_size)) == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Could not allocate buffer B");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_initialize",
+                               "'malloc' for buffer_b");
         return -1;
     }
 
@@ -207,18 +215,6 @@ int _d_io_system_fill_buffer(
 {
     size_t size_to_read = 0;
 
-
-    if(io_system == NULL) {
-
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
-        return -1;
-    }
-    
-    if(buffer == NULL) {
-
-        perror("ERROR::IO_SYSTEM::Reference to buffer is NULL");
-        return -1;
-    }
 
     #ifdef D_DEBUG
     printf("[io_system][fill buffer] Next buffer already loaded: %d\n",
@@ -283,13 +279,17 @@ int d_io_system_open_file(
 
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_open_file",
+                               "'io_system'");
         return -1;
     }
     
     if(file_path == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to file path is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_open_file",
+                               "'file_path'");
         return -1;
     }
 
@@ -300,15 +300,18 @@ int d_io_system_open_file(
     // In order to do so, it must be first opened as a file descriptor
     if ((input_file_fd = open(file_path, O_RDONLY)) == -1) {
 
-        perror("ERROR::IO_SYSTEM::Could not open input file as a file "
-               "descriptor");
+        d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+                               "io_system.c",
+                               "d_io_system_open_file");
         return -1;
     }
 
     // Its size is also needed beforehand
     if(stat(file_path, &input_file_stats) == -1) {
 
-        perror("ERROR::IO_SYSTEM::Could not retrieve input file size");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_open_file",
+                               "'stat' on input file");
         return -1;
     }
 
@@ -317,7 +320,9 @@ int d_io_system_open_file(
                                      PROT_READ, MAP_SHARED, input_file_fd, 0))
         == MAP_FAILED) {
 
-        perror("ERROR::IO_SYSTEM::Could not memory-map input file");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_open_file",
+                               "'mmap' on input file");
         return -1;
     }
 
@@ -327,7 +332,9 @@ int d_io_system_open_file(
     if(madvise(io_system->input_file, (size_t) input_file_stats.st_size,
                 MADV_SEQUENTIAL) == -1) {
 
-        perror("ERROR::IO_SYSTEM::Could not advise about input file usage");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_open_file",
+                               "'madvise' on input file");
         return -1;
     }
 
@@ -338,11 +345,7 @@ int d_io_system_open_file(
                                 io_system->input_file_size;
 
     // And the A buffer is the first to be filled with data from the file
-    if(_d_io_system_fill_buffer(io_system, io_system->buffer_a) != 0) {
-
-        perror("ERROR::IO_SYSTEM::Could not fill contents of buffer A");
-        return -1;
-    }
+    _d_io_system_fill_buffer(io_system, io_system->buffer_a);
 
     return 0;
 }
@@ -365,13 +368,6 @@ int _d_io_system_move_forward(
     struct d_io_system *io_system
 )
 {
-    if(io_system == NULL) {
-
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
-        return -1;
-    }
-
-
     ++(io_system->forward);
     ++(io_system->lexeme_length);
 
@@ -431,17 +427,19 @@ int d_io_system_get_next_char(
     unsigned char *next_character
 )
 {
-    uint8_t *buffer = io_system->buffer_b;
-
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_get_next_char",
+                               "'io_system'");
         return -1;
     }
     
     if(next_character == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to next character is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_get_next_char",
+                               "'next_character'");
         return -1;
     }
 
@@ -468,7 +466,9 @@ int d_io_system_return_char(
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_return_char",
+                               "'io_system'");
         return -1;
     }
 
@@ -514,7 +514,9 @@ int d_io_system_is_eof(
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_is_eof",
+                               "'io_system'");
         return -1;
     }
 
@@ -530,6 +532,16 @@ int d_io_system_current_lexeme_recognized(
     struct d_io_system *io_system
 )
 {
+    if(io_system == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c",
+                               "d_io_system_current_lexeme_recognized",
+                               "'io_system'");
+        return -1;
+    }
+
+
     // The "lexeme start" pointer can now move to were the "forward" pointer
     // is in order to mark the start of the next lexeme
     io_system->lexeme_begin = io_system->forward;
@@ -555,7 +567,10 @@ const unsigned char *d_io_system_save_current_lexeme(
 
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c",
+                               "d_io_system_save_current_lexeme",
+                               "'io_system'");
         return NULL;
     }
 
@@ -564,8 +579,9 @@ const unsigned char *d_io_system_save_current_lexeme(
     if((lexeme = malloc((io_system->lexeme_length + 1) *
         sizeof(unsigned char))) == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Could not allocate memory for the current "
-               "lexeme");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_save_current_lexeme",
+                               "'malloc' for lexeme");
         return NULL;
     }
 
@@ -623,7 +639,9 @@ int d_io_system_destroy(
 {
     if(io_system == NULL) {
 
-        perror("ERROR::IO_SYSTEM::Reference to struct d_io_system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "io_system.c", "d_io_system_destroy",
+                               "'io_system'");
         return -1;
     }
 
@@ -640,7 +658,9 @@ int d_io_system_destroy(
     if (munmap((*io_system)->input_file, (*io_system)->input_file_size)
         != 0) {
         
-        perror("ERROR::IO_SYSTEM::Could not unmap input file");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "io_system.c",
+                               "d_io_system_destroy",
+                               "'munmap' on input file");
         return -1;
     }
 

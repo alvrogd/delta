@@ -10,6 +10,7 @@
 #include "common/symbol_table.h"
 #include "common/keywords.h"
 #include "common/lexical_components.h"
+#include "common/errors.h"
 
 
 #include <stdio.h>
@@ -49,8 +50,9 @@ int d_symbol_table_initialize(
 
     if(symbol_table == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Reference to struct d_symbol_table is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_initialize",
+                               "'symbol_table'");
         return -1;
     }
 
@@ -60,8 +62,9 @@ int d_symbol_table_initialize(
 
     if((*symbol_table = malloc(sizeof(struct d_symbol_table))) == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Could not allocate a struct "
-               "d_symbol_table");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                               "symbol_table.c", "d_symbol_table_initialize",
+                               "'malloc' for struct d_symbol_table");
         return -1;
     }
 
@@ -76,8 +79,10 @@ int d_symbol_table_initialize(
         if((tmp_entry_lexeme = malloc(strlen(D_LANG_KEYWORDS[i]) + 1)) ==
             NULL) {
 
-            perror("ERROR::SYMBOL_TABLE::Could not allocate a keyword "
-                   "lexeme");
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "symbol_table.c",
+                                   "d_symbol_table_initialize",
+                                   "'malloc' for keyword's lexeme");
             return -1;
         }
 
@@ -124,14 +129,17 @@ struct d_symbol_table_entry *d_symbol_table_search(
 
     if(symbol_table == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Reference to struct d_symbol_table is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_search",
+                               "'symbol_table'");
         return NULL;
     }
 
     if(key == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Reference to key is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_search",
+                               "'key'");
         return NULL;
     }
 
@@ -157,14 +165,17 @@ int d_symbol_table_add(
 
     if(symbol_table == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Reference to struct d_symbol_table is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_add",
+                               "'symbol_table'");
         return -1;
     }
 
     if(entry == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Reference to entry is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_add",
+                               "'entry'");
         return -1;
     }
 
@@ -172,7 +183,8 @@ int d_symbol_table_add(
     // No entry with the same key can be already present in the table
     if(d_symbol_table_search(symbol_table, entry->lexeme) != NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Duped key");
+        d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "symbol_table.c",
+                               "d_symbol_table_add", "key already present");
         return 1;
     }
 
@@ -180,8 +192,9 @@ int d_symbol_table_add(
     if((internal_entry = malloc(sizeof(struct d_symbol_table_entry))) ==
        NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Could not allocate a struct "
-               "d_symbol_table_entry");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                               "symbol_table.c", "d_symbol_table_add",
+                                "'malloc' for struct d_symbol_table_entry");
         return -1;
     }
 
@@ -213,8 +226,9 @@ int d_symbol_table_destroy(
 
     if(symbol_table == NULL) {
 
-        perror("ERROR::SYMBOL_TABLE::Reference to struct d_symbol_table is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_destroy",
+                               "'symbol_table'");
         return -1;
     }
 

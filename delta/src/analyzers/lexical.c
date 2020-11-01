@@ -1373,8 +1373,9 @@ int d_lexical_analyzer_initialize(
 {
     if(lexical_analyzer == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
-               "d_lexical_analyzer is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_initialize",
+                               "'lexical_analyzer'");
         return -1;
     }
 
@@ -1383,8 +1384,9 @@ int d_lexical_analyzer_initialize(
     if((*lexical_analyzer = malloc(sizeof(struct d_lexical_analyzer))) ==
        NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Could not allocate a struct "
-               "d_lexical_analyzer");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "lexical.c",
+                               "d_lexical_analyzer_initialize",
+                               "'malloc' for struct d_lexical_analyzer");
         return -1;
     }
 
@@ -1409,20 +1411,25 @@ int d_lexical_analyzer_prepare_for_parsing(
 {
     if(lexical_analyzer == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to lexical analyzer is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_prepare_for_parsing",
+                               "'lexical_analyzer'");
         return -1;
     }
 
     if(io_system == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to I/O system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_prepare_for_parsing",
+                               "'io_system'");
         return -1;
     }
 
     if(symbol_table == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to symbol table is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_prepare_for_parsing",
+                               "'symbol_table'");
         return -1;
     }
 
@@ -1540,7 +1547,10 @@ void _d_lexical_analyzer_run_automata(
 
     if(d_io_system_is_eof(lexical_analyzer->io_system)) {
 
-        perror("ERROR:LEXICAL_ANALYZER::EOF has been reached");
+        d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
+                               "_d_lexical_analyzer_run_automata",
+                               "finite automata could not reach a final "
+                               "state");
         continue_parsing = 0;
     }
 
@@ -1661,7 +1671,10 @@ void _d_lexical_analyzer_run_automata(
         /* 4. Checking if the parsing process may continue */
         if(d_io_system_is_eof(lexical_analyzer->io_system)) {
 
-            perror("ERROR:LEXICAL_ANALYZE::EOF has been reached");
+            d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
+                                   "_d_lexical_analyzer_run_automata",
+                                   "finite automata could not reach a final "
+                                   "state");
             continue_parsing = 0;
         }
     }
@@ -1683,15 +1696,19 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
     if(lexical_analyzer == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to lexical analyzer is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "lexical.c",
+                               "d_lexical_analyzer_get_next_lexical_comp",
+                               "'lexical_analyzer'");
         return -1;
     }
 
     if(lexical_component == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to lexical component is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "lexical.c",
+                               "d_lexical_analyzer_get_next_lexical_comp",
+                               "'lexical_component'");
         return -1;
     }
 
@@ -1699,7 +1716,9 @@ int d_lexical_analyzer_get_next_lexical_comp(
     // If no more characters remain unparsed in the input file
     if(d_io_system_is_eof(lexical_analyzer->io_system)) {
 
-        perror("ERROR:LEXICAL_ANALYZE::EOF has been reached");
+        d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
+                               "d_lexical_analyzer_get_next_lexical_comp",
+                               "eof has already been reached");
         return -1;
     }
 
@@ -1816,7 +1835,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 _d_lexical_analyzer_automata_double_quoted_string,
+                            _d_lexical_analyzer_automata_double_quoted_string,
                                                  0);
                 break;
                 
@@ -1829,7 +1848,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 _d_lexical_analyzer_automata_equals_and_assign,
+                               _d_lexical_analyzer_automata_equals_and_assign,
                                                  0);
                 break;
 
@@ -1842,7 +1861,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 _d_lexical_analyzer_automata_increment_and_plus_assign,
+                       _d_lexical_analyzer_automata_increment_and_plus_assign,
                                                  0);
                 break;
 
@@ -1855,7 +1874,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                 _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                  lexical_component,
-                                                 _d_lexical_analyzer_automata_comment_and_div,
+                                 _d_lexical_analyzer_automata_comment_and_div,
                                                  0);
                 break;
 
@@ -1873,7 +1892,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     _d_lexical_analyzer_automata_id_and_kwd,
+                                      _d_lexical_analyzer_automata_id_and_kwd,
                                                      0);
                 }
 
@@ -1887,7 +1906,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     _d_lexical_analyzer_automata_number_and_dot,
+                                  _d_lexical_analyzer_automata_number_and_dot,
                                                      10);
                 }
 
@@ -1901,7 +1920,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     _d_lexical_analyzer_automata_number_and_dot,
+                                  _d_lexical_analyzer_automata_number_and_dot,
                                                      0);
                 }
 
@@ -1915,7 +1934,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
                 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     _d_lexical_analyzer_automata_number_and_dot,
+                                  _d_lexical_analyzer_automata_number_and_dot,
                                                      20);
                 }
 
@@ -1943,17 +1962,18 @@ int d_lexical_analyzer_get_next_lexical_comp(
                     // component must be invalid or not supported yet
                     // Therefore, it will be nice to raise an error message
                     // warning about it
-                    perror("ERROR::LEXICAL_ANALYZER::Wrong lex. comp.");
-                    // TODO remove
-                    // printf("Is %d,%c\n", character, character);
+                    d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
+                                   "d_lexical_analyzer_get_next_lexical_comp",
+                                          "next lexical component is not "
+                                          "supported");
                     // The lexical component's category is already set to
                     // '-1', which is an invalid value
-
-                    // NOTE: there will be no need to raise an error message
-                    //       beyond this point in this function, as if any
-                    //       automata were to fail, it is its duty to take
-                    //       care of showing the error all by itself
                 }                
+
+                // NOTE: there will be no need to raise an error message
+                //       beyond this point in this function, as if any
+                //       automata were to fail, it is its duty to take care of
+                //       showing the error all by itself
         }
 
     // They will have already been updated if the control was given up to any
@@ -2022,15 +2042,17 @@ int d_lexical_analyzer_destroy_lexical_com(
 {
     if(lexical_analyzer == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
-               "d_lexical_analyzer is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_destroy_lexical_com",
+                               "'lexical_analyzer'");
         return -1;
     }
 
     if(lexical_component == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
-               "d_lexical_component is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_destroy_lexical_com",
+                               "'lexical_component'");
         return -1;
     }
 
@@ -2063,8 +2085,9 @@ int d_lexical_analyzer_destroy(
 {
     if(lexical_analyzer == NULL) {
 
-        perror("ERROR::LEXICAL_ANALYZER::Reference to struct "
-               "d_lexical_analyzer is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_destroy",
+                               "'lexical_analyzer'");
         return -1;
     }
 

@@ -50,9 +50,17 @@
 
 /* Category: internal errors */
 #define D_ERR_INTERN 1000
-#define D_ERR_INTERN_ARGUMENT_INVALID 1001
-#define D_ERR_INTERN_ARGUMENT_NULL 1002
-#define D_ERR_INTERN_SYSCALL_FAILED 1003
+
+// Subcategory: argument errors
+#define D_ERR_INTERN_ARGUMENT 1100
+#define D_ERR_INTERN_ARGUMENT_INVALID 1101
+#define D_ERR_INTERN_ARGUMENT_NULL 1102
+
+// Subcategory: syscall errors
+#define D_ERR_INTERN_SYSCALL_FAILED 1200
+
+// Subcategory: inner workings' logic errors
+#define D_ERR_INTERN_LOGIC 1300
 
 
 /* Category: lexical analysis errors */
@@ -73,6 +81,12 @@
 // Subcategory: operators errors
 #define D_ERR_LEX_OPERATORS 2400
 #define D_ERR_LEX_OPERATORS_UNSUPPORTED 2401 // Expected ...
+
+
+/* Category: user errors */
+#define D_ERR_USER 3000
+
+#define D_ERR_USER_INPUT_FILE_INACCESSIBLE 3001
 
 
 /**

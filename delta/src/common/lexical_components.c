@@ -8,6 +8,7 @@
 
 
 #include "common/lexical_components.h"
+#include "common/errors.h"
 
 
 /**
@@ -130,6 +131,9 @@ const char *d_lc_to_string(
 
 
         default:
+            d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_INVALID,
+                                   "lexical_components.c", "d_lc_to_string",
+                                   "'lexical_component' ID not registered");
             return "LC_NOT_SUPPORTED";
     }
 }

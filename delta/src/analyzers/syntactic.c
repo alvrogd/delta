@@ -9,6 +9,7 @@
 
 #include "analyzers/syntactic.h"
 #include "common/lexical_components.h"
+#include "common/errors.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,8 +42,9 @@ int d_syntactic_analyzer_initialize(
 {
     if(syntactic_analyzer == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to struct "
-               "d_syntactic_analyzer is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_initialize",
+                               "'syntactic_analyzer'");
         return -1;
     }
 
@@ -51,8 +53,9 @@ int d_syntactic_analyzer_initialize(
     if((*syntactic_analyzer = malloc(sizeof(struct d_syntactic_analyzer))) ==
        NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Could not allocate a struct "
-               "d_lexical_analyzer");
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "syntactic.c",
+                               "d_syntactic_analyzer_initialize",
+                               "'malloc' for struct d_syntactic_analyzer");
         return -1;
     }
 
@@ -77,28 +80,33 @@ int d_syntactic_analyzer_prepare_for_parsing(
 {
     if(syntactic_analyzer == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to syntactic analyzer "
-               "is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_prepare_for_parsing",
+                               "'syntactic_analyzer'");
         return -1;
     }
 
     if(io_system == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to I/O system is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_prepare_for_parsing",
+                               "'io_system'");
         return -1;
     }
 
     if(symbol_table == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to symbol table is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_prepare_for_parsing",
+                               "'symbol_table'");
         return -1;
     }
 
     if(lexical_analyzer == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to lexical analyzer is "
-               "NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_prepare_for_parsing",
+                               "'lexical_analyzer'");
         return -1;
     }
 
@@ -125,8 +133,9 @@ int d_syntactic_analyzer_parse(
 
     if(syntactic_analyzer == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to syntactic analyzer "
-               "is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_parse",
+                               "'syntactic_analyzer'");
         return -1;
     }
 
@@ -136,40 +145,48 @@ int d_syntactic_analyzer_parse(
     //   - Corresponding lexeme if it had to be saved
     while(!d_io_system_is_eof(syntactic_analyzer->io_system)) {
 
-        d_lexical_analyzer_get_next_lexical_comp(
+        if(d_lexical_analyzer_get_next_lexical_comp(
                                          syntactic_analyzer->lexical_analyzer,
-                                         &tmp_lexical_component);
+                                                    &tmp_lexical_component)
+           == 0)
+        {
 
-        printf("<%s", d_lc_to_string(tmp_lexical_component.category));
+            printf("<%s", d_lc_to_string(tmp_lexical_component.category));
 
 
-        // The lexeme will be stored as its attribute, if any
-        if(tmp_lexical_component.attributes != NULL) {
+            // The lexeme will be stored as its attribute, if any
+            if(tmp_lexical_component.attributes != NULL) {
 
-            // If its attribute is its lexeme
-            if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
-            D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
+                // If its attribute is its lexeme
+                if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
+                D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
 
-                printf(", %s", (const char *)tmp_lexical_component.attributes);
+                    printf(", %s", (const char *)
+                                   tmp_lexical_component.attributes);
+                }
+
+                // If its attribute is a pointer to its entry in the symbol table
+                else if(tmp_lexical_component.category /
+                            D_LC_DISTANCE_CATEGORY ==
+                        D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
+                        
+                        tmp_lexical_component.category /
+                            D_LC_DISTANCE_CATEGORY ==
+                        D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
+
+                    printf(", %s",
+                        ((struct d_symbol_table_entry *)
+                         tmp_lexical_component.attributes)->lexeme);
+                }
             }
 
-            // If its attribute is a pointer to its entry in the symbol table
-            else if(tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
-                    D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
-                    tmp_lexical_component.category / D_LC_DISTANCE_CATEGORY ==
-                    D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
 
-                printf(", %s",
-                    ((struct d_symbol_table_entry *)tmp_lexical_component.attributes)->lexeme);
-            }
+            printf(">\n");
+
+            d_lexical_analyzer_destroy_lexical_com(
+                                         syntactic_analyzer->lexical_analyzer,
+                                                   &tmp_lexical_component);
         }
-
-
-        printf(">\n");
-
-        d_lexical_analyzer_destroy_lexical_com(
-                                         syntactic_analyzer->lexical_analyzer,
-                                         &tmp_lexical_component);
     }
 
 
@@ -186,8 +203,9 @@ int d_syntactic_analyzer_destroy(
 {
     if(syntactic_analyzer == NULL) {
 
-        perror("ERROR::SYNTACTIC_ANALYZER::Reference to struct "
-               "d_syntactic_analyzer is NULL");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
+                               "d_syntactic_analyzer_destroy",
+                               "'syntactic_analyzer'");
         return -1;
     }
 

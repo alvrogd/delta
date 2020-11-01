@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <stdlib.h>
 
 #include "io/io_system.h"
 #include "common/symbol_table.h"
@@ -21,18 +21,39 @@ int main(int argc, char *argv[])
 
     /* Initialization */
 
-    d_io_system_initialize(&io_system, 4096);
-    d_io_system_open_file(io_system, argv[1]);
+    if(d_io_system_initialize(&io_system, 4096) != 0) {
+        exit(EXIT_FAILURE);
+    }
 
-    d_symbol_table_initialize(&symbol_table);
+    if(d_io_system_open_file(io_system, argv[1]) != 0) {
+        exit(EXIT_FAILURE);
+    }
 
-    d_lexical_analyzer_initialize(&lexical_analyzer);
-    d_lexical_analyzer_prepare_for_parsing(lexical_analyzer, io_system,
-                                           symbol_table);
 
-    d_syntactic_analyzer_initialize(&syntactic_analyzer);
-    d_syntactic_analyzer_prepare_for_parsing(syntactic_analyzer, io_system,
-                                             symbol_table, lexical_analyzer);
+    if(d_symbol_table_initialize(&symbol_table) != 0) {
+        exit(EXIT_FAILURE);
+    }
+
+
+    if(d_lexical_analyzer_initialize(&lexical_analyzer) != 0) {
+        exit(EXIT_FAILURE);   
+    }
+
+    if(d_lexical_analyzer_prepare_for_parsing(lexical_analyzer, io_system,
+                                              symbol_table) != 0) {
+        exit(EXIT_FAILURE);
+    }
+
+
+    if(d_syntactic_analyzer_initialize(&syntactic_analyzer) != 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    if(d_syntactic_analyzer_prepare_for_parsing(syntactic_analyzer, io_system,
+                                                symbol_table,
+                                                lexical_analyzer) != 0) {
+        exit(EXIT_FAILURE);
+    }
 
 
     /* Input file parsing */
@@ -48,9 +69,9 @@ int main(int argc, char *argv[])
 
     d_lexical_analyzer_destroy(&lexical_analyzer);
 
-    d_io_system_destroy(&io_system);
-
     d_symbol_table_destroy(&symbol_table);
+
+    d_io_system_destroy(&io_system);
     
 
     return 0;
