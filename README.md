@@ -33,13 +33,13 @@ cd delta
 mkdir build && cd build
 ```
 
-Now, you may request to CMake that it generates all resources required to build the project:
+Now, you may request to CMake to generate all resources required to build the project:
 
 ```
 cmake ..
 ```
 
-By issuing this command, CMake reads the CMakeLists.txt file located in the parent directory. This file specifies all source and header files of the compiler, as well as some desired properties that will be applied while compiling the project.
+By issuing this command, CMake reads the `CMakeLists.txt` file located in the parent directory. This file specifies all source and header files of the compiler, as well as some desired properties that will be applied during compilation.
 
 The actual compilation process of the project is started by running:
 
@@ -49,9 +49,9 @@ cmake --build .
 
 And the Delta's executable file will be generated right in the `build` directory (the current one).
 
-#### Regarding any warnings that show up during compilation
+### Regarding any warnings that show up during compilation
 
-Due to the warning-related compiler flags, GCC will report non harmful warnings; specifically, several _unused parameter_ warnings. These unused parameters have been left this way on purpose, in order to define more comprehensive function interfaces that would ease the task of extending its module's functionality in the future.
+Due to the warning-related compiler flags, GCC will report non harmful warnings; specifically, _unused parameter_ warnings. These unused parameters have been left this way on purpose, in order to define more comprehensive function interfaces that would ease the task of extending its module's functionality in the future.
 
 Therefore, you may just ignore this kind of warnings without any problems.
 
@@ -63,7 +63,7 @@ Once compiled, you can use Delta just like any other compiler:
 ./delta <source file>
 ```
 
-As previosly said, this project is focused on compiling a subset of the D language. In particular, Delta will be able to parse any of the source files that can be found in `delta/test`.
+As previosly said, this project is focused on compiling a subset of the D language. In particular, Delta will be able to parse any of the source files that can be found in `delta/test/source_files`.
 
 The only module of the compiler that has been implemented for the time being is the lexical analyzer. Therefore, Delta will just output every lexical component that it can recognize in the given source file.
 
