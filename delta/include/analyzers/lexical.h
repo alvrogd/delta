@@ -126,13 +126,31 @@ int d_lexical_analyzer_prepare_for_parsing(
  *  take care of initializing its corresponding entry in the symbol table.
  * 
  * @param[in,out] lexical_analyzer The lexical analyzer.
- * @param[out] lexical_analyzer Pointer to a struct d_lexical_analyzer to
- *                              which the lexical component's data will be
- *                              written.
+ * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
+ *                               which the lexical component's data will be
+ *                               written.
  *
  * @return 0 if successful, any other value otherwise.
  */
 int d_lexical_analyzer_get_next_lexical_comp(
+    struct d_lexical_analyzer *lexical_analyzer,
+    struct d_lexical_component *lexical_component
+);
+
+
+/**
+ * @brief Shows the specified lexical component.
+ *
+ * @details
+ *  Prints out which category the given lexical component belongs to, as well
+ *  as its lexeme, if any (for keywords and identifiers).
+ * 
+ * @param[in] lexical_analyzer The lexical analyzer.
+ * @param[in] lexical_component The lexical component.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_lexical_analyzer_show_lexical_comp(
     struct d_lexical_analyzer *lexical_analyzer,
     struct d_lexical_component *lexical_component
 );
@@ -148,8 +166,8 @@ int d_lexical_analyzer_get_next_lexical_comp(
  *  attributes.
  * 
  * @param[in,out] lexical_analyzer The lexical analyzer.
- * @param[in,out] lexical_analyzer Pointer to the lexical component that will
- *                                 be freed.
+ * @param[in,out] lexical_component Pointer to the lexical component that will
+ *                                  be freed.
  *
  * @return 0 if successful, any other value otherwise.
  */

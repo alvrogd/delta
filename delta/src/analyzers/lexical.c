@@ -2099,6 +2099,65 @@ int d_lexical_analyzer_destroy_lexical_com(
 
 
 /**
+ * @brief Implementation of lexical.h/d_lexical_analyzer_show_lexical_comp
+ */
+int d_lexical_analyzer_show_lexical_comp(
+    struct d_lexical_analyzer *lexical_analyzer,
+    struct d_lexical_component *lexical_component
+)
+{
+    if(lexical_analyzer == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_show_lexical_comp",
+                               "'lexical_analyzer'");
+        return -1;
+    }
+
+    if(lexical_component == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.c",
+                               "d_lexical_analyzer_show_lexical_comp",
+                               "'lexical_component'");
+        return -1;
+    }
+
+
+    printf("<%s", d_lc_to_string(lexical_component->category));
+
+
+    // The lexeme will be stored as its attribute, if any
+    if(lexical_component->attributes != NULL) {
+
+        // If its attribute is its lexeme
+        if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
+           D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
+
+            printf(", %s", (const char *) lexical_component->attributes);
+        }
+
+        // If its attribute is a pointer to its entry in the symbol table
+        else if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
+                    D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
+                
+                lexical_component->category / D_LC_DISTANCE_CATEGORY ==
+                    D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
+
+            printf(", %s",
+                ((struct d_symbol_table_entry *)
+                    lexical_component->attributes)->lexeme);
+        }
+    }
+
+
+    printf(">\n");
+
+
+    return 0;
+}
+
+
+/**
  * @brief Implementation of lexical.h/d_lexical_analyzer_destroy
  */
 int d_lexical_analyzer_destroy(

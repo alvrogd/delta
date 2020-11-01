@@ -58,9 +58,25 @@ int main(int argc, char *argv[])
 
     /* Input file parsing */
 
+    // Showing what keywords the symbol table contains due to its
+    // initialization
+    if(d_symbol_table_show(symbol_table) != 0) {
+        exit(EXIT_FAILURE);
+    }
+
     // Running the syntactic analyzer, which will call by itself the lexical
     // analyzer
-    d_syntactic_analyzer_parse(syntactic_analyzer);
+    if(d_syntactic_analyzer_parse(syntactic_analyzer) != 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    printf("\n");
+
+    // Showing once again the keywords, as well as any identifiers that may
+    // have been registered while parsing
+    if(d_symbol_table_show(symbol_table) != 0) {
+        exit(EXIT_FAILURE);
+    }
 
 
     /* Clean up */

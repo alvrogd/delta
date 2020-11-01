@@ -214,6 +214,44 @@ int d_symbol_table_add(
 
 
 /**
+ * @brief Implementation of symbol_table.h/d_symbol_table_show
+ */
+int d_symbol_table_show(
+    struct d_symbol_table *symbol_table
+)
+{
+    struct d_symbol_table_entry *current_entry;
+    struct d_symbol_table_entry *tmp;
+
+
+    if(symbol_table == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_show",
+                               "'symbol_table'");
+        return -1;
+    }
+
+
+    printf("<SYMBOL_TABLE>\n");
+
+    // This iteration procedure is directly taken from the library's
+    // reference
+    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+
+        printf("\t<SYMBOL_TABLE_ENTRY, %s, %s>\n",
+               d_lc_to_string(current_entry->lexical_component),
+               current_entry->lexeme);
+    }
+
+    printf("\n");
+
+
+    return 0;
+}
+
+
+/**
  * @brief Implementation of symbol_table.h/d_symbol_table_destroy
  */
 int d_symbol_table_destroy(

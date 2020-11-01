@@ -123,6 +123,22 @@ int d_symbol_table_add(
 
 
 /**
+ * @brief Shows a symbol table.
+ *
+ * @details
+ *  Shows the specified symbol table. That is, this function prints all of its
+ *  entries, telling apart identifiers from keywords.
+ *
+ * @param[in] symbol_table The symbol table.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_symbol_table_show(
+    struct d_symbol_table *symbol_table
+);
+
+
+/**
  * @brief Destroys a symbol table.
  *
  * @details
