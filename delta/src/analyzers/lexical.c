@@ -1547,10 +1547,19 @@ void _d_lexical_analyzer_run_automata(
 
     if(d_io_system_is_eof(lexical_analyzer->io_system)) {
 
-        d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
-                               "_d_lexical_analyzer_run_automata",
-                               "finite automata could not reach a final "
-                               "state");
+        // This trick avoids false error reporting when reaching EOF while
+        // scanning whitespace (\n, spaces...)
+        if(transition_function == _d_lexical_analyzer_automata_whitespace) {
+            lexical_component->category = D_LC_WHITESPACE;
+        }
+
+        else {
+            d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
+                    "_d_lexical_analyzer_run_automata",
+                    "finite automata could not reach a final "
+                    "state");
+        }
+
         continue_parsing = 0;
     }
 
@@ -1671,10 +1680,20 @@ void _d_lexical_analyzer_run_automata(
         /* 4. Checking if the parsing process may continue */
         if(d_io_system_is_eof(lexical_analyzer->io_system)) {
 
-            d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
-                                   "_d_lexical_analyzer_run_automata",
-                                   "finite automata could not reach a final "
-                                   "state");
+            // This trick avoids false error reporting when reaching EOF while
+            // scanning whitespace (\n, spaces...)
+            if(transition_function ==
+                   _d_lexical_analyzer_automata_whitespace) {
+                lexical_component->category = D_LC_WHITESPACE;
+            }
+
+            else {
+                d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.c",
+                        "_d_lexical_analyzer_run_automata",
+                        "finite automata could not reach a final "
+                        "state");
+            }
+
             continue_parsing = 0;
         }
     }
@@ -1953,7 +1972,7 @@ int d_lexical_analyzer_get_next_lexical_comp(
 
                     _d_lexical_analyzer_run_automata(lexical_analyzer,
                                                      lexical_component,
-                                                     _d_lexical_analyzer_automata_whitespace,
+                                      _d_lexical_analyzer_automata_whitespace,
                                                      0);
                 }
 
@@ -2005,7 +2024,8 @@ int d_lexical_analyzer_get_next_lexical_comp(
     // analyzer will try to get the next component that will actually be
     // meaninful during the compilation process
     if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
-       D_LC_WHITESPACE / D_LC_DISTANCE_CATEGORY) {
+           D_LC_WHITESPACE / D_LC_DISTANCE_CATEGORY &&
+       !d_io_system_is_eof(lexical_analyzer->io_system)) {
 
         #ifdef D_DEBUG
         printf("[lexical_analyzer][get next component] Last comp. was "
