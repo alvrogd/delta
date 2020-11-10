@@ -77,10 +77,15 @@
 #define D_ERR_LEX_LITERALS_STRINGS 2330
 #define D_ERR_LEX_LITERALS_STRING_EMPTY 2331
 #define D_ERR_LEX_LITERALS_STRING_UNSUPPORTED_ESCAPE 2332 // Expected...
+#define D_ERR_LEX_LITERALS_STRING_EOF 2333 // Expected...
 
 // Subcategory: operators errors
 #define D_ERR_LEX_OPERATORS 2400
 #define D_ERR_LEX_OPERATORS_UNSUPPORTED 2401 // Expected ...
+
+// Subcategory: whitespace errors
+#define D_ERR_LEX_WHITESPACE 2600
+#define D_ERR_LEX_WHITESPACE_COMMENT_EOF 2601
 
 
 /* Category: user errors */

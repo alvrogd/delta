@@ -31,39 +31,17 @@ struct d_syntactic_analyzer;
 
 
 /**
- * @brief Initializes a syntactic analyzer.
- *
- * @param[out] syntactic_analyzer Reference to the pointer where the address
- *                                of the new syntactic analyzer will be
- *                                stored.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Globally accessible syntactic analyzer that will be used.
  */
-int d_syntactic_analyzer_initialize(
-    struct d_syntactic_analyzer **syntactic_analyzer
-);
+struct d_syntactic_analyzer *syntactic_analyzer;
 
 
 /**
- * @brief The syntactic analyzer prepares to parse a certain source file.
- * 
- * @details
- *  The syntactic analyzer is pointed which I/O system, symbol table and
- *  lexical analyzer to use in order to be able to parse a source file.
- *
- * @param[in,out] syntactic_analyzer The syntactic analyzer.
- * @param[in] io_system The I/O system.
- * @param[in] symbol_table The symbol table.
- * @param[in] lexical_analyzer The lexical analyzer.
+ * @brief Initializes the syntactic analyzer.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_syntactic_analyzer_prepare_for_parsing(
-    struct d_syntactic_analyzer *syntactic_analyzer,
-    struct d_io_system *io_system,
-    struct d_symbol_table *symbol_table,
-    struct d_lexical_analyzer *lexical_analyzer
-);
+int d_syntactic_analyzer_initialize();
 
 
 /**
@@ -74,26 +52,17 @@ int d_syntactic_analyzer_prepare_for_parsing(
  *  lexical components that are present in the input file, while showing them
  *  through the standard output.
  *
- * @param[in,out] syntactic_analyzer The syntactic analyzer.
- *
  * @return 0 if successful, any other value otherwise.
  */
-int d_syntactic_analyzer_parse(
-    struct d_syntactic_analyzer *syntactic_analyzer
-);
+int d_syntactic_analyzer_parse();
 
 
 /**
- * @brief Destroys a syntactic analyzer.
- *
- * @param[out] syntactic_analyzer Reference to the pointer where the address
- *                                of the syntactic analyzer can be found.
+ * @brief Destroys the syntactic analyzer.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_syntactic_analyzer_destroy(
-    struct d_syntactic_analyzer **syntactic_analyzer
-);
+int d_syntactic_analyzer_destroy();
 
 
 #endif

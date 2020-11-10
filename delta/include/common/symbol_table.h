@@ -63,20 +63,21 @@ struct d_symbol_table_entry {
 
 
 /**
- * @brief Initializes a symbol table.
+ * @brief Globally accessible symbol table that will be used.
+ */
+struct d_symbol_table *symbol_table;
+
+
+/**
+ * @brief Initializes the symbol table.
  *
  * @details
- *  Initializes a symbol table, filling it with all the reserved keywords in 
+ *  Initializes the symbol table, filling it with all the reserved keywords in 
  *  keywords.h
- *
- * @param[out] symbol_table Reference to the pointer where the address of the
- *                          new symbol table will be stored.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_symbol_table_initialize(
-    struct d_symbol_table **symbol_table
-);
+int d_symbol_table_initialize();
 
 
 /**
@@ -86,13 +87,11 @@ int d_symbol_table_initialize(
  *  Searches in the symbol table an entry identified by the given key, and
  *  returning it if found.
  *
- * @param[in,out] symbol_table The symbol table.
  * @param[in] '\0' terminated string which represents the key of the entry.
  *
  * @return Pointer to the requested entry, or NULL if not found.
  */
 struct d_symbol_table_entry *d_symbol_table_search(
-    struct d_symbol_table *symbol_table,
     const unsigned char* key
 );
 
@@ -117,41 +116,31 @@ struct d_symbol_table_entry *d_symbol_table_search(
  * @return 0 if successful, 1 if the key is duped, any other value otherwise.
  */
 int d_symbol_table_add(
-    struct d_symbol_table *symbol_table,
     struct d_symbol_table_entry *entry
 );
 
 
 /**
- * @brief Shows a symbol table.
+ * @brief Shows the symbol table.
  *
  * @details
- *  Shows the specified symbol table. That is, this function prints all of its
- *  entries, telling apart identifiers from keywords.
- *
- * @param[in] symbol_table The symbol table.
- *
+ *  Shows the symbol table. That is, this function prints all of its entries
+ *  telling apart identifiers from keywords.
+ * *
  * @return 0 if successful, any other value otherwise.
  */
-int d_symbol_table_show(
-    struct d_symbol_table *symbol_table
-);
+int d_symbol_table_show();
 
 
 /**
- * @brief Destroys a symbol table.
+ * @brief Destroys the symbol table.
  *
  * @details
- *  Destroys the specified symbol table, as well as all of its entries.
- *
- * @param[out] symbol_table Reference to the pointer where the address of the
- *                          symbol table can be found.
+ *  Destroys the symbol table, as well as all of its entries.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_symbol_table_destroy(
-    struct d_symbol_table **symbol_table
-);
+int d_symbol_table_destroy();
 
 
 #endif //D_SYMBOL_TABLE

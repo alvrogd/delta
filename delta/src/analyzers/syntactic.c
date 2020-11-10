@@ -16,20 +16,19 @@
 
 
 /**
+ * @brief Globally accessible syntactic analyzer that will be used.
+ */
+syntactic_analyzer = NULL;
+
+
+/**
  * @brief Represents a syntactic analyzer.
  *
  * @details
  *  Data type which represents a syntactic analyzer.
  */
 struct d_syntactic_analyzer {
-    /** Which I/O system will provide the source file that will be
-        analyzed. */
-    struct d_io_system *io_system;
-    /** Which symbol table will be used during the compilation process. */
-    struct d_symbol_table *symbol_table;
-    /** Which lexical analyzer will provide all the lexical components in the
-        input file. */
-    struct d_lexical_analyzer *lexical_analyzer;
+    // Empty as of now
 };
 
 
@@ -40,17 +39,8 @@ int d_syntactic_analyzer_initialize(
     struct d_syntactic_analyzer **syntactic_analyzer
 )
 {
-    if(syntactic_analyzer == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
-                               "d_syntactic_analyzer_initialize",
-                               "'syntactic_analyzer'");
-        return -1;
-    }
-
-
     // The structure that represents the syntactic analyzer must be allocated
-    if((*syntactic_analyzer = malloc(sizeof(struct d_syntactic_analyzer))) ==
+    if((syntactic_analyzer = malloc(sizeof(struct d_syntactic_analyzer))) ==
        NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED, "syntactic.c",
@@ -58,63 +48,6 @@ int d_syntactic_analyzer_initialize(
                                "'malloc' for struct d_syntactic_analyzer");
         return -1;
     }
-
-    // The I/O system, symbol table and lexical analyzer will be provided
-    // later on.
-
-
-    return 0;
-}
-
-
-/**
- * @brief Implementation of
- *        syntactic.h/d_syntactic_analyzer_prepare_for_parsing
- */
-int d_syntactic_analyzer_prepare_for_parsing(
-    struct d_syntactic_analyzer *syntactic_analyzer,
-    struct d_io_system *io_system,
-    struct d_symbol_table *symbol_table,
-    struct d_lexical_analyzer *lexical_analyzer
-)
-{
-    if(syntactic_analyzer == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
-                               "d_syntactic_analyzer_prepare_for_parsing",
-                               "'syntactic_analyzer'");
-        return -1;
-    }
-
-    if(io_system == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
-                               "d_syntactic_analyzer_prepare_for_parsing",
-                               "'io_system'");
-        return -1;
-    }
-
-    if(symbol_table == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
-                               "d_syntactic_analyzer_prepare_for_parsing",
-                               "'symbol_table'");
-        return -1;
-    }
-
-    if(lexical_analyzer == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "syntactic.c",
-                               "d_syntactic_analyzer_prepare_for_parsing",
-                               "'lexical_analyzer'");
-        return -1;
-    }
-
-
-    // The referenced utilities just need to be stored in the lexical analyzer
-    syntactic_analyzer->io_system = io_system;
-    syntactic_analyzer->symbol_table = symbol_table;
-    syntactic_analyzer->lexical_analyzer = lexical_analyzer;
 
 
     return 0;
@@ -124,9 +57,7 @@ int d_syntactic_analyzer_prepare_for_parsing(
 /**
  * @brief Implementation of syntactic.h/d_syntactic_analyzer_parse
  */
-int d_syntactic_analyzer_parse(
-    struct d_syntactic_analyzer *syntactic_analyzer
-)
+int d_syntactic_analyzer_parse()
 {
     struct d_lexical_component tmp_lexical_component;
 
@@ -143,7 +74,7 @@ int d_syntactic_analyzer_parse(
     // Printing out all lexical components:
     //   - String that represents the category.
     //   - Corresponding lexeme if it had to be saved
-    while(!d_io_system_is_eof(syntactic_analyzer->io_system)) {
+    while(!d_io_system_is_eof(syntactic_analyzer->io_system)) { // TODO change
 
         if(d_lexical_analyzer_get_next_lexical_comp(
                                          syntactic_analyzer->lexical_analyzer,
@@ -168,9 +99,7 @@ int d_syntactic_analyzer_parse(
 /**
  * @brief Implementation of syntactic.h/d_syntactic_analyzer_destroy
  */
-int d_syntactic_analyzer_destroy(
-    struct d_syntactic_analyzer **syntactic_analyzer
-)
+int d_syntactic_analyzer_destroy()
 {
     if(syntactic_analyzer == NULL) {
 
@@ -182,7 +111,7 @@ int d_syntactic_analyzer_destroy(
 
 
     // The structure that represents the syntactic analyzer needs to be freed
-    free(*syntactic_analyzer);
+    free(syntactic_analyzer);
 
 
     return 0;

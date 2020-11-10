@@ -24,6 +24,17 @@
  *
  *  This will also be reproduced for each category's subcategories, distancing
  *  them by hundreds.
+ *
+ *  A lexical component will be presented as a struct d_lexical_component,
+ *  which contains:
+ *
+ *    - The integer that represents the lexical component's category.
+ *
+ *    - A void * pointer to its attributes.
+ *        - If the component is a literal, it is a char * to its lexeme.
+ *        - If the component is an identifier, it is a
+ *          struct d_symbol_table_entry *, which already contains the lexeme
+ *          (see common/symbol_table.h).
  */
 
 
@@ -104,6 +115,34 @@
 #define D_LC_WHITESPACE 6000
 #define D_LC_WHITESPACE_COMMENT 6001
 #define D_LC_WHITESPACE_EOL 6002
+
+
+/* Category: EOF */
+#define D_LC_EOF 7000
+
+
+/**
+ * @brief Represents a lexical component.
+ *
+ * @details
+ *  Opaque data type which represents a lexical analyzer.
+ */
+struct d_lexical_component {
+    /** Integer that represents the (sub)category to which the lexical
+        component belongs. */
+    int category;
+    /** Any attributes that the lexical component may carry along:
+          
+          - char * to its lexeme if the component is a literal.
+              (must be manually freed once de component is no longer needed,
+               using the d_lexical_analyzer_destroy_lexical_comp function)
+              
+          - struct d_symbol_table_entry * if the component is an identifier.
+              (there is no need to free it as the symbol table is responsible
+               of it)
+    */
+    const void *attributes;
+};
 
 
 /**

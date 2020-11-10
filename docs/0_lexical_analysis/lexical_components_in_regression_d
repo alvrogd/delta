@@ -107,7 +107,7 @@ must carry along its value.
   - 8_000
 
 They can be recognized using the following regular expressions (for binary and
-hexadecimal integers respectively):
+decimal integers respectively):
 
   0(b | B){(0 | 1 | _)*(0 | 1)(0 | 1 | _)*}
   digit(_ | digit)*

@@ -68,10 +68,17 @@ const char *d_errors_get_template(
         case D_ERR_LEX_LITERALS_STRING_UNSUPPORTED_ESCAPE:
             return "as of now, the only supported escape sequences are ";
 
+        case D_ERR_LEX_LITERALS_STRING_EOF:
+            return "unclosed string, reached EOF";
+
         // Subcategory: operators errors
         case D_ERR_LEX_OPERATORS_UNSUPPORTED:
             return "as of now, the only two supported operators starting by "
                    "+ are [..]";
+
+        // Subcategory: whitespace errors
+        case D_ERR_LEX_WHITESPACE_COMMENT_EOF:
+            return "unclosed comment, reached EOF";
 
 
         /* Category: user errors */

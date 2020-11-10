@@ -34,11 +34,15 @@ struct d_symbol_table {
 
 
 /**
+ * @brief Globally accessible symbol table that will be used.
+ */
+symbol_table = NULL;
+
+
+/**
  * @brief Implementation of symbol_table.h/d_symbol_table_initialize
  */
-int d_symbol_table_initialize(
-    struct d_symbol_table **symbol_table
-)
+int d_symbol_table_initialize()
 {
     size_t i = 0;
     size_t keyword_count = sizeof(D_LANG_KEYWORDS) /
@@ -48,19 +52,11 @@ int d_symbol_table_initialize(
     unsigned char *tmp_entry_lexeme = NULL;
 
 
-    if(symbol_table == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
-                               "symbol_table.c", "d_symbol_table_initialize",
-                               "'symbol_table'");
-        return -1;
-    }
-
     // The structure that represents the symbol table gets initialized, as
     // well as all its only member, which must point to NULL in order for the
     // library to properly work
 
-    if((*symbol_table = malloc(sizeof(struct d_symbol_table))) == NULL) {
+    if((symbol_table = malloc(sizeof(struct d_symbol_table))) == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                "symbol_table.c", "d_symbol_table_initialize",
@@ -68,7 +64,7 @@ int d_symbol_table_initialize(
         return -1;
     }
 
-    (*symbol_table)->table = NULL;
+    symbol_table->table = NULL;
 
     // And the symbol table initialization will be completed once all of the
     // registered keywords are put into it
@@ -91,7 +87,7 @@ int d_symbol_table_initialize(
 
         tmp_entry.lexical_component = D_LC_KEYWORD;
 
-        d_symbol_table_add(*symbol_table, &tmp_entry);
+        d_symbol_table_add(symbol_table, &tmp_entry);
 
         #ifdef DEBUG
         printf("[symbol_table][initialize] Added kwd.: %s\n",
@@ -104,11 +100,11 @@ int d_symbol_table_initialize(
     printf("[symbol_table][initialize] Added kwd.: %s\n",
             tmp_entry.lexeme);
     printf("[symbol_table][initialize] Kwd. \"int\" present: %d\n",
-           d_symbol_table_search(*symbol_table, "int") != NULL);
+           d_symbol_table_search(symbol_table, "int") != NULL);
     printf("[symbol_table][initialize] Kwd. \"potato\" present: %d\n",
-           d_symbol_table_search(*symbol_table, "potato") != NULL);
+           d_symbol_table_search(symbol_table, "potato") != NULL);
     printf("[symbol_table][initialize] Kwd. \"string\" present: %d\n",
-           d_symbol_table_search(*symbol_table, "string") != NULL);
+           d_symbol_table_search(symbol_table, "string") != NULL);
     #endif
 
 
@@ -120,7 +116,6 @@ int d_symbol_table_initialize(
  * @brief Implementation of symbol_table.h/d_symbol_table_search
  */
 struct d_symbol_table_entry *d_symbol_table_search(
-    struct d_symbol_table *symbol_table,
     const unsigned char* key
 )
 {
@@ -156,7 +151,6 @@ struct d_symbol_table_entry *d_symbol_table_search(
  * @brief Implementation of symbol_table.h/d_symbol_table_add
  */
 int d_symbol_table_add(
-    struct d_symbol_table *symbol_table,
     struct d_symbol_table_entry *entry
 )
 {
@@ -216,9 +210,7 @@ int d_symbol_table_add(
 /**
  * @brief Implementation of symbol_table.h/d_symbol_table_show
  */
-int d_symbol_table_show(
-    struct d_symbol_table *symbol_table
-)
+int d_symbol_table_show()
 {
     struct d_symbol_table_entry *current_entry;
     struct d_symbol_table_entry *tmp;
@@ -254,9 +246,7 @@ int d_symbol_table_show(
 /**
  * @brief Implementation of symbol_table.h/d_symbol_table_destroy
  */
-int d_symbol_table_destroy(
-    struct d_symbol_table **symbol_table
-)
+int d_symbol_table_destroy()
 {
     struct d_symbol_table_entry *current_entry;
     struct d_symbol_table_entry *tmp;
@@ -273,10 +263,10 @@ int d_symbol_table_destroy(
     
     // This "all deletion" procedure is directly taken from the library's
     // reference
-    HASH_ITER(hh, (*symbol_table)->table, current_entry, tmp) {
+    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {
 
         // Deletes the first entry and proceeds to the next one
-        HASH_DEL((*symbol_table)->table, current_entry);
+        HASH_DEL(symbol_table->table, current_entry);
 
         // Each internally-managed entry must be properly freed
         free((unsigned char *) current_entry->lexeme);
@@ -284,7 +274,7 @@ int d_symbol_table_destroy(
     }
 
     // The symbol table structure itself must also be freed
-    free(*symbol_table);
+    free(symbol_table);
 
 
     return 0;
