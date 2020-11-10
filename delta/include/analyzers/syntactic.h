@@ -16,7 +16,6 @@
 #define D_SYNTACTIC_ANALYZER
 
 
-#include "io/io_system.h"
 #include "common/symbol_table.h"
 #include "analyzers/lexical.h"
 

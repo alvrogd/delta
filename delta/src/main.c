@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "io/io_system.h"
 #include "common/symbol_table.h"
 #include "analyzers/lexical.h"
 #include "analyzers/syntactic.h"

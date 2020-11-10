@@ -36,7 +36,7 @@ struct d_symbol_table {
 /**
  * @brief Globally accessible symbol table that will be used.
  */
-symbol_table = NULL;
+struct d_symbol_table *symbol_table = NULL;
 
 
 /**
@@ -87,7 +87,7 @@ int d_symbol_table_initialize()
 
         tmp_entry.lexical_component = D_LC_KEYWORD;
 
-        d_symbol_table_add(symbol_table, &tmp_entry);
+        d_symbol_table_add(&tmp_entry);
 
         #ifdef DEBUG
         printf("[symbol_table][initialize] Added kwd.: %s\n",
@@ -175,7 +175,7 @@ int d_symbol_table_add(
 
 
     // No entry with the same key can be already present in the table
-    if(d_symbol_table_search(symbol_table, entry->lexeme) != NULL) {
+    if(d_symbol_table_search(entry->lexeme) != NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "symbol_table.c",
                                "d_symbol_table_add", "key already present");

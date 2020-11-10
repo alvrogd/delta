@@ -18,7 +18,7 @@
 /**
  * @brief Globally accessible syntactic analyzer that will be used.
  */
-syntactic_analyzer = NULL;
+struct d_syntactic_analyzer *syntactic_analyzer = NULL;
 
 
 /**
@@ -35,9 +35,7 @@ struct d_syntactic_analyzer {
 /**
  * @brief Implementation of syntactic.h/d_syntactic_analyzer_initialize
  */
-int d_syntactic_analyzer_initialize(
-    struct d_syntactic_analyzer **syntactic_analyzer
-)
+int d_syntactic_analyzer_initialize()
 {
     // The structure that represents the syntactic analyzer must be allocated
     if((syntactic_analyzer = malloc(sizeof(struct d_syntactic_analyzer))) ==
@@ -74,21 +72,14 @@ int d_syntactic_analyzer_parse()
     // Printing out all lexical components:
     //   - String that represents the category.
     //   - Corresponding lexeme if it had to be saved
-    while(!d_io_system_is_eof(syntactic_analyzer->io_system)) { // TODO change
+    d_lexical_analyzer_get_next_lexical_comp(&tmp_lexical_component);
 
-        if(d_lexical_analyzer_get_next_lexical_comp(
-                                         syntactic_analyzer->lexical_analyzer,
-                                                    &tmp_lexical_component)
-           == 0)
-        {
-            d_lexical_analyzer_show_lexical_comp(
-                                         syntactic_analyzer->lexical_analyzer,
-                                                 &tmp_lexical_component);
+    while(tmp_lexical_component.category != D_LC_EOF) {
 
-            d_lexical_analyzer_destroy_lexical_com(
-                                         syntactic_analyzer->lexical_analyzer,
-                                                   &tmp_lexical_component);
-        }
+        d_lexical_analyzer_show_lexical_comp(&tmp_lexical_component);
+        d_lexical_analyzer_destroy_lexical_com(&tmp_lexical_component);
+        
+        d_lexical_analyzer_get_next_lexical_comp(&tmp_lexical_component);
     }
 
 
