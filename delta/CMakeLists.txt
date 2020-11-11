@@ -11,6 +11,7 @@ find_package(FLEX)
 # an auxiliary one
 FLEX_TARGET(
     deltalex src/analyzers/lexical.l ${CMAKE_CURRENT_BINARY_DIR}/lexical.c
+    COMPILE_FLAGS "-Cf"
 )
 
 
