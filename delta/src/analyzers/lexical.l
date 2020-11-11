@@ -12,11 +12,11 @@
 /** 1-byte chars. */
 %option 8bit
 
-/** The current lexeme will be a character pointer (= no max. length). */
-%option pointer
-
 /** We will just parse a single source file. */
 %option noyywrap
+
+/** The current lexeme will be a character pointer (= no max. length). */
+%option pointer
 
 
 /* ═════════════════════════ Exclusive start states ═══════════════════════ */
@@ -70,6 +70,7 @@ PRINT   [ -²]
        section */
     int _d_lexical_analyzer_identifer_recognized();
     int _d_lexical_analyzer_literal_recognized();
+    int _d_lexical_analyzer_literal_count_eol();
 
 
     /** How many '\n' have been seen in the input file that is being
@@ -78,6 +79,11 @@ PRINT   [ -²]
 
     /** How many characters have been seen in the current line */
     size_t current_column;
+
+    /** Each time that a lexical component is recognized, its length will be
+        added to the current col count. */
+    #define YY_USER_ACTION { current_column += yyleng; }
+
 
     /** Because a standard finite automata will not be able to detect nested
         comments */
@@ -165,12 +171,13 @@ PRINT   [ -²]
 
  /* Double quoted strings */
 
-\"\"                            { d_errors_parse_show(3,
-                                                      D_ERR_LEX_LITERALS_STRING_EMPTY,
-                                                      current_line, current_column); }
+\"\"                                { d_errors_parse_show(3,
+                                                          D_ERR_LEX_LITERALS_STRING_EMPTY,
+                                                          current_line, current_column); }
 
-\"({PRINT}|\\[abfnrtvx])+\"     { _d_lexical_analyzer_literal_recognized();
-                                  return D_LC_LITERAL_STR; }
+\"({PRINT}|\\([abfnrtuUvx])?)+\"    { _d_lexical_analyzer_literal_recognized();
+                                      _d_lexical_analyzer_literal_count_eol();
+                                      return D_LC_LITERAL_STR; }
 
 
  /* Identifiers */
@@ -388,6 +395,48 @@ int _d_lexical_analyzer_literal_recognized()
     lex_component_attributes = lexeme;
 
     
+    return 0;
+}
+
+
+/**
+ * @brief Checks if any '\n's are present in the last stored lexeme.
+ *
+ * @details
+ *  Checks if any '\n's are present in the last stored lexeme. This action is
+ *  required when recognizing double quoted strings, as they may include
+ *  newlines which must be manually counted in order to properly update the
+ *  current line and col counters.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int _d_lexical_analyzer_literal_count_eol()
+{
+    size_t eol_count = 0;
+    
+    // Starts right from the beginning of the lexeme
+    const char *last_eol = (const char *)lex_component_attributes;
+    const char *tmp = NULL;
+
+
+    while((tmp = strchr(last_eol, '\n')) != NULL) {
+        ++eol_count;
+        last_eol = tmp;
+    }
+
+    
+    current_line += eol_count;
+
+    if(eol_count > 0) {
+        current_column = 1;
+    }
+
+    // The current line will have has many characters as there are from the
+    // last eol to the end of the lexeme
+    current_column += yyleng -
+                      (last_eol - (const char *)lex_component_attributes);
+
+
     return 0;
 }
 
