@@ -68,9 +68,17 @@ PRINT   [ -²]
 
     /* Declaration of some private fuctions that will be used in the rules
        section */
-    int _d_lexical_analyzer_identifer_recognized();
-    int _d_lexical_analyzer_literal_recognized();
-    int _d_lexical_analyzer_literal_count_eol();
+    int _d_lexical_analyzer_identifer_recognized(
+        struct d_lexical_component *lexical_component
+    );
+
+    int _d_lexical_analyzer_literal_recognized(
+        struct d_lexical_component *lexical_component
+    );
+
+    int _d_lexical_analyzer_literal_count_eol(
+        struct d_lexical_component *lexical_component
+    );
 
 
     /** How many '\n' have been seen in the input file that is being
@@ -89,8 +97,10 @@ PRINT   [ -²]
         comments */
     size_t active_nested_comments;
 
-    /** To store any possible attributes that a lexical component may have. */
-    const void *lex_component_attributes;
+
+    /** The default yylex() function is overriden as the lexical analyzer
+        needs to be able to receive custom parameters. */
+    #define YY_DECL int d_lexical_analyzer_get_next_lexical_comp(struct d_lexical_component *lexical_component)
 %}
 
 
@@ -101,27 +111,27 @@ PRINT   [ -²]
 
  /* ** 1-char components ** */
 
-"-"   { return D_LC_OP_ARITHMETIC_MINUS; }
-"*"   { return D_LC_OP_ARITHMETIC_TIMES; }
-"/"   { return D_LC_OP_ARITHMETIC_DIV; }
-"<"   { return D_LC_OP_RELATIONAL_LESS_THAN; }
-"="   { return D_LC_OP_ASSIGNMENT_ASSIGN; }
-"."   { return D_LC_OP_ACCESS_DOT; }
-"["   { return D_LC_OP_ACCESS_L_BRACKET; }
-"]"   { return D_LC_OP_ACCESS_R_BRACKET; }
-","   { return D_LC_SEPARATOR_COMMA; }
-";"   { return D_LC_SEPARATOR_SEMICOL; }
-"("   { return D_LC_SEPARATOR_L_PARENTHESIS; }
-")"   { return D_LC_SEPARATOR_R_PARENTHESIS; }
-"{"   { return D_LC_SEPARATOR_L_CURLY; }
-"}"   { return D_LC_SEPARATOR_R_CURLY; }
+"-"   { lexical_component->category = D_LC_OP_ARITHMETIC_MINUS; return 0; }
+"*"   { lexical_component->category = D_LC_OP_ARITHMETIC_TIMES; return 0; }
+"/"   { lexical_component->category = D_LC_OP_ARITHMETIC_DIV; return 0; }
+"<"   { lexical_component->category = D_LC_OP_RELATIONAL_LESS_THAN; return 0; }
+"="   { lexical_component->category = D_LC_OP_ASSIGNMENT_ASSIGN; return 0; }
+"."   { lexical_component->category = D_LC_OP_ACCESS_DOT; return 0; }
+"["   { lexical_component->category = D_LC_OP_ACCESS_L_BRACKET; return 0; }
+"]"   { lexical_component->category = D_LC_OP_ACCESS_R_BRACKET; return 0; }
+","   { lexical_component->category = D_LC_SEPARATOR_COMMA; return 0; }
+";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }
+"("   { lexical_component->category = D_LC_SEPARATOR_L_PARENTHESIS; return 0; }
+")"   { lexical_component->category = D_LC_SEPARATOR_R_PARENTHESIS; return 0; }
+"{"   { lexical_component->category = D_LC_SEPARATOR_L_CURLY; return 0; }
+"}"   { lexical_component->category = D_LC_SEPARATOR_R_CURLY; return 0; }
 
 
  /* ** 2-char components ** */
 
-"++"    { return D_LC_OP_ARITHMETIC_INCREMENT; }
-"=="    { return D_LC_OP_RELATIONAL_EQUALS; }
-"+="    { return D_LC_OP_ASSIGNMENT_PLUS_ASSIGN; }
+"++"    { lexical_component->category = D_LC_OP_ARITHMETIC_INCREMENT; return 0; }
+"=="    { lexical_component->category = D_LC_OP_RELATIONAL_EQUALS; return 0; }
+"+="    { lexical_component->category = D_LC_OP_ASSIGNMENT_PLUS_ASSIGN; return 0; }
 
 
  /* ** Multiple-char components ** */
@@ -141,7 +151,8 @@ PRINT   [ -²]
 <COMMENT_BLOCK><<EOF>>          { d_errors_parse_show(3,
                                                       D_ERR_LEX_WHITESPACE_COMMENT_EOF,
                                                       current_line, current_column);
-                                                      return D_LC_EOF; }
+                                                      lexical_component->category = D_LC_EOF;
+                                                      return 0; }
 
 
  /* Comments, block & nested */
@@ -161,7 +172,8 @@ PRINT   [ -²]
 <COMMENT_NESTED><<EOF>>         { d_errors_parse_show(3,
                                                       D_ERR_LEX_WHITESPACE_COMMENT_EOF,
                                                       current_line, current_column);
-                                                      return D_LC_EOF; }
+                                                      lexical_component->category = D_LC_EOF;
+                                                      return 0; }
 
 
  /* Comments (single line) */
@@ -175,21 +187,24 @@ PRINT   [ -²]
                                                           D_ERR_LEX_LITERALS_STRING_EMPTY,
                                                           current_line, current_column); }
 
-\"({PRINT}|\\([abfnrtuUvx])?)+\"    { _d_lexical_analyzer_literal_recognized();
-                                      _d_lexical_analyzer_literal_count_eol();
-                                      return D_LC_LITERAL_STR; }
+\"({PRINT}|\\([abfnrtuUvx])?)+\"    { _d_lexical_analyzer_literal_recognized(lexical_component);
+                                      _d_lexical_analyzer_literal_count_eol(lexical_component);
+                                      lexical_component->category = D_LC_LITERAL_STR;
+                                      return 0; }
 
 
  /* Identifiers */
 
-({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { return _d_lexical_analyzer_identifer_recognized(); }
+({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { lexical_component->category = _d_lexical_analyzer_identifer_recognized(lexical_component);
+                                      return 0; }
 
 
 
  /* Numbers, binary integer */
 
-0[bB](_)*[01][01_]*                                     { _d_lexical_analyzer_literal_recognized();
-                                                          return D_LC_LITERAL_INT; }
+0[bB](_)*[01][01_]*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
+                                                          lexical_component->category = D_LC_LITERAL_INT;
+                                                          return 0; }
 
 0[bB](_)*[^01]({DIGIT}|{ALPHA}|_)*                      { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
@@ -206,8 +221,9 @@ PRINT   [ -²]
 
  /* Numbers, decimal integer */
 
-{DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized();
-                                                          return D_LC_LITERAL_INT; }
+{DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
+                                                          lexical_component->category = D_LC_LITERAL_INT;
+                                                          return 0; }
 
 {DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BAD,
@@ -222,14 +238,17 @@ PRINT   [ -²]
 
  /* Numbers, decimal float */
 
-{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(); 
-                                                                                                                          return D_LC_LITERAL_FP; }
+{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                          return 0; }
 
-\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                 { _d_lexical_analyzer_literal_recognized(); 
-                                                                                                                          return D_LC_LITERAL_FP; }
+\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                 { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                          return 0; }
 
-{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(); 
-                                                                                                                          return D_LC_LITERAL_FP; }
+{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                          return 0; }
 
 {FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
                                                                                                                           current_line, current_column,
@@ -270,7 +289,8 @@ PRINT   [ -²]
 
  /* ** EOF ** */
 
-<<EOF>>     { return D_LC_EOF; }
+<<EOF>>     { lexical_component->category = D_LC_EOF;
+              return 0; }
 
 
 %%
@@ -320,40 +340,6 @@ int d_lexical_analyzer_prepare_for_parsing(
     current_column = 1;
     active_nested_comments = 0;
 
-    lex_component_attributes = NULL;
-
-
-    return 0;
-}
-
-
-/**
- * @brief Implementation of lexical.h/d_lexical_analyzer_get_next_lexical_comp
- */
-int d_lexical_analyzer_get_next_lexical_comp(
-    struct d_lexical_component *lexical_component
-)
-{
-    if(lexical_component == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
-                               "lexical.l",
-                               "d_lexical_analyzer_get_next_lexical_comp",
-                               "'lexical_component'");
-        return -1;
-    }
-
-
-    // Flex takes care of recognizing the lexical component
-    lexical_component->category = yylex();
-
-    // Any associated attributes will have been stored while parsing
-    if(lex_component_attributes != NULL) {
-
-        lexical_component->attributes = lex_component_attributes;
-        lex_component_attributes = NULL;
-    }
-
 
     return 0;
 }
@@ -369,11 +355,17 @@ int d_lexical_analyzer_get_next_lexical_comp(
  *  category.
  *
  *  Specifically, the lexeme gets copied to a new string, which will be
- *  available in the "lex_component_attributes" pointer.
+ *  available in the "lexical_component->attributes" pointer.
+ *
+ * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
+ *                               which the lexical component's data will be
+ *                               written.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int _d_lexical_analyzer_literal_recognized()
+int _d_lexical_analyzer_literal_recognized(
+    struct d_lexical_component *lexical_component
+)
 {
     const unsigned char *lexeme = NULL;
     
@@ -392,7 +384,7 @@ int _d_lexical_analyzer_literal_recognized()
            lexeme);
     #endif
 
-    lex_component_attributes = lexeme;
+    lexical_component->attributes = lexeme;
 
     
     return 0;
@@ -408,14 +400,20 @@ int _d_lexical_analyzer_literal_recognized()
  *  newlines which must be manually counted in order to properly update the
  *  current line and col counters.
  *
+ * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
+ *                               which the lexical component's data will be
+ *                               written.
+ *
  * @return 0 if successful, any other value otherwise.
  */
-int _d_lexical_analyzer_literal_count_eol()
+int _d_lexical_analyzer_literal_count_eol(
+    struct d_lexical_component *lexical_component
+)
 {
     size_t eol_count = 0;
     
     // Starts right from the beginning of the lexeme
-    const char *last_eol = (const char *)lex_component_attributes;
+    const char *last_eol = (const char *)lexical_component->attributes;
     const char *tmp = NULL;
 
 
@@ -433,8 +431,8 @@ int _d_lexical_analyzer_literal_count_eol()
 
     // The current line will have has many characters as there are from the
     // last eol to the end of the lexeme
-    current_column += yyleng -
-                      (last_eol - (const char *)lex_component_attributes);
+    current_column += yyleng - (last_eol -
+                                 (const char *)lexical_component->attributes);
 
 
     return 0;
@@ -450,17 +448,23 @@ int _d_lexical_analyzer_literal_count_eol()
  *  lexical component). All identifiers need an entry in the symbol table.
  *
  *  Specifically, this entry will have the component's lexeme, and
- *  it will be available in the "lex_component_attributes" pointer.
+ *  it will be available in the "lexical_component->attributes" pointer.
  *
  *  It is worth noting that the identifier may actually be a keyword. If it
  *  were the case, its already present entry in the table will be retrieved,
  *  instead of creating a new one, and it will be also available in the
- *  "lex_component_attributes" pointer.
+ *  "lexical_component->attributes" pointer.
+ *
+ * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
+ *                               which the lexical component's data will be
+ *                               written.
  *
  * @return D_LC_IDENTIFIER if successful, D_LC_IDENTIFIER if the component
  *         turned out to be a keyword, any other value otherwise.
  */
-int _d_lexical_analyzer_identifer_recognized()
+int _d_lexical_analyzer_identifer_recognized(
+    struct d_lexical_component *lexical_component
+)
 {
     const unsigned char *lexeme = NULL;
     struct d_symbol_table_entry entry;
@@ -513,7 +517,7 @@ int _d_lexical_analyzer_identifer_recognized()
 
     // Anyways, if the component deserves an entry in the symbol
     // table, its attribute will always be a reference to that entry
-    lex_component_attributes = entry_in_table;
+    lexical_component->attributes = entry_in_table;
 
     
     return entry_in_table->lexical_component;
@@ -586,6 +590,9 @@ int d_lexical_analyzer_destroy_lexical_com(
     }
 
 
+    lexical_component->category = -1; // Gets invalidated
+
+
     if(lexical_component->attributes != NULL) {
 
         // If the component is a literal, its attribute is its lexeme
@@ -599,6 +606,9 @@ int d_lexical_analyzer_destroy_lexical_com(
         // Otherwise, its attribute must be a pointer to its entry in the
         // symbol table
         //   -> the symbol table will take care of it
+
+
+        lexical_component->attributes = NULL;  // Gets invalidated
     }
 
 
