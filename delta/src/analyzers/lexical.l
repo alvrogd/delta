@@ -35,9 +35,6 @@
 
 /* ══════════════════════════ Compilation Options ═════════════════════════ */
 
-/** Custom flex-generated files. */
-%option outfile="lexical.c"
-
 /** 1-byte chars. */
 %option 8bit
 
