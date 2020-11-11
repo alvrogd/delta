@@ -16,13 +16,21 @@ You will need to have a **development environment that supports the following te
 
 * GNU C Compiler.
 * CMake 3.0 or greater.
+* The Fast Lexical Analyzer (flex).
 
-Any recent Linux distribution should support them out of the box. If anything, you may have to manually install CMake. On Ubuntu, you would just need to run:
+Any recent Linux distribution should support them. You may have to manually install CMake and/or flex. On Ubuntu, you would just need to run:
 
 ```
 apt update
 apt install cmake
+apt install flex
 ```
+
+Specifically, this project was tested under:
+
+* GNU C Compiler 9.3.0
+* CMake 3.16.3
+* flex 2.6.4
 
 ### Compiling the project
 
@@ -49,11 +57,21 @@ cmake --build .
 
 And the Delta's executable file will be generated right in the `build` directory (the current one).
 
+It is worth noting that the flex's specification file (`src/analyzers/lexical.l`) must be translated to an actual source file in order to use it alongside Delta. CMake also takes care of this translation process. In fact, you may find that source file in your build directory (`build/lexical.c`) after issuing CMake.
+
 ### Regarding any warnings that show up during compilation
 
-Due to the warning-related compiler flags, GCC will report non harmful warnings; specifically, _unused parameter_ warnings. These unused parameters have been left this way on purpose, in order to define more comprehensive function interfaces that would ease the task of extending its module's functionality in the future.
+Due to the warning-related compiler flags, GCC will report non harmful warnings, which come from the source file that flex generates. Specifically, the following warnings should show up:
 
-Therefore, you may just ignore this kind of warnings without any problems.
+* _warning: "YY_BUF_SIZE" redefined_
+
+    * flex uses an I/O buffer size of 16 KB by default, which has been reduced to 4 KB. That is where the redefinition comes from.
+
+* _warning: ‘input’ defined but not used [-Wunused-function]_
+* _warning: ‘yyunput’ defined but not used [-Wunused-function]_
+    * These are two functions that are not needed by the lexical analyzer, but that flex generates by itself. That is why they are defined nevertheless.
+
+Therefore, you may just ignore these warnings without any problems.
 
 ### Running Delta
 
@@ -73,6 +91,7 @@ There are definitely more modules cooming soon, so stay tuned!
 
 * [C 99]() - A good ol' trusty language.
 * [CMake](https://cmake.org/) - Which eases the portability accross different systems.
+* [flex](https://github.com/westes/flex) - To assist in building the lexical analyzer.
 * [uthash](https://troydhanson.github.io/uthash/) - A handy hast table ready to be used in C.
 
 ## Authors
