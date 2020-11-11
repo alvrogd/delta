@@ -3,33 +3,7 @@
  * @author Álvaro Goldar Dieste
  * @date Nov 2020
  *
- * @brief This is the lexical analyzer that the delta compiler will use.
- *
- * @details
- *  This is the definition of the lexical analyzer that the delta compiler use
- *  during through the compilation process.
- *
- *  Its duty is to parse the contents given by the I/O system, recognizing
- *  the lexical components that are present in it. These are defined in
- *  lexical_components.h
- *
- *  For some lexical components, it will be enough to just identify them
- *  through those lex. comp. definitions (i.e. an "if" has the same meaning
- *  wherever it may appear), whereas others, such as identifiers and literals,
- *  will be returned along with some additional attributes:
- *
- *    - Both identifiers and literals will carry the lexemes (characters) that
- *      represent them in order to not lose their specific values.
- *    
- *    - Furthermore, identifiers have many additional metadata, such as their
- *      data type, first appearance... That is why they will also point to
- *      their corresponding symbol table's entries, which will already contain
- *      all that metadata, instead of replicating it.
- *
- *  As you may see, this analyzer relies on flex, a tool for generating
- *  programs that perform pattern-matching on text.
- *
- * @see https://github.com/westes/flex
+ * @brief Implementation of analyzers/syntactic.h
  */
 
 
@@ -66,9 +40,11 @@ FLOAT_EXPONENT (e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*
 ALPHA [a-zA-z]
 
 
-/* ═══════════════════════ Includes & local variables ═════════════════════ */
+/* ═════════════════ Includes & local functions/variables ═════════════════ */
 
 %{
+    #include "analyzers/lexical.h"
+
     #include "common/errors.h"
     #include "common/lexical_components.h"
     #include "common/symbol_table.h"
@@ -89,6 +65,12 @@ ALPHA [a-zA-z]
             size of whichever filesystem lies under.
     */
     #define YY_BUF_SIZE 4096
+
+
+    /* Declaration of some private fuctions that will be used in the rules
+       section */
+    int _d_lexical_analyzer_identifer_recognized();
+    int _d_lexical_analyzer_literal_recognized();
 
 
     /** How many '\n' have been seen in the input file that is being
@@ -184,17 +166,16 @@ ALPHA [a-zA-z]
 
  /* Double quoted strings */
 
-\"\"    { d_errors_parse_show(3, D_ERR_LEX_LITERALS_STRING_EMPTY, current_line,
-                              current_column); }
+\"\"                        { d_errors_parse_show(3,
+                                                  D_ERR_LEX_LITERALS_STRING_EMPTY,
+                                                  current_line, current_column); }
 
- /*\"({PRINT}|\\[abfnrtvx])+\"  { _d_lexical_analyzer_literal_recognized();*/
-\"([ -²]|\\[abfnrtvx])+\"  { _d_lexical_analyzer_literal_recognized();
+\"([ -²]|\\[abfnrtvx])+\"   { _d_lexical_analyzer_literal_recognized();
                               return D_LC_LITERAL_STR; }
 
 
  /* Identifiers */
 
- /*({ALPHA}|_)({DIGIT}|{ALPHA}|_)*   { return _d_lexical_analyzer_identifer_recognized(); }*/
 ([a-zA-Z]|_)([0-9]|[a-zA-Z]|_)*   { return _d_lexical_analyzer_identifer_recognized(); }
 
 
@@ -204,14 +185,12 @@ ALPHA [a-zA-z]
 0[bB](_)*[01][01_]*                                     { _d_lexical_analyzer_literal_recognized();
                                                           return D_LC_LITERAL_INT; }
 
- /*0[bB](_)*[^01]({DIGIT}|{ALPHA}|_)*                      { d_errors_parse_show(4,*/
-0[bB](_)*[^01]([0-9]|[a-zA-Z]|_)*                      { d_errors_parse_show(4,
+0[bB](_)*[^01]([0-9]|[a-zA-Z]|_)*                       { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
                                                           current_line, current_column,
                                                           "a binary number needs at least one "
                                                           "'0' -OR- '1' (i.e. 0b1)"); }
 
- /*0[bB](_)*[01][01_]*([2-9]|{ALPHA})({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4,*/
 0[bB](_)*[01][01_]*([2-9]|[a-zA-Z])([0-9]|[a-zA-Z]|_)*  { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
                                                           current_line, current_column,
@@ -221,71 +200,60 @@ ALPHA [a-zA-z]
 
  /* Numbers, decimal integer */
 
- /*{NON_ZERO}({DIGIT}|_)*    { _d_lexical_analyzer_literal_recognized();*/
-[0-9]([0-9]|_)*    { _d_lexical_analyzer_literal_recognized();
-                                  return D_LC_LITERAL_INT; }
+[0-9]([0-9]|_)*                                     { _d_lexical_analyzer_literal_recognized();
+                                                      return D_LC_LITERAL_INT; }
 
- /*{NON_ZERO}({DIGIT}|_)*({ALPHA}--[bBeE])({DIGIT}|{ALPHA}|_)*    { d_errors_parse_show(4,*/
 [0-9]([0-9]|_)*[aAcCdDf-zF-Z]([0-9]|[a-zA-Z]|_)*    { d_errors_parse_show(4,
-                                                                  D_ERR_LEX_LITERALS_INTEGERS_BAD,
-                                                                  current_line, current_column,
-                                                                  "the only letters that may "
-                                                                  "follow after an integer "
-                                                                  "number are 'E' -OR- 'e' for "
-                                                                  "floats (i.e. 10E+15) -AND- "
-                                                                  "'B' -OR- 'b'  for binaries "
-                                                                  "(i.e. 0b011)"); }
+                                                      D_ERR_LEX_LITERALS_INTEGERS_BAD,
+                                                      current_line, current_column,
+                                                      "the only letters that may "
+                                                      "follow after an integer "
+                                                      "number are 'E' -OR- 'e' for "
+                                                      "floats (i.e. 10E+15) -AND- "
+                                                      "'B' -OR- 'b'  for binaries "
+                                                      "(i.e. 0b011)"); }
 
 
  /* Numbers, decimal float */
 
- /*{FLOAT_INTEGER}\.({FLOAT_DECIMALS}{FLOAT_EXPONENT}?)?                                                                   { _d_lexical_analyzer_literal_recognized(); */
-[0-9]([0-9]|_)*\.(([0-9]([0-9]|_)*)((e|E)(\+|\-)?[0-9]([0-9]|_)*)?)?                                                                   { _d_lexical_analyzer_literal_recognized(); 
-                                                                                                                          return D_LC_LITERAL_FP; }
+[0-9]([0-9]|_)*\.(([0-9]([0-9]|_)*)((e|E)(\+|\-)?[0-9]([0-9]|_)*)?)?                                                { _d_lexical_analyzer_literal_recognized(); 
+                                                                                                                      return D_LC_LITERAL_FP; }
 
- /*\.{FLOAT_DECIMALS}{FLOAT_EXPONENT}?                                                                                     { _d_lexical_analyzer_literal_recognized(); */
-\.([0-9]([0-9]|_)*)((e|E)(\+|\-)?[0-9]([0-9]|_)*)?                                                                                     { _d_lexical_analyzer_literal_recognized(); 
-                                                                                                                          return D_LC_LITERAL_FP; }
+\.([0-9]([0-9]|_)*)((e|E)(\+|\-)?[0-9]([0-9]|_)*)?                                                                  { _d_lexical_analyzer_literal_recognized(); 
+                                                                                                                      return D_LC_LITERAL_FP; }
 
- /*{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(); */
-[0-9]([0-9]|_)*(e|E)(\+|\-)?[0-9]([0-9]|_)*                                                                                         { _d_lexical_analyzer_literal_recognized(); 
-                                                                                                                          return D_LC_LITERAL_FP; }
+[0-9]([0-9]|_)*(e|E)(\+|\-)?[0-9]([0-9]|_)*                                                                         { _d_lexical_analyzer_literal_recognized(); 
+                                                                                                                      return D_LC_LITERAL_FP; }
 
- /*{FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
-[0-9]([0-9]|_)*\.[a-zA-Z]([0-9]|[a-zA-Z]|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only letter that may follow after a float's "
-                                                                                                                          "decimal dot is 'E' -OR- 'e', providing that there "
-                                                                                                                          "is at least a digit beforehand (i.e. 10.3E+15)"); }
+[0-9]([0-9]|_)*\.[a-zA-Z]([0-9]|[a-zA-Z]|_)*                                                                        { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                      current_line, current_column,
+                                                                                                                      "the only letter that may follow after a float's "
+                                                                                                                      "decimal dot is 'E' -OR- 'e', providing that there "
+                                                                                                                      "is at least a digit beforehand (i.e. 10.3E+15)"); }
 
- /*{FLOAT_INTEGER}?\.{FLOAT_DECIMALS}({ALPHA}--[eE])({DIGIT}|{ALPHA}|_)*                                                   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
-([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)([a-dA-Df-zF-Z])([0-9]|[a-zA-Z]|_)*                                                   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only letter that may be in a float's decimal "
-                                                                                                                          "part is 'E' -OR- 'e' for its exponent (i.e. "
-                                                                                                                          "10.3E+15)"); }
+([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)([a-dA-Df-zF-Z])([0-9]|[a-zA-Z]|_)*                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                      current_line, current_column,
+                                                                                                                      "the only letter that may be in a float's decimal "
+                                                                                                                      "part is 'E' -OR- 'e' for its exponent (i.e. "
+                                                                                                                      "10.3E+15)"); }
 
 
- /*(({FLOAT_INTEGER}?\.{FLOAT_DECIMALS})|{FLOAT_INTEGER})[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                                  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
-((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE][^0-9+-]([0-9]|[a-zA-Z]|_)*                                  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only characters that may follow after a "
-                                                                                                                          "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
-                                                                                                                          "digit' (i.e. 10.3E+15, 10.3E10)"); }
+((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE][^0-9+-]([0-9]|[a-zA-Z]|_)*                          { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                      current_line, current_column,
+                                                                                                                      "the only characters that may follow after a "
+                                                                                                                      "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
+                                                                                                                      "digit' (i.e. 10.3E+15, 10.3E10)"); }
 
- /*(({FLOAT_INTEGER}?\.{FLOAT_DECIMALS})|{FLOAT_INTEGER})(e|E)(\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                           { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
-((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE](\+|\-)?[^0-9]([0-9]|[a-zA-Z]|_)*                           { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                            "the only characters that may follow "
-                                    "after a float's exponent and sign "
-                                    "declaration are digits (i.e. 10.3E+15, "
-                                    "10.3E10_5)"); }
+((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE](\+|\-)?[^0-9]([0-9]|[a-zA-Z]|_)*                    { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                      current_line, current_column,
+                                                                                                                      "the only characters that may follow after a "
+                                                                                                                      "float's exponent and sign declaration are digits "
+                                                                                                                      "(i.e. 10.3E+15, 10.3E10_5)"); }
 
- /*(({FLOAT_INTEGER}?\.{FLOAT_DECIMALS})|{FLOAT_INTEGER})(e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*[^0-9_]({DIGIT}|{ALPHA}|_)*       { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
-((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE](\+|\-)?[0-9]([0-9]|_)*[a-zA-Z]([0-9]|[a-zA-Z]|_)*       { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "a float's decimal number may only have 'digits' "
-                                                                                                                          "-AND- '_'"); }
+((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE](\+|\-)?[0-9]([0-9]|_)*[a-zA-Z]([0-9]|[a-zA-Z]|_)*   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                      current_line, current_column,
+                                                                                                                      "a float's decimal number may only have 'digits' "
+                                                                                                                      "-AND- '_'"); }
 
 
  /* ** Whitespace ** */
@@ -305,9 +273,7 @@ ALPHA [a-zA-z]
 /* ════════════════════════════════ Functions ═════════════════════════════ */
 
 /**
- * @brief Initializes the lexical analyzer.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_initialize
  */
 int d_lexical_analyzer_initialize()
 {
@@ -318,14 +284,7 @@ int d_lexical_analyzer_initialize()
 
 
 /**
- * @brief The lexical analyzer prepares to parse a certain source file.
- * 
- * @details
- *  The lexical analyzer is pointed which source file to use while parsing.
- *
- * @param[in] file_path Path (relative or absolute) to the desired file.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_prepare_for_parsing
  */
 int d_lexical_analyzer_prepare_for_parsing(
     const char *file_path
@@ -363,21 +322,7 @@ int d_lexical_analyzer_prepare_for_parsing(
 
 
 /**
- * @brief The lexical analyzer identifies the next lexical component in the
- *        current source file.
- *
- * @details
- *  The lexical analyzer continues parsing the current source file,
- *  recognizing and returning its next lexical component.
- *
- *  If the component turns out to be an identifier, the analyzer will also
- *  take care of initializing its corresponding entry in the symbol table.
- * 
- * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
- *                               which the lexical component's data will be
- *                               written.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_get_next_lexical_comp
  */
 int d_lexical_analyzer_get_next_lexical_comp(
     struct d_lexical_component *lexical_component
@@ -521,15 +466,7 @@ int _d_lexical_analyzer_identifer_recognized()
 
 
 /**
- * @brief Shows the specified lexical component.
- *
- * @details
- *  Prints out which category the given lexical component belongs to, as well
- *  as its lexeme, if any (for keywords and identifiers).
- * 
- * @param[in] lexical_component The lexical component.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_show_lexical_comp
  */
 int d_lexical_analyzer_show_lexical_comp(
     struct d_lexical_component *lexical_component
@@ -579,40 +516,7 @@ int d_lexical_analyzer_show_lexical_comp(
 
 
 /**
- * @brief The lexical analyzer destroys a lexical component that has
- *        previously created.
- *
- * @details
- *  The lexical analyzer frees any resources that may have allocated
- *  previously for a given lexical component, and for which it must take
- *  responsability, as some of them may carry attributes.
- *
- *  Specifically, according to the different types of lexical components that
- *  have attributes:
- *
- *    - Those that have an entry in the symbol table are already memory-
- *      -managed by it. That is:
- *
- *        - If actual scopes were supported, closing one would imply deleting
- *          all of its identifiers. They must not be deleted earlier, as an
- *          identifier can be referenced multiple times in the same scope. As
- *          of now, the "only scope" would be terminated when destroying the
- *          symbol table. In such event, all allocated memory to each present
- *          identifier will be freed.
- *
- *        - Keywords cannot be removed from the table until the input file
- *          parsing has ended. Therefore, they will also be destroyed by the
- *          symbol table in the previous circumstances.
- *
- *    - Regarding the other components that also have attributes, but no
- *      entry, these attributes have been reserved on purpose when recognizing
- *      the lex. comp. from the input file, so they will not be freed unless
- *      the consumer requests it.
- *
- * @param[in,out] lexical_component Pointer to the lexical component that will
- *                                  be freed.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_destroy_lexical_com
  */
 int d_lexical_analyzer_destroy_lexical_com(
     struct d_lexical_component *lexical_component
@@ -648,9 +552,7 @@ int d_lexical_analyzer_destroy_lexical_com(
 
 
 /**
- * @brief Destroys the lexical analyzer.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_destroy
  */
 int d_lexical_analyzer_destroy()
 {

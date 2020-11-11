@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "common/symbol_table.h"
 #include "analyzers/lexical.h"
 #include "analyzers/syntactic.h"
-#include "common/lexical_components.h"
 #include "common/errors.h"
+#include "common/lexical_components.h"
+#include "common/symbol_table.h"
 
 
 int main(int argc, char *argv[])
@@ -38,13 +38,13 @@ int main(int argc, char *argv[])
 
     // Showing what keywords the symbol table contains due to its
     // initialization
-    if(d_symbol_table_show(symbol_table) != 0) {
+    if(d_symbol_table_show() != 0) {
         exit(EXIT_FAILURE);
     }
 
     // Running the syntactic analyzer, which will call by itself the lexical
     // analyzer
-    if(d_syntactic_analyzer_parse(syntactic_analyzer) != 0) {
+    if(d_syntactic_analyzer_parse() != 0) {
         exit(EXIT_FAILURE);
     }
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
     // Showing once again the keywords, as well as any identifiers that may
     // have been registered while parsing
-    if(d_symbol_table_show(symbol_table) != 0) {
+    if(d_symbol_table_show() != 0) {
         exit(EXIT_FAILURE);
     }
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 
     d_lexical_analyzer_destroy();
 
-    d_symbol_table_destroy(&symbol_table);
+    d_symbol_table_destroy();
     
 
     return 0;

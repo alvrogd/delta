@@ -30,12 +30,6 @@ struct d_syntactic_analyzer;
 
 
 /**
- * @brief Globally accessible syntactic analyzer that will be used.
- */
-struct d_syntactic_analyzer *syntactic_analyzer;
-
-
-/**
  * @brief Initializes the syntactic analyzer.
  *
  * @return 0 if successful, any other value otherwise.

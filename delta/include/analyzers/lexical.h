@@ -26,8 +26,8 @@
  *      their corresponding symbol table's entries, which will already contain
  *      all that metadata, instead of replicating it.
  *
- *  As you may see, this analyzer relies on flex, a tool for generating
- *  programs that perform pattern-matching on text.
+ *  This analyzer relies on flex, a tool for generating programs that perform
+ *  pattern-matching on text, which already includes its own I/O system.
  *
  * @see https://github.com/westes/flex
  */

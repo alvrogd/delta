@@ -33,8 +33,7 @@
  *    - A void * pointer to its attributes.
  *        - If the component is a literal, it is a char * to its lexeme.
  *        - If the component is an identifier, it is a
- *          struct d_symbol_table_entry *, which already contains the lexeme
- *          (see common/symbol_table.h).
+ *          struct d_symbol_table_entry * (see common/symbol_table.h).
  */
 
 

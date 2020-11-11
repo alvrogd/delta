@@ -66,6 +66,7 @@ int d_symbol_table_initialize()
 
     symbol_table->table = NULL;
 
+
     // And the symbol table initialization will be completed once all of the
     // registered keywords are put into it
     for(i = 0; i < keyword_count; ++i) {
@@ -174,6 +175,8 @@ int d_symbol_table_add(
     }
 
 
+    #ifdef DEBUG
+    // Should already be checked from the caller
     // No entry with the same key can be already present in the table
     if(d_symbol_table_search(entry->lexeme) != NULL) {
 
@@ -181,6 +184,7 @@ int d_symbol_table_add(
                                "d_symbol_table_add", "key already present");
         return 1;
     }
+    #endif
 
     // With each new entry, a new internally-managed structure is allocated
     if((internal_entry = malloc(sizeof(struct d_symbol_table_entry))) ==
@@ -200,7 +204,8 @@ int d_symbol_table_add(
 
     // As previously said, the "lexeme" member is used as the key
     HASH_ADD_KEYPTR(hh, symbol_table->table, internal_entry->lexeme,
-                    strlen((const char *)internal_entry->lexeme), internal_entry);
+                    strlen((const char *)internal_entry->lexeme),
+                    internal_entry);
 
 
     return 0;

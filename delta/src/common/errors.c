@@ -88,7 +88,7 @@ const char *d_errors_get_template(
                    "right, and if its permissions allow reading it";
 
 
-        default:
+        default: // TODO change perror
             perror("error: invalid argument, 'error_code' not recognized\n"
                    " --> internal file : errors.c : d_errors_get_template()");
 

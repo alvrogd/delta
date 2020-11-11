@@ -63,12 +63,6 @@ struct d_symbol_table_entry {
 
 
 /**
- * @brief Globally accessible symbol table that will be used.
- */
-struct d_symbol_table *symbol_table;
-
-
-/**
  * @brief Initializes the symbol table.
  *
  * @details
