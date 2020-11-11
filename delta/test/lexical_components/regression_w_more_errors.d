@@ -66,7 +66,7 @@
 <LC_SEPARATOR_COMMA>
 <LC_IDENTIFIER, denom>
 <LC_OP_ASSIGNMENT_ASSIGN>
-error[E2321]: malformed integer number, the only letters that may follow after an integer number are 'E' -OR- 'e' for floats (i.e. 10E+15) -AND- 'B' -OR- 'b'  for binaries (i.e. 0b011)
+error[E2321]: malformed integer number, the only letters that may follow after an integer number are 'E' -OR- 'e' -OR- 'F' -OR- 'f' -OR- 'i' -OR- 'Li' for floats (i.e. 10E+15, 5f, 2i, 23Li) -AND- 'B' -OR- 'b' for binaries (i.e. 0b011) -AND- suffixes (i.e. 45u, 1000L, 1024LU)
  --> input file : ln 12 : col 29
 
 <LC_SEPARATOR_SEMICOL>

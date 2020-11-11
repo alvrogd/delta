@@ -30,11 +30,15 @@
 
 ALPHA   [a-zA-Z]
 
+DECIMAL_INTEGER_SUFFIX  (L|u|U|Lu|LU|uL|UL)
+
 DIGIT   [0-9]
 
-FLOAT_INTEGER   {DIGIT}({DIGIT}|_)*
-FLOAT_DECIMALS  {DIGIT}({DIGIT}|_)*
-FLOAT_EXPONENT  (e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*
+FLOAT_DECIMALS      {DIGIT}({DIGIT}|_)*
+FLOAT_EXPONENT      (e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*
+FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
+FLOAT_SUFFIX        [fF](i)?|Li|i
+FLOAT_WRONG_LETTERS [a-eA-EgGhHjJkKm-zM-Z]
 
 PRINT   [ -²]
 
@@ -183,14 +187,14 @@ PRINT   [ -²]
 
  /* Double quoted strings */
 
-\"\"                                { d_errors_parse_show(3,
-                                                          D_ERR_LEX_LITERALS_STRING_EMPTY,
-                                                          current_line, current_column); }
+\"\"([cwd])?                                { d_errors_parse_show(3,
+                                                                  D_ERR_LEX_LITERALS_STRING_EMPTY,
+                                                                  current_line, current_column); }
 
-\"({PRINT}|\\([abfnrtuUvx])?)+\"    { _d_lexical_analyzer_literal_recognized(lexical_component);
-                                      _d_lexical_analyzer_literal_count_eol(lexical_component);
-                                      lexical_component->category = D_LC_LITERAL_STR;
-                                      return 0; }
+\"({PRINT}|\\([abfnrtuUvx])?)+\"([cwd])?    { _d_lexical_analyzer_literal_recognized(lexical_component);
+                                              _d_lexical_analyzer_literal_count_eol(lexical_component);
+                                              lexical_component->category = D_LC_LITERAL_STR;
+                                              return 0; }
 
 
  /* Identifiers */
@@ -221,64 +225,72 @@ PRINT   [ -²]
 
  /* Numbers, decimal integer */
 
-{DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
-                                                          lexical_component->category = D_LC_LITERAL_INT;
-                                                          return 0; }
+{DIGIT}({DIGIT}|_)*({DECIMAL_INTEGER_SUFFIX})?                      { _d_lexical_analyzer_literal_recognized(lexical_component);
+                                                                      lexical_component->category = D_LC_LITERAL_INT;
+                                                                      return 0; }
 
-{DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
-                                                          D_ERR_LEX_LITERALS_INTEGERS_BAD,
-                                                          current_line, current_column,
-                                                          "the only letters that may "
-                                                          "follow after an integer "
-                                                          "number are 'E' -OR- 'e' for "
-                                                          "floats (i.e. 10E+15) -AND- "
-                                                          "'B' -OR- 'b'  for binaries "
-                                                          "(i.e. 0b011)"); }
+{DIGIT}({DIGIT}|_)*[aAcCdDgGhHjJkKm-tM-Tv-zV-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
+                                                                      D_ERR_LEX_LITERALS_INTEGERS_BAD,
+                                                                      current_line, current_column,
+                                                                      "the only letters that may "
+                                                                      "follow after an integer "
+                                                                      "number are 'E' -OR- 'e' -OR- "
+                                                                      "'F' -OR- 'f' -OR- 'i' -OR- "
+                                                                      "'Li' for floats (i.e. 10E+15, "
+                                                                      "5f, 2i, 23Li) -AND- 'B' -OR- "
+                                                                      "'b' for binaries (i.e. 0b011)"
+                                                                      " -AND- suffixes (i.e. 45u, "
+                                                                      "1000L, 1024LU)"); }
 
 
  /* Numbers, decimal float */
 
-{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                          return 0; }
+{FLOAT_INTEGER}{FLOAT_SUFFIX}                                                                                                         { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                                        return 0; }
 
-\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                 { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                          return 0; }
+{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                                             { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                                        return 0; }
 
-{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                          return 0; }
+\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                               { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                                        return 0; }
 
-{FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only letter that may follow after a float's "
-                                                                                                                          "decimal dot is 'E' -OR- 'e', providing that there "
-                                                                                                                          "is at least a digit beforehand (i.e. 10.3E+15)"); }
+{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                                       { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                                        return 0; }
 
-({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})([a-dA-Df-zF-Z])({DIGIT}|{ALPHA}|_)*                                              { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only letter that may be in a float's decimal "
-                                                                                                                          "part is 'E' -OR- 'e' for its exponent (i.e. "
-                                                                                                                          "10.3E+15)"); }
+{FLOAT_INTEGER}\.{FLOAT_WRONG_LETTERS}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                                        current_line, current_column,
+                                                                                                                                        "the only letter that may follow after a float's "
+                                                                                                                                        "decimal dot is 'E' -OR- 'e', providing that there "
+                                                                                                                                        "is at least a digit beforehand (i.e. 10.3E+15), "
+                                                                                                                                        "-AND- suffixes (i.e. 5f, 6.F, 2i, 23Li)"); }
+
+({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})({FLOAT_WRONG_LETTERS})({DIGIT}|{ALPHA}|_)*                                                     { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                                        current_line, current_column,
+                                                                                                                                        "the only letter that may be in a float's decimal "
+                                                                                                                                        "part is 'E' -OR- 'e' for its exponent (i.e. "
+                                                                                                                                        "10.3E+15) -AND- suffixes (i.e. 5f, 6.F, 2i, 23Li)"); }
 
 
-((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only characters that may follow after a "
-                                                                                                                          "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
-                                                                                                                          "digit' (i.e. 10.3E+15, 10.3E10)"); }
+((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                                          { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                                        current_line, current_column,
+                                                                                                                                        "the only characters that may follow after a "
+                                                                                                                                        "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
+                                                                                                                                        "digit' (i.e. 10.3E+15, 10.3E10)"); }
 
-((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                      { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "the only characters that may follow after a "
-                                                                                                                          "float's exponent and sign declaration are digits "
-                                                                                                                          "(i.e. 10.3E+15, 10.3E10_5)"); }
+((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                                    { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                                        current_line, current_column,
+                                                                                                                                        "the only characters that may follow after a "
+                                                                                                                                        "float's exponent and sign declaration are digits "
+                                                                                                                                        "(i.e. 10.3E+15, 10.3E10_5)"); }
 
-((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?{DIGIT}({DIGIT}|_)*{ALPHA}({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
-                                                                                                                          "a float's decimal number may only have 'digits' "
-                                                                                                                          "-AND- '_'"); }
+((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?{DIGIT}({DIGIT}|_)*{FLOAT_WRONG_LETTERS}({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                                        current_line, current_column,
+                                                                                                                                        "a float's decimal number may only have 'digits' "
+                                                                                                                                        "-AND- '_' -AND- suffixes (i.e. 5f, 6.F, 2i, 23Li)"); }
 
 
  /* ** Whitespace ** */
