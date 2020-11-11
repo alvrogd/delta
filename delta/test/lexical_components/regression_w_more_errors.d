@@ -67,9 +67,8 @@
 <LC_IDENTIFIER, denom>
 <LC_OP_ASSIGNMENT_ASSIGN>
 error[E2321]: malformed integer number, the only letters that may follow after an integer number are 'E' -OR- 'e' for floats (i.e. 10E+15) -AND- 'B' -OR- 'b'  for binaries (i.e. 0b011)
- --> input file : ln 12 : col 26
+ --> input file : ln 12 : col 1
 
-<LC_IDENTIFIER, qwe>
 <LC_SEPARATOR_SEMICOL>
 <LC_KEYWORD, int>
 <LC_IDENTIFIER, whilectr>
@@ -149,9 +148,8 @@ error[E2321]: malformed integer number, the only letters that may follow after a
 <LC_OP_ASSIGNMENT_ASSIGN>
 <LC_OP_ACCESS_L_BRACKET>
 error[E2322]: malformed binary integer number, a binary number may only have '0' -AND- '1' -AND- '_'
- --> input file : ln 32 : col 22
+ --> input file : ln 32 : col 1
 
-<LC_IDENTIFIER, abcd>
 <LC_SEPARATOR_COMMA>
 <LC_LITERAL_INT, 2>
 <LC_SEPARATOR_COMMA>
@@ -297,7 +295,6 @@ error[E2322]: malformed binary integer number, a binary number may only have '0'
 <LC_LITERAL_INT, 3>
 <LC_SEPARATOR_SEMICOL>
 <LC_SEPARATOR_R_CURLY>
-<LC_WHITESPACE>
 
 <SYMBOL_TABLE>
 	<SYMBOL_TABLE_ENTRY, LC_KEYWORD, import>
@@ -323,11 +320,9 @@ error[E2322]: malformed binary integer number, a binary number may only have '0'
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, length>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, num>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, denom>
-	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, qwe>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, whilectr>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, xval>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, main>
-	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, abcd>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, b1>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, _0>
 	<SYMBOL_TABLE_ENTRY, LC_IDENTIFIER, sum>

@@ -254,7 +254,41 @@ ALPHA [a-zA-z]
 [0-9]([0-9]|_)*(e|E)(\+|\-)?[0-9]([0-9]|_)*                                                                                         { _d_lexical_analyzer_literal_recognized(); 
                                                                                                                           return D_LC_LITERAL_FP; }
 
+ /*{FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
+[0-9]([0-9]|_)*\.[a-zA-Z]([0-9]|[a-zA-Z]|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only letter that may follow after a float's "
+                                                                                                                          "decimal dot is 'E' -OR- 'e', providing that there "
+                                                                                                                          "is at least a digit beforehand (i.e. 10.3E+15)"); }
 
+ /*{FLOAT_INTEGER}?\.{FLOAT_DECIMALS}({ALPHA}--[eE])({DIGIT}|{ALPHA}|_)*                                                   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
+([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)([a-dA-Df-zF-Z])([0-9]|[a-zA-Z]|_)*                                                   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only letter that may be in a float's decimal "
+                                                                                                                          "part is 'E' -OR- 'e' for its exponent (i.e. "
+                                                                                                                          "10.3E+15)"); }
+
+
+ /*(({FLOAT_INTEGER}?\.{FLOAT_DECIMALS})|{FLOAT_INTEGER})[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                                  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
+((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE][^0-9+-]([0-9]|[a-zA-Z]|_)*                                  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only characters that may follow after a "
+                                                                                                                          "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
+                                                                                                                          "digit' (i.e. 10.3E+15, 10.3E10)"); }
+
+ /*(({FLOAT_INTEGER}?\.{FLOAT_DECIMALS})|{FLOAT_INTEGER})(e|E)(\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                           { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
+((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE](\+|\-)?[^0-9]([0-9]|[a-zA-Z]|_)*                           { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                            "the only characters that may follow "
+                                    "after a float's exponent and sign "
+                                    "declaration are digits (i.e. 10.3E+15, "
+                                    "10.3E10_5)"); }
+
+ /*(({FLOAT_INTEGER}?\.{FLOAT_DECIMALS})|{FLOAT_INTEGER})(e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*[^0-9_]({DIGIT}|{ALPHA}|_)*       { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,*/
+((([0-9]([0-9]|_)*)?\.([0-9]([0-9]|_)*)|([0-9]([0-9]|_)*)))[eE](\+|\-)?[0-9]([0-9]|_)*[a-zA-Z]([0-9]|[a-zA-Z]|_)*       { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "a float's decimal number may only have 'digits' "
+                                                                                                                          "-AND- '_'"); }
 
 
  /* ** Whitespace ** */
