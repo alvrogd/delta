@@ -5,6 +5,8 @@
 #  - "Compilers: Principles, Techniques, and Tools" by Alfred Aho et al.
 #  - https://www.brainkart.com/article/Lexical-Units-(Tokens)---C---program_36566/
 #
+# TODO the regex for strings, decimal integers and floats do not have their
+#      suffixes 
 
 ## Keywords
 
