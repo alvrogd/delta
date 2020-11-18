@@ -11,7 +11,7 @@ find_package(FLEX)
 # an auxiliary one
 FLEX_TARGET(
     deltalex src/analyzers/lexical.l ${CMAKE_CURRENT_BINARY_DIR}/lexical.c
-    COMPILE_FLAGS "-Cf --perf-report --perf-report"
+    COMPILE_FLAGS "--perf-report --perf-report"
 )
 
 # Bison will be used to generate Delta's syntactic and semantic analyzer
@@ -32,7 +32,7 @@ set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_C_STANDARD 99)
 set(
     CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -Wall -Wextra -std=c99 -O3 -Wno-unused-parameter"
+    "${CMAKE_C_FLAGS} -Wall -Wextra -lm -std=c99 -O3 -Wno-unused-parameter"
 )
 
 
@@ -56,3 +56,4 @@ set(
 # The only target is the Delta's executable
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE include)
+target_link_libraries(${PROJECT_NAME} m) # math.h

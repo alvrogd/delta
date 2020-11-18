@@ -83,6 +83,9 @@ const char *d_errors_get_template(
 
         /* Category: user errors */
 
+        case D_ERR_USER_INPUT_DIVISION_BY_ZERO:
+            return "catched a division by 0";
+
         case D_ERR_USER_INPUT_FILE_INACCESSIBLE:
             return "the input file is inaccessible; check if the path is "
                    "right, and if its permissions allow reading it";

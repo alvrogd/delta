@@ -60,13 +60,9 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
     /* Declaration of some private fuctions that will be used in the rules
        section */
-    int _d_lexical_analyzer_identifer_recognized(
-        struct d_lexical_component *lexical_component
-    );
+    int _d_lexical_analyzer_identifer_recognized();
 
-    int _d_lexical_analyzer_literal_recognized(
-        struct d_lexical_component *lexical_component
-    );
+    int _d_lexical_analyzer_literal_recognized();
 
 
     /** How many '\n' have been seen in the input file that is being
@@ -76,13 +72,13 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
     /** How many characters have been seen in the current line */
     size_t current_column;
 
-    /** Each time that a lexical component is recognized, its length will be
-        added to the current col count. */
-    #define YY_USER_ACTION { current_column += yyleng; }
-
-    /** The default yylex() function is overriden as the lexical analyzer
-        needs to be able to receive custom parameters. */
-    #define YY_DECL int yylex(struct d_lexical_component *lexical_component)
+    /** Each time that a lexical component is recognized, the lex. analyzer
+        points to the syntactic and semantic analyzer where it can be found,
+        for error reporting purposes. */
+    #define YY_USER_ACTION \
+        yylloc.first_line = current_line; yylloc.last_line = current_line; \
+        yylloc.first_column = current_column; \
+        current_column += yyleng; yylloc.last_column = current_column;
 %}
 
 
@@ -93,15 +89,15 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
  /* ** 1-char components ** */
 
-"+"   { lexical_component->category = D_LC_OP_ARITHMETIC_PLUS; return D_LC_OP_ARITHMETIC_PLUS; }
-"-"   { lexical_component->category = D_LC_OP_ARITHMETIC_MINUS; return D_LC_OP_ARITHMETIC_MINUS; }
-"*"   { lexical_component->category = D_LC_OP_ARITHMETIC_TIMES; return D_LC_OP_ARITHMETIC_TIMES; }
-"/"   { lexical_component->category = D_LC_OP_ARITHMETIC_DIV; return D_LC_OP_ARITHMETIC_DIV; }
-"^"   { lexical_component->category = D_LC_OP_ARITHMETIC_EXPONENT; return D_LC_OP_ARITHMETIC_EXPONENT; }
+"+"   { return D_LC_OP_ARITHMETIC_PLUS; }
+"-"   { return D_LC_OP_ARITHMETIC_MINUS; }
+"*"   { return D_LC_OP_ARITHMETIC_TIMES; }
+"/"   { return D_LC_OP_ARITHMETIC_DIV; }
+"^"   { return D_LC_OP_ARITHMETIC_EXPONENT; }
  /*"="   { lexical_component->category = D_LC_OP_ASSIGNMENT_ASSIGN; return 0; }  // TODO remove initial space when removing comments
 ";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }*/
-"("   { lexical_component->category = D_LC_SEPARATOR_L_PARENTHESIS; return D_LC_SEPARATOR_L_PARENTHESIS; }
-")"   { lexical_component->category = D_LC_SEPARATOR_R_PARENTHESIS; return D_LC_SEPARATOR_R_PARENTHESIS; }
+"("   { return D_LC_SEPARATOR_L_PARENTHESIS; }
+")"   { return D_LC_SEPARATOR_R_PARENTHESIS; }
 
 
  /* ** Multiple-char components ** */
@@ -156,16 +152,13 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
  /* Numbers, decimal float */
 
-{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_FP); 
                                                                                                                           return D_LC_LITERAL_FP; }
 
-\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                 { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                 { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_FP); 
                                                                                                                           return D_LC_LITERAL_FP; }
 
-{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_FP); 
                                                                                                                           return D_LC_LITERAL_FP; }
 
 {FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
@@ -221,37 +214,8 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
  */
 int d_lexical_analyzer_initialize()
 {
-    // No initializations are needed as of now
-
-    return 0;
-}
-
-
-/**
- * @brief Implementation of lexical.h/d_lexical_analyzer_prepare_for_parsing
- */
-int d_lexical_analyzer_prepare_for_parsing(
-    const char *file_path
-)
-{
-    if(file_path == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
-                               "lexical.l",
-                               "d_lexical_analyzer_prepare_for_parsing",
-                               "'file_path'");
-        return -1;
-    }
-
-
-    if ((yyin = fopen(file_path, "r")) == NULL) {
-
-        d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
-                               "lexical.l",
-                               "d_lexical_analyzer_prepare_for_parsing");
-        return -1;
-    }
-
+    // All input will be given by the user
+    yyin = stdin;
 
     // The counters need to be initialized
     current_line = 1;
@@ -263,49 +227,52 @@ int d_lexical_analyzer_prepare_for_parsing(
 
 
 /**
- * @brief Stores the lexeme that represents the current literal (a lexical
- *        component).
+ * @brief Stores the semantic value that represents the current literal
+ *        (a lexical component).
  *
  * @details
- *  Stores the lexeme that represents the current literal (a lexical
- *  component), as its full meaning cannot be represented using only its
- *  category.
+ *  Stores the semantic value that represents the current literal (a lexical
+ *  component), as its category is enough for the syntactic analyzer, but not
+ *  for the semantic.
  *
- *  Specifically, the lexeme gets copied to a new string, which will be
- *  available in the "lexical_component->attributes" pointer.
+ *  Specifically:
+ *    - If the literal is a number, its lexeme is coverted to its
+ *      corresponding integer/floating type.
  *
- * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
- *                               which the lexical component's data will be
- *                               written.
+ *  The semantic value will be available in the "yylval" external variable.
  *
  * @return 0 if successful, any other value otherwise.
  */
 int _d_lexical_analyzer_literal_recognized(
-    struct d_lexical_component *lexical_component
+    int lexical_component
 )
 {
-    const unsigned char *lexeme = NULL;
-    
-    
-    if((lexeme = (const unsigned char *) strdup(yytext)) == NULL) {
+    switch(lexical_component) {
 
-        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
-                               "lexical.l",
-                               "_d_lexical_analyzer_literal_recognized",
-                               "'strdup' of current lexeme");
-        return -1;
+        case D_LC_LITERAL_INT:
+            yylval = atof(yytext); /* TODO update */
+            
+            #ifdef D_DEBUG
+            printf("[lexical_analyzer][literal recognized] Saved integer "
+                   "number: %d\n", yylval);
+            #endif
+
+            break;
+
+        case D_LC_LITERAL_FP:
+            yylval = atof(yytext);
+            
+            #ifdef D_DEBUG
+            printf("[lexical_analyzer][literal recognized] Saved floating "
+                   "point number: %f\n", yylval);
+            #endif
+
+            break;
+
+        default:
+            printf("Unexpected\n");
     }
 
-    #ifdef D_DEBUG
-    printf("[lexical_analyzer][literal recognized] Saved lexeme: %s\n",
-           lexeme);
-    #endif
-
-    lexical_component->attributes = lexeme;
-
-    
-    /* TODO udpate */
-    yylval = atof(lexeme);
 
     return 0;
 }
@@ -442,15 +409,8 @@ int d_lexical_analyzer_destroy_lexical_com(
  * @brief Implementation of lexical.h/d_lexical_analyzer_destroy
  */
 int d_lexical_analyzer_destroy()
-{
-    if (fclose(yyin) != 0) {
+{   
+    // No clean-up is needed as of now
 
-        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
-                               "lexical.l", "d_lexical_analyzer_destroy",
-                               "'fclose' on input source file");
-        return -1;
-    }
-    
-    
     return 0;
 }

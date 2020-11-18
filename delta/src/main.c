@@ -18,47 +18,27 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-
     if(d_lexical_analyzer_initialize() != 0) {
         exit(EXIT_FAILURE);   
     }
 
-    if(d_lexical_analyzer_prepare_for_parsing(argv[1]) != 0) {
-        exit(EXIT_FAILURE);
-    }
-
-
-    if(d_syntactic_analyzer_initialize() != 0) {
+    if(d_synsem_analyzer_initialize() != 0) {
         exit(EXIT_FAILURE);
     }
 
 
     /* Input file parsing */
 
-    // Showing what keywords the symbol table contains due to its
-    // initialization
-    if(d_symbol_table_show() != 0) {
-        exit(EXIT_FAILURE);
-    }
-
     // Running the syntactic analyzer, which will call by itself the lexical
     // analyzer
-    if(d_syntactic_analyzer_parse() != 0) {
-        exit(EXIT_FAILURE);
-    }
-
-    printf("\n");
-
-    // Showing once again the keywords, as well as any identifiers that may
-    // have been registered while parsing
-    if(d_symbol_table_show() != 0) {
+    if(d_synsem_analyzer_parse() != 0) {
         exit(EXIT_FAILURE);
     }
 
 
     /* Clean up */
 
-    d_syntactic_analyzer_destroy();
+    d_synsem_analyzer_destroy();
 
     d_lexical_analyzer_destroy();
 

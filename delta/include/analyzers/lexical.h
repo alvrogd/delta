@@ -67,20 +67,6 @@ struct d_lexical_component {
  */
 int d_lexical_analyzer_initialize();
 
-/**
- * @brief The lexical analyzer prepares to parse a certain source file.
- * 
- * @details
- *  The lexical analyzer is pointed which source file to use while parsing.
- *
- * @param[in] file_path Path (relative or absolute) to the desired file.
- *
- * @return 0 if successful, any other value otherwise.
- */
-int d_lexical_analyzer_prepare_for_parsing(
-    const char *file_path
-);
-
 
 /**
  * @brief The lexical analyzer identifies the next lexical component in the
@@ -92,16 +78,10 @@ int d_lexical_analyzer_prepare_for_parsing(
  *
  *  If the component turns out to be an identifier, the analyzer will also
  *  take care of initializing its corresponding entry in the symbol table.
- * 
- * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
- *                               which the lexical component's data will be
- *                               written.
  *
  * @return 0 if successful, any other value otherwise.
  */
-int yylex(
-    struct d_lexical_component *lexical_component
-);
+int yylex();
 
 
 /**
