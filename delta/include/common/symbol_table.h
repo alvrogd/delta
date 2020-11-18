@@ -3,13 +3,13 @@
  * @author Álvaro Goldar Dieste
  * @date Oct 2020
  *
- * @brief This is the symbol table that the delta compiler will use.
+ * @brief This is the symbol table that delta will use.
  *
  * @details
- *  This is the definition of the symbol table that the delta compiler will
- *  use through all of its compilation phases. It will allow the compiler to
- *  keep track, at each time point, of the currently active identifiers, as
- *  well as all of their attributes.
+ *  This is the definition of the symbol table that delta will use through all
+ *  of its compilation phases. It will allow delta to keep track, at each time
+ *  point, of the currently active identifiers, as well as all of their
+ *  attributes.
  *
  *  As of now, it does not support scoping, as it assumes that all source code
  *  can be found in the same block.

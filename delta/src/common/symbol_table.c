@@ -9,7 +9,6 @@
 
 #include "common/symbol_table.h"
 #include "common/keywords.h"
-#include "common/lexical_components.h"
 #include "common/errors.h"
 
 
@@ -67,6 +66,7 @@ int d_symbol_table_initialize()
     symbol_table->table = NULL;
 
 
+    /* TOD update *//*
     // And the symbol table initialization will be completed once all of the
     // registered keywords are put into it
     for(i = 0; i < keyword_count; ++i) {
@@ -107,7 +107,7 @@ int d_symbol_table_initialize()
     printf("[symbol_table][initialize] Kwd. \"string\" present: %d\n",
            d_symbol_table_search(symbol_table, "string") != NULL);
     #endif
-
+*/
 
     return 0;
 }
@@ -232,16 +232,17 @@ int d_symbol_table_show()
 
     printf("<SYMBOL_TABLE>\n");
 
+    /* TODO update */
     // This iteration procedure is directly taken from the library's
     // reference
-    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+    /*HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
 
         printf("\t<SYMBOL_TABLE_ENTRY, %s, %s>\n",
                d_lc_to_string(current_entry->lexical_component),
                current_entry->lexeme);
     }
 
-    printf("\n");
+    printf("\n");*/
 
 
     return 0;

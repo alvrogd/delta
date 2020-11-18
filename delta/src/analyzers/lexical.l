@@ -19,28 +19,15 @@
 %option pointer
 
 
-/* ═════════════════════════ Exclusive start states ═══════════════════════ */
-
-/** In order to easily parse comments. */
-%x COMMENT_BLOCK
-%x COMMENT_NESTED
-
-
 /* ═══════════════════════════════ Definitions ════════════════════════════ */
 
 ALPHA   [a-zA-Z]
-
-DECIMAL_INTEGER_SUFFIX  (L|u|U|Lu|LU|uL|UL)
 
 DIGIT   [0-9]
 
 FLOAT_DECIMALS      {DIGIT}({DIGIT}|_)*
 FLOAT_EXPONENT      (e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*
 FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
-FLOAT_SUFFIX        [fF](i)?|Li|i
-FLOAT_WRONG_LETTERS [a-eA-EgGhHjJkKm-zM-Z]
-
-PRINT   [ -²]
 
 
 /* ═════════════════ Includes & local functions/variables ═════════════════ */
@@ -48,24 +35,25 @@ PRINT   [ -²]
 %{
     #include "analyzers/lexical.h"
 
+    #include "lexical_comp.h"
     #include "common/errors.h"
-    #include "common/lexical_components.h"
     #include "common/symbol_table.h"
 
     /* File access */
     #include <stdio.h>
     /* To store lexemes */
     #include <string.h>
+    #include <stdlib.h>
     /* size_t */
     #include <stddef.h>
 
 
     /** Block size in bytes. */
-    /* TODO As of now, the block size has been set to 4096 bytes as the
-            compiler is intended to be used in Linux, in which the most
-            popular filesystem is ext4, whose default block size is 4096
-            bytes. However, it would be nice to automatically detect the block
-            size of whichever filesystem lies under.
+    /* TODO As of now, the block size has been set to 4096 bytes as delta
+            is intended to be used in Linux, in which the most popular
+            fileystem is ext4, whose default block size is 4096 bytes.
+            However, it would be nice to automatically detect the block size
+            of whichever filesystem lies under.
     */
     #define YY_BUF_SIZE 4096
 
@@ -77,10 +65,6 @@ PRINT   [ -²]
     );
 
     int _d_lexical_analyzer_literal_recognized(
-        struct d_lexical_component *lexical_component
-    );
-
-    int _d_lexical_analyzer_literal_count_eol(
         struct d_lexical_component *lexical_component
     );
 
@@ -96,15 +80,9 @@ PRINT   [ -²]
         added to the current col count. */
     #define YY_USER_ACTION { current_column += yyleng; }
 
-
-    /** Because a standard finite automata will not be able to detect nested
-        comments */
-    size_t active_nested_comments;
-
-
     /** The default yylex() function is overriden as the lexical analyzer
         needs to be able to receive custom parameters. */
-    #define YY_DECL int d_lexical_analyzer_get_next_lexical_comp(struct d_lexical_component *lexical_component)
+    #define YY_DECL int yylex(struct d_lexical_component *lexical_component)
 %}
 
 
@@ -115,98 +93,34 @@ PRINT   [ -²]
 
  /* ** 1-char components ** */
 
-"-"   { lexical_component->category = D_LC_OP_ARITHMETIC_MINUS; return 0; }
-"*"   { lexical_component->category = D_LC_OP_ARITHMETIC_TIMES; return 0; }
-"/"   { lexical_component->category = D_LC_OP_ARITHMETIC_DIV; return 0; }
-"<"   { lexical_component->category = D_LC_OP_RELATIONAL_LESS_THAN; return 0; }
-"="   { lexical_component->category = D_LC_OP_ASSIGNMENT_ASSIGN; return 0; }
-"."   { lexical_component->category = D_LC_OP_ACCESS_DOT; return 0; }
-"["   { lexical_component->category = D_LC_OP_ACCESS_L_BRACKET; return 0; }
-"]"   { lexical_component->category = D_LC_OP_ACCESS_R_BRACKET; return 0; }
-","   { lexical_component->category = D_LC_SEPARATOR_COMMA; return 0; }
-";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }
-"("   { lexical_component->category = D_LC_SEPARATOR_L_PARENTHESIS; return 0; }
-")"   { lexical_component->category = D_LC_SEPARATOR_R_PARENTHESIS; return 0; }
-"{"   { lexical_component->category = D_LC_SEPARATOR_L_CURLY; return 0; }
-"}"   { lexical_component->category = D_LC_SEPARATOR_R_CURLY; return 0; }
-
-
- /* ** 2-char components ** */
-
-"++"    { lexical_component->category = D_LC_OP_ARITHMETIC_INCREMENT; return 0; }
-"=="    { lexical_component->category = D_LC_OP_RELATIONAL_EQUALS; return 0; }
-"+="    { lexical_component->category = D_LC_OP_ASSIGNMENT_PLUS_ASSIGN; return 0; }
+"+"   { lexical_component->category = D_LC_OP_ARITHMETIC_PLUS; return D_LC_OP_ARITHMETIC_PLUS; }
+"-"   { lexical_component->category = D_LC_OP_ARITHMETIC_MINUS; return D_LC_OP_ARITHMETIC_MINUS; }
+"*"   { lexical_component->category = D_LC_OP_ARITHMETIC_TIMES; return D_LC_OP_ARITHMETIC_TIMES; }
+"/"   { lexical_component->category = D_LC_OP_ARITHMETIC_DIV; return D_LC_OP_ARITHMETIC_DIV; }
+"^"   { lexical_component->category = D_LC_OP_ARITHMETIC_EXPONENT; return D_LC_OP_ARITHMETIC_EXPONENT; }
+ /*"="   { lexical_component->category = D_LC_OP_ASSIGNMENT_ASSIGN; return 0; }  // TODO remove initial space when removing comments
+";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }*/
+"("   { lexical_component->category = D_LC_SEPARATOR_L_PARENTHESIS; return D_LC_SEPARATOR_L_PARENTHESIS; }
+")"   { lexical_component->category = D_LC_SEPARATOR_R_PARENTHESIS; return D_LC_SEPARATOR_R_PARENTHESIS; }
 
 
  /* ** Multiple-char components ** */
 
- /* Comments, block */
-
-"/*"                            { BEGIN(COMMENT_BLOCK); }
-
-<COMMENT_BLOCK>[^*\n]           /* Ignore anything that is not '*' nor '\n' */
-
-<COMMENT_BLOCK>"*"+[^*/\n]*     /* Ignore '*'s that are not followed by '/'s */
-
-<COMMENT_BLOCK>\n               { ++current_line; current_column = 1; }
-
-<COMMENT_BLOCK>"*"+"/"          { BEGIN(INITIAL); }
-
-<COMMENT_BLOCK><<EOF>>          { d_errors_parse_show(3,
-                                                      D_ERR_LEX_WHITESPACE_COMMENT_EOF,
-                                                      current_line, current_column);
-                                                      lexical_component->category = D_LC_EOF;
-                                                      return 0; }
-
-
- /* Comments, block & nested */
-
-<INITIAL,COMMENT_NESTED>"/+"    { ++active_nested_comments; 
-                                  BEGIN(COMMENT_NESTED); }
-
-<COMMENT_NESTED>[^+\n]          /* Ignore anything that is not '+' nor '\n' */
-
-<COMMENT_NESTED>"+"+[^+/\n]*    /* Ignore '+'s that are not followed by '/'s */
-
-<COMMENT_NESTED>\n              { ++current_line; current_column = 1; }
-
-<COMMENT_NESTED>"+"+"/"         { --active_nested_comments;
-                                  if(active_nested_comments == 0) BEGIN(INITIAL); }
-
-<COMMENT_NESTED><<EOF>>         { d_errors_parse_show(3,
-                                                      D_ERR_LEX_WHITESPACE_COMMENT_EOF,
-                                                      current_line, current_column);
-                                                      lexical_component->category = D_LC_EOF;
-                                                      return 0; }
-
-
  /* Comments (single line) */
 
-"//".*\n    { ++current_line; current_column = 1; }
-
-
- /* Double quoted strings */
-
-\"\"([cwd])?                                { d_errors_parse_show(3,
-                                                                  D_ERR_LEX_LITERALS_STRING_EMPTY,
-                                                                  current_line, current_column); }
-
-\"({PRINT}|\\([abfnrtuUvx])?)+\"([cwd])?    { _d_lexical_analyzer_literal_recognized(lexical_component);
-                                              _d_lexical_analyzer_literal_count_eol(lexical_component);
-                                              lexical_component->category = D_LC_LITERAL_STR;
-                                              return 0; }
+ /*"#".*\n    { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; }*/
 
 
  /* Identifiers */
 
-({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { lexical_component->category = _d_lexical_analyzer_identifer_recognized(lexical_component);
-                                      return 0; }
+ /*({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { lexical_component->category = _d_lexical_analyzer_identifer_recognized(lexical_component);
+                                      return 0; }*/
 
 
 
  /* Numbers, binary integer */
 
-0[bB](_)*[01][01_]*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
+ /*0[bB](_)*[01][01_]*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
                                                           lexical_component->category = D_LC_LITERAL_INT;
                                                           return 0; }
 
@@ -220,89 +134,81 @@ PRINT   [ -²]
                                                           D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
                                                           current_line, current_column,
                                                           "a binary number may only have '0' "
-                                                          "-AND- '1' -AND- '_'"); }
+                                                          "-AND- '1' -AND- '_'"); }*/
 
 
  /* Numbers, decimal integer */
 
-{DIGIT}({DIGIT}|_)*({DECIMAL_INTEGER_SUFFIX})?                      { _d_lexical_analyzer_literal_recognized(lexical_component);
-                                                                      lexical_component->category = D_LC_LITERAL_INT;
-                                                                      return 0; }
+ /*{DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
+                                                          lexical_component->category = D_LC_LITERAL_INT;
+                                                          return 0; }
 
-{DIGIT}({DIGIT}|_)*[aAcCdDgGhHjJkKm-tM-Tv-zV-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
-                                                                      D_ERR_LEX_LITERALS_INTEGERS_BAD,
-                                                                      current_line, current_column,
-                                                                      "the only letters that may "
-                                                                      "follow after an integer "
-                                                                      "number are 'E' -OR- 'e' -OR- "
-                                                                      "'F' -OR- 'f' -OR- 'i' -OR- "
-                                                                      "'Li' for floats (i.e. 10E+15, "
-                                                                      "5f, 2i, 23Li) -AND- 'B' -OR- "
-                                                                      "'b' for binaries (i.e. 0b011)"
-                                                                      " -AND- suffixes (i.e. 45u, "
-                                                                      "1000L, 1024LU)"); }
+{DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
+                                                          D_ERR_LEX_LITERALS_INTEGERS_BAD,
+                                                          current_line, current_column,
+                                                          "the only letters that may "
+                                                          "follow after an integer "
+                                                          "number are 'E' -OR- 'e' for "
+                                                          "floats (i.e. 10E+15) -AND- "
+                                                          "'B' -OR- 'b' for binaries "
+                                                          "(i.e. 0b011)"); }*/
 
 
  /* Numbers, decimal float */
 
-{FLOAT_INTEGER}{FLOAT_SUFFIX}                                                                                                         { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                                        return 0; }
+{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                          return D_LC_LITERAL_FP; }
 
-{FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                                             { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                                        return 0; }
+\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                 { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                          return D_LC_LITERAL_FP; }
 
-\.({FLOAT_DECIMALS})({FLOAT_EXPONENT})?                                                                                               { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                                        return 0; }
+{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                         { _d_lexical_analyzer_literal_recognized(lexical_component); 
+                                                                                                                          lexical_component->category = D_LC_LITERAL_FP;
+                                                                                                                          return D_LC_LITERAL_FP; }
 
-{FLOAT_INTEGER}{FLOAT_EXPONENT}                                                                                                       { _d_lexical_analyzer_literal_recognized(lexical_component); 
-                                                                                                                                        lexical_component->category = D_LC_LITERAL_FP;
-                                                                                                                                        return 0; }
+{FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only letter that may follow after a float's "
+                                                                                                                          "decimal dot is 'E' -OR- 'e', providing that there "
+                                                                                                                          "is at least a digit beforehand (i.e. 10.3E+15)"); }
 
-{FLOAT_INTEGER}\.{FLOAT_WRONG_LETTERS}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                                        current_line, current_column,
-                                                                                                                                        "the only letter that may follow after a float's "
-                                                                                                                                        "decimal dot is 'E' -OR- 'e', providing that there "
-                                                                                                                                        "is at least a digit beforehand (i.e. 10.3E+15), "
-                                                                                                                                        "-AND- suffixes (i.e. 5f, 6.F, 2i, 23Li)"); }
-
-({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})({FLOAT_WRONG_LETTERS})({DIGIT}|{ALPHA}|_)*                                                     { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                                        current_line, current_column,
-                                                                                                                                        "the only letter that may be in a float's decimal "
-                                                                                                                                        "part is 'E' -OR- 'e' for its exponent (i.e. "
-                                                                                                                                        "10.3E+15) -AND- suffixes (i.e. 5f, 6.F, 2i, 23Li)"); }
+({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})([a-dA-Df-zF-Z])({DIGIT}|{ALPHA}|_)*                                              { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only letter that may be in a float's decimal "
+                                                                                                                          "part is 'E' -OR- 'e' for its exponent (i.e. "
+                                                                                                                          "10.3E+15)"); }
 
 
-((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                                          { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                                        current_line, current_column,
-                                                                                                                                        "the only characters that may follow after a "
-                                                                                                                                        "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
-                                                                                                                                        "digit' (i.e. 10.3E+15, 10.3E10)"); }
+((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only characters that may follow after a "
+                                                                                                                          "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
+                                                                                                                          "digit' (i.e. 10.3E+15, 10.3E10)"); }
 
-((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                                    { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                                        current_line, current_column,
-                                                                                                                                        "the only characters that may follow after a "
-                                                                                                                                        "float's exponent and sign declaration are digits "
-                                                                                                                                        "(i.e. 10.3E+15, 10.3E10_5)"); }
+((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                      { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "the only characters that may follow after a "
+                                                                                                                          "float's exponent and sign declaration are digits "
+                                                                                                                          "(i.e. 10.3E+15, 10.3E10_5)"); }
 
-((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?{DIGIT}({DIGIT}|_)*{FLOAT_WRONG_LETTERS}({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                                        current_line, current_column,
-                                                                                                                                        "a float's decimal number may only have 'digits' "
-                                                                                                                                        "-AND- '_' -AND- suffixes (i.e. 5f, 6.F, 2i, 23Li)"); }
+((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?{DIGIT}({DIGIT}|_)*{ALPHA}({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
+                                                                                                                          current_line, current_column,
+                                                                                                                          "a float's decimal number may only have 'digits' "
+                                                                                                                          "-AND- '_'"); }
 
 
  /* ** Whitespace ** */
 
 [ \t]+  /* Ignore */
-\n      { ++current_line; current_column = 1; }
+\n      { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; }
 
 
  /* ** EOF ** */
 
-<<EOF>>     { lexical_component->category = D_LC_EOF;
-              return 0; }
+ /*<<EOF>>     { lexical_component->category = D_LC_EOF;
+              return 0; }*/
 
 
 %%
@@ -350,7 +256,6 @@ int d_lexical_analyzer_prepare_for_parsing(
     // The counters need to be initialized
     current_line = 1;
     current_column = 1;
-    active_nested_comments = 0;
 
 
     return 0;
@@ -399,53 +304,8 @@ int _d_lexical_analyzer_literal_recognized(
     lexical_component->attributes = lexeme;
 
     
-    return 0;
-}
-
-
-/**
- * @brief Checks if any '\n's are present in the last stored lexeme.
- *
- * @details
- *  Checks if any '\n's are present in the last stored lexeme. This action is
- *  required when recognizing double quoted strings, as they may include
- *  newlines which must be manually counted in order to properly update the
- *  current line and col counters.
- *
- * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
- *                               which the lexical component's data will be
- *                               written.
- *
- * @return 0 if successful, any other value otherwise.
- */
-int _d_lexical_analyzer_literal_count_eol(
-    struct d_lexical_component *lexical_component
-)
-{
-    size_t eol_count = 0;
-    
-    // Starts right from the beginning of the lexeme
-    const char *last_eol = (const char *)lexical_component->attributes;
-    const char *tmp = NULL;
-
-
-    while((tmp = strchr(last_eol, '\n')) != NULL) {
-        ++eol_count;
-        last_eol = tmp;
-    }
-
-    
-    current_line += eol_count;
-
-    if(eol_count > 0) {
-        current_column = 1;
-    }
-
-    // The current line will have has many characters as there are from the
-    // last eol to the end of the lexeme
-    current_column += yyleng - (last_eol -
-                                 (const char *)lexical_component->attributes);
-
+    /* TODO udpate */
+    yylval = atof(lexeme);
 
     return 0;
 }
@@ -474,7 +334,7 @@ int _d_lexical_analyzer_literal_count_eol(
  * @return D_LC_IDENTIFIER if successful, D_LC_IDENTIFIER if the component
  *         turned out to be a keyword, any other value otherwise.
  */
-int _d_lexical_analyzer_identifer_recognized(
+/*int _d_lexical_analyzer_identifer_recognized(
     struct d_lexical_component *lexical_component
 )
 {
@@ -533,57 +393,7 @@ int _d_lexical_analyzer_identifer_recognized(
 
     
     return entry_in_table->lexical_component;
-}
-
-
-/**
- * @brief Implementation of lexical.h/d_lexical_analyzer_show_lexical_comp
- */
-int d_lexical_analyzer_show_lexical_comp(
-    struct d_lexical_component *lexical_component
-)
-{
-    if(lexical_component == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.l",
-                               "d_lexical_analyzer_show_lexical_comp",
-                               "'lexical_component'");
-        return -1;
-    }
-
-
-    printf("<%s", d_lc_to_string(lexical_component->category));
-
-
-    // The lexeme will be stored as its attribute, if any
-    if(lexical_component->attributes != NULL) {
-
-        // If its attribute is its lexeme
-        if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
-           D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
-
-            printf(", %s", (const char *) lexical_component->attributes);
-        }
-
-        // If its attribute is a pointer to its entry in the symbol table
-        else if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
-                    D_LC_KEYWORD / D_LC_DISTANCE_CATEGORY ||
-                
-                lexical_component->category / D_LC_DISTANCE_CATEGORY ==
-                    D_LC_IDENTIFIER / D_LC_DISTANCE_CATEGORY) {
-
-            printf(", %s",
-                ((struct d_symbol_table_entry *)
-                    lexical_component->attributes)->lexeme);
-        }
-    }
-
-
-    printf(">\n");
-
-
-    return 0;
-}
+}*/
 
 
 /**
@@ -604,7 +414,7 @@ int d_lexical_analyzer_destroy_lexical_com(
 
     lexical_component->category = -1; // Gets invalidated
 
-
+/* TODO update */ /*
     if(lexical_component->attributes != NULL) {
 
         // If the component is a literal, its attribute is its lexeme
@@ -621,7 +431,7 @@ int d_lexical_analyzer_destroy_lexical_com(
 
 
         lexical_component->attributes = NULL;  // Gets invalidated
-    }
+    }*/
 
 
     return 0;

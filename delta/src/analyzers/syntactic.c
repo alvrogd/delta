@@ -8,7 +8,6 @@
 
 
 #include "analyzers/syntactic.h"
-#include "common/lexical_components.h"
 #include "common/errors.h"
 
 #include <stdio.h>

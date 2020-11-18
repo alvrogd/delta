@@ -2,9 +2,8 @@
 #include <stdlib.h>
 
 #include "analyzers/lexical.h"
-#include "analyzers/syntactic.h"
+#include "analyzers/synsem.h"
 #include "common/errors.h"
-#include "common/lexical_components.h"
 #include "common/symbol_table.h"
 
 
@@ -13,7 +12,7 @@ int main(int argc, char *argv[])
     /* Initialization */
 
     // The main function is responsible for initializing all the components of
-    // the Delta compiler
+    // delta
 
     if(d_symbol_table_initialize() != 0) {
         exit(EXIT_FAILURE);

@@ -1,32 +1,21 @@
 /**
- * @file syntactic.h
+ * @file synsem.h
  * @author Álvaro Goldar Dieste
  * @date Oct 2020
  *
- * @brief This is the syntantic analyzer that the delta compiler will use.
+ * @brief This is the syntantic and semantic analyzer that delta will use.
  *
  * @details
- *  As of now, the syntactic compiler's only duty is to command the lexical
- *  analyzer to parse the input file, reporting all lexical components that
- *  can be found.
+ *  /* TODO
  */
 
 
-#ifndef D_SYNTACTIC_ANALYZER
-#define D_SYNTACTIC_ANALYZER
+#ifndef D_SYNTACTIC_SEMANTIC_ANALYZER
+#define D_SYNTACTIC_SEMANTIC_ANALYZER
 
 
 #include "common/symbol_table.h"
 #include "analyzers/lexical.h"
-
-
-/**
- * @brief Represents a syntactic analyzer.
- *
- * @details
- *  Opaque data type which represents a syntactic analyzer.
- */
-struct d_syntactic_analyzer;
 
 
 /**
@@ -58,4 +47,4 @@ int d_syntactic_analyzer_parse();
 int d_syntactic_analyzer_destroy();
 
 
-#endif
+#endif// D_SYNTACTIC_SEMANTIC_ANALYZER

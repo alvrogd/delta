@@ -3,11 +3,11 @@
  * @author Álvaro Goldar Dieste
  * @date Nov 2020
  *
- * @brief This is the lexical analyzer that the delta compiler will use.
+ * @brief This is the lexical analyzer that delta will use.
  *
  * @details
- *  This is the definition of the lexical analyzer that the delta compiler use
- *  during through the compilation process.
+ *  This is the definition of the lexical analyzer that delta will use 
+ *  through the compilation process.
  *
  *  Its duty is to parse the contents given by the I/O system, recognizing
  *  the lexical components that are present in it. These are defined in
@@ -36,7 +36,28 @@
 #define D_LEXICAL_ANALYZER
 
 
-#include "common/lexical_components.h"
+/**
+ * @brief Represents a lexical component.
+ *
+ * @details
+ *  Opaque data type which represents a lexical analyzer.
+ */
+struct d_lexical_component {
+    /** Integer that represents the (sub)category to which the lexical
+        component belongs. */
+    int category;
+    /** Any attributes that the lexical component may carry along:
+          
+          - char * to its lexeme if the component is a literal.
+              (must be manually freed once de component is no longer needed,
+               using the d_lexical_analyzer_destroy_lexical_comp function)
+              
+          - struct d_symbol_table_entry * if the component is an identifier.
+              (there is no need to free it as the symbol table is responsible
+               of it)
+    */
+    const void *attributes;
+};
 
 
 /**
@@ -78,23 +99,7 @@ int d_lexical_analyzer_prepare_for_parsing(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_lexical_analyzer_get_next_lexical_comp(
-    struct d_lexical_component *lexical_component
-);
-
-
-/**
- * @brief Shows the specified lexical component.
- *
- * @details
- *  Prints out which category the given lexical component belongs to, as well
- *  as its lexeme, if any (for keywords and identifiers).
- * 
- * @param[in] lexical_component The lexical component.
- *
- * @return 0 if successful, any other value otherwise.
- */
-int d_lexical_analyzer_show_lexical_comp(
+int yylex(
     struct d_lexical_component *lexical_component
 );
 

@@ -3,19 +3,18 @@
  * @author Álvaro Goldar Dieste
  * @date Oct 2020
  *
- * @brief This file contains the utilities on which the delta compiler relies
- *        to show its error messages.
+ * @brief This file contains the utilities on which delta relies to show its
+ *        error messages.
  *
  * @details
- *  All possible error messages that the delta compiler may show fall into
- *  two categories:
+ *  All possible error messages that delta may show fall into two categories:
  *
  *    - On the one hand, there are the error messages that happen due to
  *      parsing the input source file. They are lexical, syntatic and semantic
  *      errors.
  *
- *    - On the other hand, the compiler can also raise internal errors, such
- *      as those that come from failed system calls.
+ *    - On the other hand, delta can also raise internal errors, such as those
+ *      that come from failed system calls.
  *
  *  No matter from where an error comes from, there will be a template for it.
  *
@@ -25,10 +24,10 @@
  *                              code which uniquely identifies the error. If
  *                              the template allows one or more custom values
  *                              to be inserted (i.e. to point out to which
- *                              variable the error affects), the compiler may
- *                              also provide those values, and they will be
- *                              printed out just in the right places,
- *                              accordingly to the error template.
+ *                              variable the error affects), delta may also
+ *                              provide those values, and they will be printed
+ *                              out just in the right places, accordingly
+ *                              to the error template.
  *
 
  *
