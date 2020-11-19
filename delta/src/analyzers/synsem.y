@@ -19,12 +19,13 @@
     #include <stdlib.h>
     /* Functions that are expected to be available in a calculator */
     #include <math.h>
+}
 
-
-    /* All possible semantic data types, for both terminal and non-terminal
-       symbols */
-    /* As of now, all numbers will be floats */
-    #define YYSTYPE double
+/* All possible semantic data types, for both terminal and non-terminal
+    symbols */
+%union {
+    double                      dec_value; /* Decimal numbers */
+    struct d_symbol_table_entry *st_entry; /* Identifiers */
 }
 
 
@@ -33,6 +34,10 @@
 
 
 /* ═══════════════════════════ Bison declarations ═════════════════════════ */
+
+/* NOTE: any symbol that may have a semantic value needs to have explicitely
+         set its data type */
+          
 
 /* **  Terminal symbols definitions ** */
 
@@ -43,8 +48,10 @@
    header file that this one generates, and which contains all components. */
 
 /* Almost all arithmetic operators will be left-associative, as it is how a
-   calculator usually works. The only operator that is right-associative is
-   the exponentiation, also as expected. */
+   calculator usually works; the only arith. operator that is right-
+   -associative is the exponentiation, also as expected.
+   
+   The assignment operator is also right-associative, as in C. */
 
 /* The operator precedence is determined by the line in which a symbol is
    defined. A higher line number means a greater operator precedence. */
@@ -52,9 +59,16 @@
 /* Whitespace */
 %token D_LC_WHITESPACE_EOL
 
+/* Identifiers */
+%token <st_entry> D_LC_IDENTIFIER_VARIABLE
+%token <st_entry> D_LC_IDENTIFIER_FUNCTION
+
 /* Numbers */
-%token D_LC_LITERAL_INT
-%token D_LC_LITERAL_FP
+%token <dec_value> D_LC_LITERAL_INT
+%token <dec_value> D_LC_LITERAL_FP
+
+/* Assignment operators */
+%right D_LC_OP_ASSIGNMENT_ASSIGN
 
 /* Arithmetic operatos */
 %left       D_LC_OP_ARITHMETIC_PLUS D_LC_OP_ARITHMETIC_MINUS
@@ -65,6 +79,13 @@
 /* Separators */
 %token D_LC_SEPARATOR_L_PARENTHESIS
 %token D_LC_SEPARATOR_R_PARENTHESIS
+
+
+/* **  Non-terminal symbols definitions ** */
+
+/* Only those that may have semantic values need to be declared, in order to
+   know their required data type */
+%type <dec_value> expression;
 
 
 /* ═══════════════════════ Local functions/variables ══════════════════════ */
@@ -98,19 +119,33 @@ line:
 
 /* Mathematical expressions */
 expression:
-        D_LC_LITERAL_FP                                                                         /*{ printf("un float: %f\n", $1); } */
-    |   expression                   D_LC_OP_ARITHMETIC_PLUS     expression                     { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ }
-    |   expression                   D_LC_OP_ARITHMETIC_MINUS    expression                     { $$ = $1 - $3; }
-    |   expression                   D_LC_OP_ARITHMETIC_TIMES    expression                     { $$ = $1 * $3; }
-    |   expression                   D_LC_OP_ARITHMETIC_DIV      expression
+        D_LC_LITERAL_INT
+    |   D_LC_LITERAL_FP
+    |   D_LC_IDENTIFIER_VARIABLE
+            { $$ = $1->attribute.dec_value; }
+    |   D_LC_IDENTIFIER_VARIABLE D_LC_OP_ASSIGNMENT_ASSIGN expression
+            { $$ = $3; $1->attribute.dec_value = $3; }
+    |   D_LC_IDENTIFIER_FUNCTION D_LC_SEPARATOR_L_PARENTHESIS expression D_LC_SEPARATOR_R_PARENTHESIS
+            { printf("funcion: %d %s %p \n", $1->lexical_component, $1->lexeme, $1->attribute.function); printf("%f\n", $3); $$ = $1->attribute.function($3); }
+    |   expression D_LC_OP_ARITHMETIC_PLUS expression
+            { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ }
+    |   expression D_LC_OP_ARITHMETIC_MINUS expression
+            { $$ = $1 - $3; }
+    |   expression D_LC_OP_ARITHMETIC_TIMES expression
+            { $$ = $1 * $3; }
+    |   expression D_LC_OP_ARITHMETIC_DIV expression
             {
                 if($3 != 0) { $$ = $1 / $3; }
                 else { $$ = 0.0; d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO, @3.last_line, @3.last_column); }
             }
-    |   D_LC_OP_ARITHMETIC_MINUS     expression                  %prec D_LC_OP_ARITHMETIC_NEG   { $$ = -$2; }
-    |   expression                   D_LC_OP_ARITHMETIC_EXPONENT expression                     { $$ = pow($1, $3); }
-    |   D_LC_SEPARATOR_L_PARENTHESIS expression                  D_LC_SEPARATOR_R_PARENTHESIS   { $$ = $2; }
-    |   D_LC_SEPARATOR_L_PARENTHESIS error                  D_LC_SEPARATOR_R_PARENTHESIS        { yyerrok; }
+    |   D_LC_OP_ARITHMETIC_MINUS expression %prec D_LC_OP_ARITHMETIC_NEG
+            { $$ = -$2; }
+    |   expression D_LC_OP_ARITHMETIC_EXPONENT expression
+            { $$ = pow($1, $3); }
+    |   D_LC_SEPARATOR_L_PARENTHESIS expression D_LC_SEPARATOR_R_PARENTHESIS
+            { $$ = $2; }
+    |   D_LC_SEPARATOR_L_PARENTHESIS error D_LC_SEPARATOR_R_PARENTHESIS
+            { yyerrok; }
     ;
 
 

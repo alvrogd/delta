@@ -94,8 +94,8 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 "*"   { return D_LC_OP_ARITHMETIC_TIMES; }
 "/"   { return D_LC_OP_ARITHMETIC_DIV; }
 "^"   { return D_LC_OP_ARITHMETIC_EXPONENT; }
- /*"="   { lexical_component->category = D_LC_OP_ASSIGNMENT_ASSIGN; return 0; }  // TODO remove initial space when removing comments
-";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }*/
+"="   { return D_LC_OP_ASSIGNMENT_ASSIGN; }
+ /*";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }*/
 "("   { return D_LC_SEPARATOR_L_PARENTHESIS; }
 ")"   { return D_LC_SEPARATOR_R_PARENTHESIS; }
 
@@ -109,8 +109,7 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
  /* Identifiers */
 
- /*({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { lexical_component->category = _d_lexical_analyzer_identifer_recognized(lexical_component);
-                                      return 0; }*/
+({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { return _d_lexical_analyzer_identifer_recognized(); }
 
 
 
@@ -135,9 +134,8 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
  /* Numbers, decimal integer */
 
- /*{DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
-                                                          lexical_component->category = D_LC_LITERAL_INT;
-                                                          return 0; }
+{DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_INT);
+                                                          return D_LC_LITERAL_INT; }
 
 {DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BAD,
@@ -147,7 +145,7 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
                                                           "number are 'E' -OR- 'e' for "
                                                           "floats (i.e. 10E+15) -AND- "
                                                           "'B' -OR- 'b' for binaries "
-                                                          "(i.e. 0b011)"); }*/
+                                                          "(i.e. 0b011)"); }
 
 
  /* Numbers, decimal float */
@@ -250,21 +248,21 @@ int _d_lexical_analyzer_literal_recognized(
     switch(lexical_component) {
 
         case D_LC_LITERAL_INT:
-            yylval = atof(yytext); /* TODO update */
+            yylval.dec_value = atof(yytext);
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved integer "
-                   "number: %d\n", yylval);
+                   "number as fp: %d\n", yylval.dec_value);
             #endif
 
             break;
 
         case D_LC_LITERAL_FP:
-            yylval = atof(yytext);
+            yylval.dec_value = atof(yytext);
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved floating "
-                   "point number: %f\n", yylval);
+                   "point number: %f\n", yylval.dec_value);
             #endif
 
             break;
@@ -279,20 +277,21 @@ int _d_lexical_analyzer_literal_recognized(
 
 
 /**
- * @brief Stores the current identifier (a lexical component) in the symbol
- *        table.
+ * @brief Makes sure that the current identifier (a lexical component) is
+ *        stored in the symbol table.
  *
  * @details
- *  Generates a new entry in the symbol table for the current identifier (a
- *  lexical component). All identifiers need an entry in the symbol table.
+ *  Identifiers can be categorized into:
+ *    - New identifiers; they always represent variables.
+ *    - Already present identifiers; they may represent keywords, functions or
+ *      previously declared variables.
  *
- *  Specifically, this entry will have the component's lexeme, and
- *  it will be available in the "lexical_component->attributes" pointer.
+ *  If the identifier is not present yet, an entry, which has its lexeme and
+ *  is initialized to '0.0', will be added to the table. Otherwise, the
+ *  already present entry will be retrieved.
  *
- *  It is worth noting that the identifier may actually be a keyword. If it
- *  were the case, its already present entry in the table will be retrieved,
- *  instead of creating a new one, and it will be also available in the
- *  "lexical_component->attributes" pointer.
+ *  In any case, the associated entry will be available in the "yylval"
+ *  variable so that the syntactic and semantic analyzer may use it.
  *
  * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
  *                               which the lexical component's data will be
@@ -301,11 +300,12 @@ int _d_lexical_analyzer_literal_recognized(
  * @return D_LC_IDENTIFIER if successful, D_LC_IDENTIFIER if the component
  *         turned out to be a keyword, any other value otherwise.
  */
-/*int _d_lexical_analyzer_identifer_recognized(
+int _d_lexical_analyzer_identifer_recognized(
     struct d_lexical_component *lexical_component
 )
 {
     const unsigned char *lexeme = NULL;
+
     struct d_symbol_table_entry entry;
     struct d_symbol_table_entry *entry_in_table = NULL;
     
@@ -345,22 +345,22 @@ int _d_lexical_analyzer_literal_recognized(
                "yet\n");
         #endif
 
-        // If it is not already present, it definitely cannot be a
-        // keyword
+        // If it is not already present, it is a new variable
         entry.lexeme = lexeme;
-        entry.lexical_component = D_LC_IDENTIFIER;
+        entry.lexical_component = D_LC_IDENTIFIER_VARIABLE;
 
         d_symbol_table_add(&entry);
         entry_in_table = d_symbol_table_search(lexeme);
     }
 
-    // Anyways, if the component deserves an entry in the symbol
+
+    // Anyways, if the current component deserves an entry in the symbol
     // table, its attribute will always be a reference to that entry
-    lexical_component->attributes = entry_in_table;
+    yylval.st_entry = entry_in_table;
 
     
     return entry_in_table->lexical_component;
-}*/
+}
 
 
 /**

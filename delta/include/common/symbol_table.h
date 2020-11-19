@@ -28,6 +28,9 @@
 #define D_SYMBOL_TABLE
 
 
+#include "common/math_functions.h"
+
+
 // External library 
 #include "lib/uthash.h"
 
@@ -55,8 +58,17 @@ struct d_symbol_table_entry {
         entry, as well as serving as its key. It will be automatically freed
         once the entry is deleted. */
     const unsigned char *lexeme;
+
     /** Lexical component which corresponds to the entry's lexeme. */
     int lexical_component;
+
+    /** Union that holds any attribute of any kind that an entry may
+        require. */
+    union {
+        double dec_value; /** The value of decimal variables. */
+        dec_function function; /** Pointer a function's implementation. */
+    } attribute;
+
     /** Makes this structure hashable by the library. */
     UT_hash_handle hh;
 };

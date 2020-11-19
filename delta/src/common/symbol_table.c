@@ -7,6 +7,8 @@
  */
 
 
+#include "lexical_comp.h"
+
 #include "common/symbol_table.h"
 #include "common/keywords.h"
 #include "common/errors.h"
@@ -17,6 +19,28 @@
 
 // strcpy, strlen
 #include <string.h>
+
+
+#include <math.h>
+/* TODO clean up */
+const char *D_MATH_FUNCTIONS_NAMES[] = {
+    "atan",
+    "cos",
+    "exp",
+    "log",
+    "sin",
+    "sqrt",
+};
+
+const dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
+    &atan,
+    &cos,
+    &exp,
+    &log,
+    &sin,
+    &sqrt,
+};
+
 
 
 /**
@@ -46,6 +70,8 @@ int d_symbol_table_initialize()
     size_t i = 0;
     size_t keyword_count = sizeof(D_LANG_KEYWORDS) /
                            sizeof(D_LANG_KEYWORDS[0]);
+    size_t function_count = sizeof(D_MATH_FUNCTIONS_NAMES) /
+                            sizeof(D_MATH_FUNCTIONS_NAMES[0]);
 
     struct d_symbol_table_entry tmp_entry;
     unsigned char *tmp_entry_lexeme = NULL;
@@ -66,10 +92,9 @@ int d_symbol_table_initialize()
     symbol_table->table = NULL;
 
 
-    /* TOD update *//*
     // And the symbol table initialization will be completed once all of the
-    // registered keywords are put into it
-    for(i = 0; i < keyword_count; ++i) {
+    // predefined keywords and math functions are put into it
+/*    for(i = 0; i < keyword_count; ++i) {
 
         // The lexeme is the keyword itself; a '\0' char must be present at
         // the end
@@ -108,6 +133,35 @@ int d_symbol_table_initialize()
            d_symbol_table_search(symbol_table, "string") != NULL);
     #endif
 */
+
+    for(i = 0; i < function_count; ++i) {
+
+        if((tmp_entry_lexeme = malloc(strlen(D_MATH_FUNCTIONS_NAMES[i]) + 1)) ==
+            NULL) {
+
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "symbol_table.c",
+                                   "d_symbol_table_initialize",
+                                   "'malloc' for math function's lexeme");
+            return -1;
+        }
+
+        strcpy((char *)tmp_entry_lexeme, D_MATH_FUNCTIONS_NAMES[i]);
+        tmp_entry.lexeme = tmp_entry_lexeme;
+
+        tmp_entry.lexical_component = D_LC_IDENTIFIER_FUNCTION;
+
+        tmp_entry.attribute.function = D_MATH_FUNCTIONS_IMPLEMENTATIONS[i];
+
+        d_symbol_table_add(&tmp_entry);
+
+        //#ifdef DEBUG
+        printf("[symbol_table][initialize] Added function.: %s %p %p\n",
+               tmp_entry.lexeme, D_MATH_FUNCTIONS_IMPLEMENTATIONS[i],
+               tmp_entry.attribute.function);
+        //#endif
+    }
+
 
     return 0;
 }
@@ -199,6 +253,7 @@ int d_symbol_table_add(
     // The new struture just copies value by value the given struct's members
     internal_entry->lexeme = entry->lexeme;
     internal_entry->lexical_component = entry->lexical_component;
+    internal_entry->attribute = entry->attribute;
     // There is no need to copy the library's handle, it just needs to be
     // present
 
