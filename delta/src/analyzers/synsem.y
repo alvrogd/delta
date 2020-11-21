@@ -62,6 +62,7 @@
 /* Identifiers */
 %token <st_entry> D_LC_IDENTIFIER_VARIABLE
 %token <st_entry> D_LC_IDENTIFIER_FUNCTION
+%token <st_entry> D_LC_IDENTIFIER_CONSTANT
 
 /* Numbers */
 %token <dec_value> D_LC_LITERAL_INT
@@ -70,15 +71,17 @@
 /* Assignment operators */
 %right D_LC_OP_ASSIGNMENT_ASSIGN
 
-/* Arithmetic operatos */
+/* Arithmetic operators */
 %left       D_LC_OP_ARITHMETIC_PLUS D_LC_OP_ARITHMETIC_MINUS
 %left       D_LC_OP_ARITHMETIC_TIMES D_LC_OP_ARITHMETIC_DIV
-%precedence D_LC_OP_ARITHMETIC_NEG /* This precedence rule will allow negating expresions */
-%right      D_LC_OP_ARITHMETIC_EXPONENT
 
 /* Separators */
 %token D_LC_SEPARATOR_L_PARENTHESIS
 %token D_LC_SEPARATOR_R_PARENTHESIS
+
+/* More arithmetic operators */
+%precedence D_LC_OP_ARITHMETIC_NEG /* This precedence rule will allow negating expresions */
+%right      D_LC_OP_ARITHMETIC_EXPONENT
 
 
 /* **  Non-terminal symbols definitions ** */
@@ -112,7 +115,7 @@ input:
    at the end. The third entry allows basic recovery from syntax errors. */
 line:
         D_LC_WHITESPACE_EOL
-    |   expression          D_LC_WHITESPACE_EOL  { printf("-> %.10g\n", $1); }
+    |   expression          D_LC_WHITESPACE_EOL  { printf("   %.10g\n>> ", $1); }
     |   error              '\n'                  { yyerrok; yyclearin; }
     ;
 
@@ -123,10 +126,14 @@ expression:
     |   D_LC_LITERAL_FP
     |   D_LC_IDENTIFIER_VARIABLE
             { $$ = $1->attribute.dec_value; }
+    |   D_LC_IDENTIFIER_CONSTANT
+            { $$ = $1->attribute.dec_value; }
     |   D_LC_IDENTIFIER_VARIABLE D_LC_OP_ASSIGNMENT_ASSIGN expression
             { $$ = $3; $1->attribute.dec_value = $3; }
+    |   D_LC_IDENTIFIER_CONSTANT D_LC_OP_ASSIGNMENT_ASSIGN expression
+            { d_errors_parse_show(3, D_ERR_USER_INPUT_WRITE_CONSTANT, @3.last_line, @3.last_column); }
     |   D_LC_IDENTIFIER_FUNCTION D_LC_SEPARATOR_L_PARENTHESIS expression D_LC_SEPARATOR_R_PARENTHESIS
-            { printf("funcion: %d %s %p \n", $1->lexical_component, $1->lexeme, $1->attribute.function); printf("%f\n", $3); $$ = $1->attribute.function($3); }
+            { $$ = $1->attribute.function($3); }
     |   expression D_LC_OP_ARITHMETIC_PLUS expression
             { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ }
     |   expression D_LC_OP_ARITHMETIC_MINUS expression
@@ -136,7 +143,7 @@ expression:
     |   expression D_LC_OP_ARITHMETIC_DIV expression
             {
                 if($3 != 0) { $$ = $1 / $3; }
-                else { $$ = 0.0; d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO, @3.last_line, @3.last_column); }
+                else { d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO, @3.last_line, @3.last_column); }
             }
     |   D_LC_OP_ARITHMETIC_MINUS expression %prec D_LC_OP_ARITHMETIC_NEG
             { $$ = -$2; }
@@ -168,6 +175,8 @@ int d_synsem_analyzer_initialize()
  */
 int d_synsem_analyzer_parse()
 {
+    printf(">> ");
+
     return yyparse();
 }
 

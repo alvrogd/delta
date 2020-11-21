@@ -7,11 +7,13 @@
  */
 
 
-#include "lexical_comp.h"
+#include "common/lexical_comp.h"
 
 #include "common/symbol_table.h"
 #include "common/keywords.h"
 #include "common/errors.h"
+#include "common/math_constants.h"
+#include "common/math_functions.h"
 
 
 #include <stdio.h>
@@ -19,28 +21,6 @@
 
 // strcpy, strlen
 #include <string.h>
-
-
-#include <math.h>
-/* TODO clean up */
-const char *D_MATH_FUNCTIONS_NAMES[] = {
-    "atan",
-    "cos",
-    "exp",
-    "log",
-    "sin",
-    "sqrt",
-};
-
-const dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
-    &atan,
-    &cos,
-    &exp,
-    &log,
-    &sin,
-    &sqrt,
-};
-
 
 
 /**
@@ -68,10 +48,13 @@ struct d_symbol_table *symbol_table = NULL;
 int d_symbol_table_initialize()
 {
     size_t i = 0;
+
     size_t keyword_count = sizeof(D_LANG_KEYWORDS) /
                            sizeof(D_LANG_KEYWORDS[0]);
     size_t function_count = sizeof(D_MATH_FUNCTIONS_NAMES) /
                             sizeof(D_MATH_FUNCTIONS_NAMES[0]);
+    size_t constant_count = sizeof(D_MATH_CONSTANTS_NAMES) /
+                            sizeof(D_MATH_CONSTANTS_NAMES[0]);
 
     struct d_symbol_table_entry tmp_entry;
     unsigned char *tmp_entry_lexeme = NULL;
@@ -136,8 +119,8 @@ int d_symbol_table_initialize()
 
     for(i = 0; i < function_count; ++i) {
 
-        if((tmp_entry_lexeme = malloc(strlen(D_MATH_FUNCTIONS_NAMES[i]) + 1)) ==
-            NULL) {
+        if((tmp_entry_lexeme =
+            malloc(strlen(D_MATH_FUNCTIONS_NAMES[i]) + 1)) == NULL) {
 
             d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                    "symbol_table.c",
@@ -156,9 +139,37 @@ int d_symbol_table_initialize()
         d_symbol_table_add(&tmp_entry);
 
         //#ifdef DEBUG
-        printf("[symbol_table][initialize] Added function.: %s %p %p\n",
+        printf("[symbol_table][initialize] Added function: %s %p %p\n",
                tmp_entry.lexeme, D_MATH_FUNCTIONS_IMPLEMENTATIONS[i],
                tmp_entry.attribute.function);
+        //#endif
+    }
+
+
+    for(i = 0; i < constant_count; ++i) {
+
+        if((tmp_entry_lexeme =
+            malloc(strlen(D_MATH_CONSTANTS_NAMES[i]) + 1)) == NULL) {
+
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "symbol_table.c",
+                                   "d_symbol_table_initialize",
+                                   "'malloc' for math constant's lexeme");
+            return -1;
+        }
+
+        strcpy((char *)tmp_entry_lexeme, D_MATH_CONSTANTS_NAMES[i]);
+        tmp_entry.lexeme = tmp_entry_lexeme;
+
+        tmp_entry.lexical_component = D_LC_IDENTIFIER_CONSTANT;
+
+        tmp_entry.attribute.dec_value = D_MATH_CONSTANTS_VALUES[i];
+
+        d_symbol_table_add(&tmp_entry);
+
+        //#ifdef DEBUG
+        printf("[symbol_table][initialize] Added constant: %s %f\n",
+               tmp_entry.lexeme, tmp_entry.attribute.dec_value);
         //#endif
     }
 

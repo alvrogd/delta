@@ -35,7 +35,7 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 %{
     #include "analyzers/lexical.h"
 
-    #include "lexical_comp.h"
+    #include "common/lexical_comp.h"
     #include "common/errors.h"
     #include "common/symbol_table.h"
 

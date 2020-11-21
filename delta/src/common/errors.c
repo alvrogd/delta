@@ -90,6 +90,8 @@ const char *d_errors_get_template(
             return "the input file is inaccessible; check if the path is "
                    "right, and if its permissions allow reading it";
 
+        case D_ERR_USER_INPUT_WRITE_CONSTANT:
+            return "mathematical constants are inmutable";
 
         default: // TODO change perror
             perror("error: invalid argument, 'error_code' not recognized\n"

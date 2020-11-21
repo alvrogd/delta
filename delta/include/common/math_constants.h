@@ -1,7 +1,7 @@
 /**
- * @file keywords.h
+ * @file math_constants.h
  * @author Álvaro Goldar Dieste
- * @date Oct 2020
+ * @date Nov 2020
  *
  * @brief This file lists a subset of the keywords in the D language.
  *
@@ -12,11 +12,13 @@
 
 /* TODO update */
 
-#ifndef D_KEYWORDS
-#define D_KEYWORDS
+#ifndef D_MATH_CONSTANTS
+#define D_MATH_CONSTANTS
 
 
-extern const char *D_LANG_KEYWORDS[9];
+extern const char *D_MATH_CONSTANTS_NAMES[2];
+
+extern const double D_MATH_CONSTANTS_VALUES[2];
 
 
-#endif //D_KEYWORDS
+#endif //D_MATH_CONSTANTS

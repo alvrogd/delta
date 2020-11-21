@@ -19,7 +19,7 @@ find_package(BISON)
 # Its specification file is "synsem.y"
 BISON_TARGET(
     deltaparser src/analyzers/synsem.y ${CMAKE_CURRENT_BINARY_DIR}/synsem.c
-    COMPILE_FLAGS "--defines=${CMAKE_CURRENT_BINARY_DIR}/lexical_comp.h"
+    COMPILE_FLAGS "--defines=include/common/lexical_comp.h"
 )
 ADD_FLEX_BISON_DEPENDENCY(deltalex deltaparser)
 
@@ -41,15 +41,15 @@ set(
 # with Flex
 set(
     HEADERS
-    include/analyzers/lexical.h include/analyzers/synsem.h ${CMAKE_CURRENT_BINARY_DIR}/lexical_comp.h
-    include/common/errors.h include/common/keywords.h include/common/symbol_table.h
+    include/analyzers/lexical.h include/analyzers/synsem.h include/common/lexical_comp.h
+    include/common/errors.h include/common/keywords.h include/common/math_constants.h include/common/math_functions.h include/common/symbol_table.h
     include/lib/uthash.h
 )
 set(
     SOURCES
     src/main.c
     ${FLEX_deltalex_OUTPUTS} ${BISON_deltaparser_OUTPUTS}
-    src/common/errors.c src/common/symbol_table.c
+    src/common/errors.c src/common/keywords.c src/common/math_constants.c src/common/math_functions.c src/common/symbol_table.c
 )
 
 

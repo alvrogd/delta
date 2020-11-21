@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_YY_MNT_C_USERS_ALVAR_DESKTOP_DROPBOX_SYYNC_DELTA_DELTA_BUILD_LEXICAL_COMP_H_INCLUDED
-# define YY_YY_MNT_C_USERS_ALVAR_DESKTOP_DROPBOX_SYYNC_DELTA_DELTA_BUILD_LEXICAL_COMP_H_INCLUDED
+#ifndef YY_YY_INCLUDE_COMMON_LEXICAL_COMP_H_INCLUDED
+# define YY_YY_INCLUDE_COMMON_LEXICAL_COMP_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -56,7 +56,7 @@ extern int yydebug;
     /* Functions that are expected to be available in a calculator */
     #include <math.h>
 
-#line 60 "/mnt/c/Users/alvar/Desktop/Dropbox/Syync/delta/delta/build/lexical_comp.h"
+#line 60 "include/common/lexical_comp.h"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -66,17 +66,18 @@ extern int yydebug;
     D_LC_WHITESPACE_EOL = 258,
     D_LC_IDENTIFIER_VARIABLE = 259,
     D_LC_IDENTIFIER_FUNCTION = 260,
-    D_LC_LITERAL_INT = 261,
-    D_LC_LITERAL_FP = 262,
-    D_LC_OP_ASSIGNMENT_ASSIGN = 263,
-    D_LC_OP_ARITHMETIC_PLUS = 264,
-    D_LC_OP_ARITHMETIC_MINUS = 265,
-    D_LC_OP_ARITHMETIC_TIMES = 266,
-    D_LC_OP_ARITHMETIC_DIV = 267,
-    D_LC_OP_ARITHMETIC_NEG = 268,
-    D_LC_OP_ARITHMETIC_EXPONENT = 269,
-    D_LC_SEPARATOR_L_PARENTHESIS = 270,
-    D_LC_SEPARATOR_R_PARENTHESIS = 271
+    D_LC_IDENTIFIER_CONSTANT = 261,
+    D_LC_LITERAL_INT = 262,
+    D_LC_LITERAL_FP = 263,
+    D_LC_OP_ASSIGNMENT_ASSIGN = 264,
+    D_LC_OP_ARITHMETIC_PLUS = 265,
+    D_LC_OP_ARITHMETIC_MINUS = 266,
+    D_LC_OP_ARITHMETIC_TIMES = 267,
+    D_LC_OP_ARITHMETIC_DIV = 268,
+    D_LC_SEPARATOR_L_PARENTHESIS = 269,
+    D_LC_SEPARATOR_R_PARENTHESIS = 270,
+    D_LC_OP_ARITHMETIC_NEG = 271,
+    D_LC_OP_ARITHMETIC_EXPONENT = 272
   };
 #endif
 
@@ -89,7 +90,7 @@ union YYSTYPE
     double                      dec_value; /* Decimal numbers */
     struct d_symbol_table_entry *st_entry; /* Identifiers */
 
-#line 93 "/mnt/c/Users/alvar/Desktop/Dropbox/Syync/delta/delta/build/lexical_comp.h"
+#line 94 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -116,4 +117,4 @@ extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
 int yyparse (void);
 
-#endif /* !YY_YY_MNT_C_USERS_ALVAR_DESKTOP_DROPBOX_SYYNC_DELTA_DELTA_BUILD_LEXICAL_COMP_H_INCLUDED  */
+#endif /* !YY_YY_INCLUDE_COMMON_LEXICAL_COMP_H_INCLUDED  */
