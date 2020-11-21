@@ -19,6 +19,7 @@
 /** Template for the functions that operate on decimal numbers. */
 typedef double (*dec_function) (double);
 
+
 extern const char *D_MATH_FUNCTIONS_NAMES[6];
 
 extern const dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[6];

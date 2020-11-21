@@ -14,6 +14,7 @@
 #include "common/errors.h"
 #include "common/math_constants.h"
 #include "common/math_functions.h"
+#include "common/commands.h"
 
 
 #include <stdio.h>
@@ -55,6 +56,8 @@ int d_symbol_table_initialize()
                             sizeof(D_MATH_FUNCTIONS_NAMES[0]);
     size_t constant_count = sizeof(D_MATH_CONSTANTS_NAMES) /
                             sizeof(D_MATH_CONSTANTS_NAMES[0]);
+    size_t command_count = sizeof(D_COMMANDS_NAMES) /
+                           sizeof(D_COMMANDS_NAMES[0]);
 
     struct d_symbol_table_entry tmp_entry;
     unsigned char *tmp_entry_lexeme = NULL;
@@ -170,6 +173,35 @@ int d_symbol_table_initialize()
         //#ifdef DEBUG
         printf("[symbol_table][initialize] Added constant: %s %f\n",
                tmp_entry.lexeme, tmp_entry.attribute.dec_value);
+        //#endif
+    }
+
+
+    for(i = 0; i < command_count; ++i) {
+
+        if((tmp_entry_lexeme = malloc(strlen(D_COMMANDS_NAMES[i]) + 1))
+           == NULL) {
+
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "symbol_table.c",
+                                   "d_symbol_table_initialize",
+                                   "'malloc' for command's lexeme");
+            return -1;
+        }
+
+        strcpy((char *)tmp_entry_lexeme, D_COMMANDS_NAMES[i]);
+        tmp_entry.lexeme = tmp_entry_lexeme;
+
+        tmp_entry.lexical_component = D_LC_IDENTIFIER_COMMAND;
+
+        tmp_entry.attribute.command = D_COMMANDS_IMPLEMENTATIONS[i];
+
+        d_symbol_table_add(&tmp_entry);
+
+        //#ifdef DEBUG
+        printf("[symbol_table][initialize] Added command: %s %p %p\n",
+               tmp_entry.lexeme, D_COMMANDS_IMPLEMENTATIONS[i],
+               tmp_entry.attribute.command);
         //#endif
     }
 
@@ -296,19 +328,82 @@ int d_symbol_table_show()
     }
 
 
-    printf("<SYMBOL_TABLE>\n");
+    printf("   1. Mathematical constants:\n");
 
-    /* TODO update */
     // This iteration procedure is directly taken from the library's
     // reference
-    /*HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
 
-        printf("\t<SYMBOL_TABLE_ENTRY, %s, %s>\n",
-               d_lc_to_string(current_entry->lexical_component),
-               current_entry->lexeme);
+        if(current_entry->lexical_component == D_LC_IDENTIFIER_CONSTANT) {
+            printf("      %s => %f\n", current_entry->lexeme,
+                   current_entry->attribute.dec_value);
+        }
+        
     }
 
-    printf("\n");*/
+
+    printf("   2. Loaded mathematical functions:\n");
+
+    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+
+        if(current_entry->lexical_component == D_LC_IDENTIFIER_FUNCTION) {
+            printf("      %s\n", current_entry->lexeme);
+        }
+        
+    }
+
+
+    printf("   3. Your variables:\n");
+
+    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+
+        if(current_entry->lexical_component == D_LC_IDENTIFIER_VARIABLE) {
+            printf("      [%s] %s => %.10g\n",
+                   "decimal",
+                   current_entry->lexeme, current_entry->attribute.dec_value);
+        }
+        
+    }
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Implementation of symbol_table.h/d_symbol_table_delete
+ */
+int d_symbol_table_delete(
+    int lexical_component
+)
+{
+    struct d_symbol_table_entry *current_entry;
+    struct d_symbol_table_entry *tmp;
+
+
+    if(symbol_table == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "symbol_table.c", "d_symbol_table_delete",
+                               "'symbol_table'");
+        return -1;
+    }
+
+    
+    // This "all deletion" procedure is directly taken from the library's
+    // reference
+    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {
+
+        // Deletes the entry and proceeds to the next one if applicable
+        if(current_entry->lexical_component == lexical_component) {
+
+            HASH_DEL(symbol_table->table, current_entry);
+
+            // Each internally-managed entry must be properly freed
+            free((unsigned char *) current_entry->lexeme);
+            free(current_entry);
+        }
+    }
 
 
     return 0;
@@ -337,7 +432,7 @@ int d_symbol_table_destroy()
     // reference
     HASH_ITER(hh, symbol_table->table, current_entry, tmp) {
 
-        // Deletes the first entry and proceeds to the next one
+        // Deletes the entry and proceeds to the next one
         HASH_DEL(symbol_table->table, current_entry);
 
         // Each internally-managed entry must be properly freed

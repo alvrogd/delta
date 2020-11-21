@@ -66,18 +66,19 @@ extern int yydebug;
     D_LC_WHITESPACE_EOL = 258,
     D_LC_IDENTIFIER_VARIABLE = 259,
     D_LC_IDENTIFIER_FUNCTION = 260,
-    D_LC_IDENTIFIER_CONSTANT = 261,
-    D_LC_LITERAL_INT = 262,
-    D_LC_LITERAL_FP = 263,
-    D_LC_OP_ASSIGNMENT_ASSIGN = 264,
-    D_LC_OP_ARITHMETIC_PLUS = 265,
-    D_LC_OP_ARITHMETIC_MINUS = 266,
-    D_LC_OP_ARITHMETIC_TIMES = 267,
-    D_LC_OP_ARITHMETIC_DIV = 268,
-    D_LC_SEPARATOR_L_PARENTHESIS = 269,
-    D_LC_SEPARATOR_R_PARENTHESIS = 270,
-    D_LC_OP_ARITHMETIC_NEG = 271,
-    D_LC_OP_ARITHMETIC_EXPONENT = 272
+    D_LC_IDENTIFIER_COMMAND = 261,
+    D_LC_IDENTIFIER_CONSTANT = 262,
+    D_LC_LITERAL_INT = 263,
+    D_LC_LITERAL_FP = 264,
+    D_LC_OP_ASSIGNMENT_ASSIGN = 265,
+    D_LC_OP_ARITHMETIC_PLUS = 266,
+    D_LC_OP_ARITHMETIC_MINUS = 267,
+    D_LC_OP_ARITHMETIC_TIMES = 268,
+    D_LC_OP_ARITHMETIC_DIV = 269,
+    D_LC_SEPARATOR_L_PARENTHESIS = 270,
+    D_LC_SEPARATOR_R_PARENTHESIS = 271,
+    D_LC_OP_ARITHMETIC_NEG = 272,
+    D_LC_OP_ARITHMETIC_EXPONENT = 273
   };
 #endif
 
@@ -90,7 +91,7 @@ union YYSTYPE
     double                      dec_value; /* Decimal numbers */
     struct d_symbol_table_entry *st_entry; /* Identifiers */
 
-#line 94 "include/common/lexical_comp.h"
+#line 95 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

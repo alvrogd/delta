@@ -29,6 +29,7 @@
 
 
 #include "common/math_functions.h"
+#include "common/commands.h"
 
 
 // External library 
@@ -65,8 +66,9 @@ struct d_symbol_table_entry {
     /** Union that holds any attribute of any kind that an entry may
         require. */
     union {
-        double dec_value; /** The value of decimal variables. */
+        double dec_value; /** The value of decimal variables and constants. */
         dec_function function; /** Pointer a function's implementation. */
+        comm_function command; /** Pointer a commands's implementation. */
     } attribute;
 
     /** Makes this structure hashable by the library. */
@@ -93,7 +95,7 @@ int d_symbol_table_initialize();
  *  Searches in the symbol table an entry identified by the given key, and
  *  returning it if found.
  *
- * @param[in] '\0' terminated string which represents the key of the entry.
+ * @param[in] key '\0' terminated string which represents the key of the entry.
  *
  * @return Pointer to the requested entry, or NULL if not found.
  */
@@ -117,7 +119,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
  *           not.
  *
  * @param[in,out] symbol_table The symbol table.
- * @param[in] The entry.
+ * @param[in] entry The entry.
  *
  * @return 0 if successful, 1 if the key is duped, any other value otherwise.
  */
@@ -130,12 +132,28 @@ int d_symbol_table_add(
  * @brief Shows the symbol table.
  *
  * @details
- *  Shows the symbol table. That is, this function prints all of its entries
- *  telling apart identifiers from keywords.
- * *
+ *  Shows the symbol table. That is, this function prints all of the currently
+ *  registered:
+ *
+ *    - Constants.
+ *    - Loaded math. functions.
+ *    - Variables.
+ *
  * @return 0 if successful, any other value otherwise.
  */
 int d_symbol_table_show();
+
+
+/**
+ * @brief Deletes all entries that belong to the specified lexical component.
+ *
+ * @param[in] lexical_component The lexical component category.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_symbol_table_delete(
+    int lexical_component
+);
 
 
 /**

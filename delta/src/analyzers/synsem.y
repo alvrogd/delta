@@ -62,6 +62,7 @@
 /* Identifiers */
 %token <st_entry> D_LC_IDENTIFIER_VARIABLE
 %token <st_entry> D_LC_IDENTIFIER_FUNCTION
+%token <st_entry> D_LC_IDENTIFIER_COMMAND
 %token <st_entry> D_LC_IDENTIFIER_CONSTANT
 
 /* Numbers */
@@ -115,8 +116,20 @@ input:
    at the end. The third entry allows basic recovery from syntax errors. */
 line:
         D_LC_WHITESPACE_EOL
-    |   expression          D_LC_WHITESPACE_EOL  { printf("   %.10g\n>> ", $1); }
-    |   error              '\n'                  { yyerrok; yyclearin; }
+    |   expression  D_LC_WHITESPACE_EOL
+            { printf("   %.10g\n>> ", $1); }
+    |   D_LC_IDENTIFIER_COMMAND  D_LC_WHITESPACE_EOL
+            {
+                if($1->attribute.command()) return 0; // Quit requested
+                printf("\n>> ");
+            }
+    |   D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+            {
+                if($1->attribute.command()) return 0; // Quit requested
+                printf("\n>> ");
+            }
+    |   error  D_LC_WHITESPACE_EOL
+            { yyerrok; yyclearin; printf("\n>> "); }
     ;
 
 
@@ -128,30 +141,30 @@ expression:
             { $$ = $1->attribute.dec_value; }
     |   D_LC_IDENTIFIER_CONSTANT
             { $$ = $1->attribute.dec_value; }
-    |   D_LC_IDENTIFIER_VARIABLE D_LC_OP_ASSIGNMENT_ASSIGN expression
+    |   D_LC_IDENTIFIER_VARIABLE  D_LC_OP_ASSIGNMENT_ASSIGN  expression
             { $$ = $3; $1->attribute.dec_value = $3; }
-    |   D_LC_IDENTIFIER_CONSTANT D_LC_OP_ASSIGNMENT_ASSIGN expression
+    |   D_LC_IDENTIFIER_CONSTANT  D_LC_OP_ASSIGNMENT_ASSIGN  expression
             { d_errors_parse_show(3, D_ERR_USER_INPUT_WRITE_CONSTANT, @3.last_line, @3.last_column); }
-    |   D_LC_IDENTIFIER_FUNCTION D_LC_SEPARATOR_L_PARENTHESIS expression D_LC_SEPARATOR_R_PARENTHESIS
+    |   D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
             { $$ = $1->attribute.function($3); }
-    |   expression D_LC_OP_ARITHMETIC_PLUS expression
+    |   expression  D_LC_OP_ARITHMETIC_PLUS  expression
             { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ }
-    |   expression D_LC_OP_ARITHMETIC_MINUS expression
+    |   expression  D_LC_OP_ARITHMETIC_MINUS  expression
             { $$ = $1 - $3; }
-    |   expression D_LC_OP_ARITHMETIC_TIMES expression
+    |   expression  D_LC_OP_ARITHMETIC_TIMES  expression
             { $$ = $1 * $3; }
-    |   expression D_LC_OP_ARITHMETIC_DIV expression
+    |   expression  D_LC_OP_ARITHMETIC_DIV  expression
             {
                 if($3 != 0) { $$ = $1 / $3; }
                 else { d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO, @3.last_line, @3.last_column); }
             }
-    |   D_LC_OP_ARITHMETIC_MINUS expression %prec D_LC_OP_ARITHMETIC_NEG
+    |   D_LC_OP_ARITHMETIC_MINUS  expression  %prec  D_LC_OP_ARITHMETIC_NEG
             { $$ = -$2; }
-    |   expression D_LC_OP_ARITHMETIC_EXPONENT expression
+    |   expression  D_LC_OP_ARITHMETIC_EXPONENT  expression
             { $$ = pow($1, $3); }
-    |   D_LC_SEPARATOR_L_PARENTHESIS expression D_LC_SEPARATOR_R_PARENTHESIS
+    |   D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
             { $$ = $2; }
-    |   D_LC_SEPARATOR_L_PARENTHESIS error D_LC_SEPARATOR_R_PARENTHESIS
+    |   D_LC_SEPARATOR_L_PARENTHESIS  error  D_LC_SEPARATOR_R_PARENTHESIS
             { yyerrok; }
     ;
 
@@ -191,5 +204,5 @@ int d_synsem_analyzer_destroy()
 
 void yyerror(char const *s)
 {
-    fprintf(stderr, "%s\n", s);
+    fprintf(stderr, "%s", s);
 }
