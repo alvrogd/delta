@@ -29,7 +29,7 @@
     symbols */
 %union {
     char string[D_LC_LITERAL_STR_MAX_LENGTH];    /* Literal strings */
-    double                      dec_value; /* Decimal numbers */
+    struct d_dec_number                      dec_number; /* Decimal numbers */
     struct d_symbol_table_entry *st_entry; /* Identifiers */
 }
 
@@ -74,8 +74,8 @@
 %token <st_entry> D_LC_IDENTIFIER_CONSTANT
 
 /* Numbers */
-%token <dec_value> D_LC_LITERAL_INT
-%token <dec_value> D_LC_LITERAL_FP
+%token <dec_number> D_LC_LITERAL_INT
+%token <dec_number> D_LC_LITERAL_FP
 
 /* Assignment operators */
 %right D_LC_OP_ASSIGNMENT_ASSIGN
@@ -97,7 +97,7 @@
 
 /* Only those that may have semantic values need to be declared, in order to
    know their required data type */
-%type <dec_value> expression;
+%type <dec_number> expression;
 
 
 /* ═══════════════════════ Local functions/variables ══════════════════════ */
@@ -105,6 +105,8 @@
 %code {
     /* Declaration of the private fuction that Bison uses to report errors */
     void yyerror(char const *);
+
+    //yydebug = 1;
 }
 
 
@@ -125,7 +127,14 @@ input:
 line:
         D_LC_WHITESPACE_EOL
     |   expression  D_LC_WHITESPACE_EOL
-            { printf("   %.10g\n>> ", $1); }
+            {
+                if($1.is_floating) {
+                    printf("   %.10g\n>> ", $1.values.floating);
+                }
+                else {
+                    printf("   %d\n>> ", (int)$1.values.integer);
+                }
+            }
     |   D_LC_IDENTIFIER_COMMAND  D_LC_WHITESPACE_EOL
             {
                 if($1->attribute.command.arg_count == 0) {
@@ -176,18 +185,18 @@ expression:
         D_LC_LITERAL_INT
     |   D_LC_LITERAL_FP
     |   D_LC_IDENTIFIER_VARIABLE
-            { $$ = $1->attribute.dec_value; }
+            { $$ = $1->attribute.dec_number; }
     |   D_LC_IDENTIFIER_CONSTANT
-            { $$ = $1->attribute.dec_value; }
+            { $$ = $1->attribute.dec_number; }
     |   D_LC_IDENTIFIER_VARIABLE  D_LC_OP_ASSIGNMENT_ASSIGN  expression
-            { $$ = $3; $1->attribute.dec_value = $3; }
+            { $$ = $3; $1->attribute.dec_number = $3; }
     |   D_LC_IDENTIFIER_CONSTANT  D_LC_OP_ASSIGNMENT_ASSIGN  expression
             { d_errors_parse_show(3, D_ERR_USER_INPUT_WRITE_CONSTANT, @3.last_line, @3.last_column); }
-    |   D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
+    /*|   D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
             { $$ = $1->attribute.function($3); }
     |   expression  D_LC_OP_ARITHMETIC_PLUS  expression
-            { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ }
-    |   expression  D_LC_OP_ARITHMETIC_MINUS  expression
+            { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ /*}*/
+    /*|   expression  D_LC_OP_ARITHMETIC_MINUS  expression
             { $$ = $1 - $3; }
     |   expression  D_LC_OP_ARITHMETIC_TIMES  expression
             { $$ = $1 * $3; }
@@ -203,7 +212,7 @@ expression:
     |   D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
             { $$ = $2; }
     |   D_LC_SEPARATOR_L_PARENTHESIS  error  D_LC_SEPARATOR_R_PARENTHESIS
-            { yyerrok; }
+            { yyerrok; }*/
     ;
 
 

@@ -292,9 +292,6 @@ int d_lexical_analyzer_new_file(
 {
     /* TODO add error handling */
     FILE *fl = fopen(filename, "r");
-    printf("F?: %d\n", fl == NULL);
-    perror("Why");
-    printf("%s\n", filename);
     struct _d_lexical_analyzer_bufstack *bs = malloc(sizeof(struct _d_lexical_analyzer_bufstack));
 
     // There will always be a stacked entry, as stdio will never be removed
@@ -364,7 +361,8 @@ int _d_lexical_analyzer_literal_recognized(
     switch(lexical_component) {
 
         case D_LC_LITERAL_INT:
-            yylval.dec_value = atof(yytext);
+            yylval.dec_number.values.integer = strtoll(yytext, NULL, 10); // To int64_t
+            yylval.dec_number.is_floating = 0;
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved integer "
@@ -374,7 +372,8 @@ int _d_lexical_analyzer_literal_recognized(
             break;
 
         case D_LC_LITERAL_FP:
-            yylval.dec_value = atof(yytext);
+            yylval.dec_number.values.floating = atof(yytext);
+            yylval.dec_number.is_floating = 1;
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved floating "

@@ -31,9 +31,12 @@
 #include "common/math_functions.h"
 #include "common/commands.h"
 
-
 // External library 
 #include "lib/uthash.h"
+
+
+// More integer data types
+#include <stdint.h>
 
 
 /**
@@ -44,6 +47,36 @@
  *  entries.
  */
 struct d_symbol_table;
+
+
+/**
+ * @brief Groups all possible data types of a decimal number.
+ * 
+ * @details
+ *  Groups all possible data types of a decimal number as a single element,
+ *   so that the "d_commmand" structure may carry both types of pointers at
+ *   the same time.
+ */
+typedef union {
+    int64_t integer;
+    double floating;
+} d_dec_number_values;
+
+
+/**
+ * @brief Represents the attributes of a delta decimal number.
+ *
+ * @details
+ *  Contains any attributes of a delta decimal number that the symbol table
+ *  needs to hold in order to invoke it.
+ */
+struct d_dec_number {
+    /** Pointer to which the command's implementation resides. */
+    d_dec_number_values values;
+
+    /** If the variable holds a floating point value, or an integer one. */
+    uint8_t is_floating;
+};
 
 
 /**
@@ -66,9 +99,9 @@ struct d_symbol_table_entry {
     /** Union that holds any attribute of any kind that an entry may
         require. */
     union {
-        double dec_value; /** The value of decimal variables and constants. */
+        struct d_dec_number dec_number; /** For decimal variables and constants. */
         dec_function function; /** Pointer a function's implementation. */
-        struct d_command command; /** Pointer a commands's implementation. */
+        struct d_command command; /** For internal commadns implementation. */
     } attribute;
 
     /** Makes this structure hashable by the library. */

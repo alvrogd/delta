@@ -38,7 +38,7 @@
 # define YY_YY_INCLUDE_COMMON_LEXICAL_COMP_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -94,7 +94,7 @@ union YYSTYPE
 #line 30 "src/analyzers/synsem.y"
 
     char string[D_LC_LITERAL_STR_MAX_LENGTH];    /* Literal strings */
-    double                      dec_value; /* Decimal numbers */
+    struct d_dec_number                      dec_number; /* Decimal numbers */
     struct d_symbol_table_entry *st_entry; /* Identifiers */
 
 #line 101 "include/common/lexical_comp.h"

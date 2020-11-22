@@ -19,7 +19,7 @@ find_package(BISON)
 # Its specification file is "synsem.y"
 BISON_TARGET(
     deltaparser src/analyzers/synsem.y ${CMAKE_CURRENT_BINARY_DIR}/synsem.c
-    COMPILE_FLAGS "--defines=include/common/lexical_comp.h"
+    COMPILE_FLAGS "--defines=include/common/lexical_comp.h -t"
 )
 ADD_FLEX_BISON_DEPENDENCY(deltalex deltaparser)
 

@@ -168,13 +168,15 @@ int d_symbol_table_initialize()
 
         tmp_entry.lexical_component = D_LC_IDENTIFIER_CONSTANT;
 
-        tmp_entry.attribute.dec_value = D_MATH_CONSTANTS_VALUES[i];
+        // They are all floating point numbers
+        tmp_entry.attribute.dec_number.values.floating = D_MATH_CONSTANTS_VALUES[i];
+        tmp_entry.attribute.dec_number.is_floating = 1;
 
         d_symbol_table_add(&tmp_entry);
 
         //#ifdef DEBUG
         printf("[symbol_table][initialize] Added constant: %s %f\n",
-               tmp_entry.lexeme, tmp_entry.attribute.dec_value);
+               tmp_entry.lexeme, tmp_entry.attribute.dec_number.values.floating);
         //#endif
     }
 
@@ -369,7 +371,7 @@ int d_symbol_table_show()
 
         if(current_entry->lexical_component == D_LC_IDENTIFIER_CONSTANT) {
             printf("      %s => %f\n", current_entry->lexeme,
-                   current_entry->attribute.dec_value);
+                   current_entry->attribute.dec_number.values.floating);
         }
         
     }
@@ -391,9 +393,19 @@ int d_symbol_table_show()
     HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
 
         if(current_entry->lexical_component == D_LC_IDENTIFIER_VARIABLE) {
-            printf("      [%s] %s => %.10g\n",
-                   "decimal",
-                   current_entry->lexeme, current_entry->attribute.dec_value);
+
+            if(current_entry->attribute.dec_number.is_floating) {
+                printf("      [%s] %s => %.10g\n", "floating",
+                       current_entry->lexeme,
+                       current_entry->attribute.dec_number.values.floating);
+            }
+
+            else {
+                printf("      [%s] %s => %d\n", "integer",
+                       current_entry->lexeme,
+                      /* TODO update*/ (int )current_entry->attribute.dec_number.values.integer);
+            }
+
         }
         
     }
