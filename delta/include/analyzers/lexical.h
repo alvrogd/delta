@@ -67,6 +67,15 @@ struct d_lexical_component {
  */
 int d_lexical_analyzer_initialize();
 
+int d_lexical_analyzer_new_file(
+    const char *filename
+);
+
+
+int d_lexical_analyzer_pop_file(
+    void
+);
+
 
 /**
  * @brief The lexical analyzer identifies the next lexical component in the

@@ -159,9 +159,8 @@ line:
     |   D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_LITERAL_STR  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
             {
                 if($1->attribute.command.arg_count == 1) {
-                    /*if($1->attribute.command.implementation.argc_0() == D_COMMAND_QUIT_REQUEST) return 0; // Quit requested
-                    printf("\n>> ");*/
                     printf("typed %s\n", $3);
+                    $1->attribute.command.implementation.argc_1($3);
                 }
                 else {
                     d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "0");

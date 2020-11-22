@@ -12,7 +12,8 @@
 /** 1-byte chars. */
 %option 8bit
 
-/** We will just parse a single source file. */
+/** Always return to the caller (syntactic-semantic analyzer) after finding an
+    EOF. */
 %option noyywrap
 
 /** The current lexeme will be a character pointer (= no max. length). */
@@ -81,6 +82,38 @@ PRINT   [ -²]
         yylloc.first_line = current_line; yylloc.last_line = current_line; \
         yylloc.first_column = current_column; \
         current_column += yyleng; yylloc.last_column = current_column;
+
+
+    /**
+     * @brief This structure will allow the lexical analyzer to parse nested
+     *        input files.
+     *
+     * @details
+     *  A stack will be simulated.
+     *
+     * @see flex & bison by John Levine, chapter 2.5
+     */
+    struct _d_lexical_analyzer_bufstack {
+        /** Previous entry. */
+        struct _d_lexical_analyzer_bufstack *previous;
+        /** Saved flex buffer. */
+        YY_BUFFER_STATE buffer_state;
+        /** Saved line and col counters. */
+        size_t line;
+        size_t column;
+        /** Saved filename. */
+        const char *filename;
+        /** Saved file. */
+        FILE *file;
+    };
+
+    /** The stack is empty at first (no nested files). */
+    struct _d_lexical_analyzer_bufstack *current_bufstack = NULL;
+    const char *current_filename = NULL;
+
+    /* Declaration of some public fuctions to manipulate the stack */
+    int d_lexical_analyzer_new_file(const char *filename);
+    int d_lexical_analyzer_pop_file(void);
 %}
 
 
@@ -211,8 +244,7 @@ PRINT   [ -²]
 
  /* ** EOF ** */
 
- /*<<EOF>>     { lexical_component->category = D_LC_EOF;
-              return 0; }*/
+<<EOF>>     { d_lexical_analyzer_pop_file(); }
 
 
 %%
@@ -228,10 +260,81 @@ int d_lexical_analyzer_initialize()
     // All input will be given by the user
     yyin = stdin;
 
+
     // The counters need to be initialized
     current_line = 1;
     current_column = 1;
 
+
+    /* TODO add error handling */
+    struct _d_lexical_analyzer_bufstack *bs = malloc(sizeof(struct _d_lexical_analyzer_bufstack));
+
+    bs->previous = current_bufstack;
+
+    bs->buffer_state = yy_create_buffer(stdin, YY_BUF_SIZE);
+    bs->file = stdin;
+    bs->filename = "stdin";
+    yy_switch_to_buffer(bs->buffer_state);
+    current_bufstack = bs;
+
+    current_line = 1;
+    current_column = 1;
+    current_filename = "stdin";
+
+
+    return 0;
+}
+
+
+int d_lexical_analyzer_new_file(
+    const char *filename
+)
+{
+    /* TODO add error handling */
+    FILE *fl = fopen(filename, "r");
+    printf("F?: %d\n", fl == NULL);
+    perror("Why");
+    printf("%s\n", filename);
+    struct _d_lexical_analyzer_bufstack *bs = malloc(sizeof(struct _d_lexical_analyzer_bufstack));
+
+    // There will always be a stacked entry, as stdio will never be removed
+    current_bufstack->line = current_line;
+    current_bufstack->column = current_column;
+
+    bs->previous = current_bufstack;
+
+    bs->buffer_state = yy_create_buffer(fl, YY_BUF_SIZE);
+    bs->file = fl;
+    bs->filename = filename; /* TODO segfault assured */
+    yy_switch_to_buffer(bs->buffer_state);
+    current_bufstack = bs;
+
+    current_line = 1;
+    current_column = 1;
+    current_filename = filename; /* TODO segfault assured */
+
+    return 0;
+}
+
+
+int d_lexical_analyzer_pop_file(
+    void
+)
+{
+    struct _d_lexical_analyzer_bufstack *bs = current_bufstack;
+    struct _d_lexical_analyzer_bufstack *previous = NULL;
+
+    fclose(bs->file);
+    yy_delete_buffer(bs->buffer_state);
+
+    previous = bs->previous;
+    free(bs);
+
+    yy_switch_to_buffer(previous->buffer_state);
+    current_bufstack = previous;
+    current_line = previous->line;
+    current_column = previous->column;
+    current_filename = previous->filename;
 
     return 0;
 }
@@ -281,9 +384,16 @@ int _d_lexical_analyzer_literal_recognized(
             break;
 
         case D_LC_LITERAL_STR:
-            strncpy(yylval.string, yytext, D_LC_LITERAL_STR_MAX_LENGTH);
-            // If yytext were to be larger, no '\0' would be found at the end
+            // +1 to ignore the first quote
+            strncpy(yylval.string, yytext + 1, D_LC_LITERAL_STR_MAX_LENGTH);
+
+            // If yytext were to be larger than the max. allowed size, no '\0'
+            // would be found at the end
             yylval.string[D_LC_LITERAL_STR_MAX_LENGTH - 1] = '\0';
+
+            yylval.string[
+                yyleng - 2
+            ] = '\0'; /* TODO clean up, it is for removing the last quote */
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved string: "

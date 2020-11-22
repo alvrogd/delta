@@ -21,6 +21,14 @@ int d_commands_clear_workspace()
 }
 
 
+int d_commands_load_file(const char *filename)
+{
+    printf("d_commands_load_file %s\n", filename);
+    return d_lexical_analyzer_new_file(filename);
+}
+
+
+
 int d_commands_show_help()
 {
     printf("[!] Help TODO"); // TODO just like README.md
@@ -58,5 +66,5 @@ const char *D_COMMANDS_NAMES_1[] = {
 };
 
 const comm_function_1 D_COMMANDS_IMPLEMENTATIONS_1[] = {
-    NULL,
+    &d_commands_load_file,
 };
