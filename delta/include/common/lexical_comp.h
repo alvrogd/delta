@@ -56,7 +56,11 @@ extern int yydebug;
     /* Functions that are expected to be available in a calculator */
     #include <math.h>
 
-#line 60 "include/common/lexical_comp.h"
+
+    /* Max length of string literals */
+    #define D_LC_LITERAL_STR_MAX_LENGTH 256
+
+#line 64 "include/common/lexical_comp.h"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -64,21 +68,22 @@ extern int yydebug;
   enum yytokentype
   {
     D_LC_WHITESPACE_EOL = 258,
-    D_LC_IDENTIFIER_VARIABLE = 259,
-    D_LC_IDENTIFIER_FUNCTION = 260,
-    D_LC_IDENTIFIER_COMMAND = 261,
-    D_LC_IDENTIFIER_CONSTANT = 262,
-    D_LC_LITERAL_INT = 263,
-    D_LC_LITERAL_FP = 264,
-    D_LC_OP_ASSIGNMENT_ASSIGN = 265,
-    D_LC_OP_ARITHMETIC_PLUS = 266,
-    D_LC_OP_ARITHMETIC_MINUS = 267,
-    D_LC_OP_ARITHMETIC_TIMES = 268,
-    D_LC_OP_ARITHMETIC_DIV = 269,
-    D_LC_SEPARATOR_L_PARENTHESIS = 270,
-    D_LC_SEPARATOR_R_PARENTHESIS = 271,
-    D_LC_OP_ARITHMETIC_NEG = 272,
-    D_LC_OP_ARITHMETIC_EXPONENT = 273
+    D_LC_LITERAL_STR = 259,
+    D_LC_IDENTIFIER_VARIABLE = 260,
+    D_LC_IDENTIFIER_FUNCTION = 261,
+    D_LC_IDENTIFIER_COMMAND = 262,
+    D_LC_IDENTIFIER_CONSTANT = 263,
+    D_LC_LITERAL_INT = 264,
+    D_LC_LITERAL_FP = 265,
+    D_LC_OP_ASSIGNMENT_ASSIGN = 266,
+    D_LC_OP_ARITHMETIC_PLUS = 267,
+    D_LC_OP_ARITHMETIC_MINUS = 268,
+    D_LC_OP_ARITHMETIC_TIMES = 269,
+    D_LC_OP_ARITHMETIC_DIV = 270,
+    D_LC_SEPARATOR_L_PARENTHESIS = 271,
+    D_LC_SEPARATOR_R_PARENTHESIS = 272,
+    D_LC_OP_ARITHMETIC_NEG = 273,
+    D_LC_OP_ARITHMETIC_EXPONENT = 274
   };
 #endif
 
@@ -86,12 +91,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 26 "src/analyzers/synsem.y"
+#line 30 "src/analyzers/synsem.y"
 
+    char string[D_LC_LITERAL_STR_MAX_LENGTH];    /* Literal strings */
     double                      dec_value; /* Decimal numbers */
     struct d_symbol_table_entry *st_entry; /* Identifiers */
 
-#line 95 "include/common/lexical_comp.h"
+#line 101 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -56,8 +56,10 @@ int d_symbol_table_initialize()
                             sizeof(D_MATH_FUNCTIONS_NAMES[0]);
     size_t constant_count = sizeof(D_MATH_CONSTANTS_NAMES) /
                             sizeof(D_MATH_CONSTANTS_NAMES[0]);
-    size_t command_count = sizeof(D_COMMANDS_NAMES) /
-                           sizeof(D_COMMANDS_NAMES[0]);
+    size_t command_count = sizeof(D_COMMANDS_NAMES_0) /
+                           sizeof(D_COMMANDS_NAMES_0[0]);
+    size_t command_count_1 = sizeof(D_COMMANDS_NAMES_1) /
+                             sizeof(D_COMMANDS_NAMES_1[0]);
 
     struct d_symbol_table_entry tmp_entry;
     unsigned char *tmp_entry_lexeme = NULL;
@@ -179,7 +181,7 @@ int d_symbol_table_initialize()
 
     for(i = 0; i < command_count; ++i) {
 
-        if((tmp_entry_lexeme = malloc(strlen(D_COMMANDS_NAMES[i]) + 1))
+        if((tmp_entry_lexeme = malloc(strlen(D_COMMANDS_NAMES_0[i]) + 1))
            == NULL) {
 
             d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
@@ -189,19 +191,50 @@ int d_symbol_table_initialize()
             return -1;
         }
 
-        strcpy((char *)tmp_entry_lexeme, D_COMMANDS_NAMES[i]);
+        strcpy((char *)tmp_entry_lexeme, D_COMMANDS_NAMES_0[i]);
         tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_IDENTIFIER_COMMAND;
 
-        tmp_entry.attribute.command = D_COMMANDS_IMPLEMENTATIONS[i];
+        tmp_entry.attribute.command.implementation.argc_0 = D_COMMANDS_IMPLEMENTATIONS_0[i];
+        tmp_entry.attribute.command.arg_count = 0;
 
         d_symbol_table_add(&tmp_entry);
 
         //#ifdef DEBUG
         printf("[symbol_table][initialize] Added command: %s %p %p\n",
-               tmp_entry.lexeme, D_COMMANDS_IMPLEMENTATIONS[i],
-               tmp_entry.attribute.command);
+               tmp_entry.lexeme, D_COMMANDS_IMPLEMENTATIONS_0[i],
+               tmp_entry.attribute.command.implementation.argc_0);
+        //#endif
+    }
+
+
+    for(i = 0; i < command_count_1; ++i) {
+
+        if((tmp_entry_lexeme = malloc(strlen(D_COMMANDS_NAMES_1[i]) + 1))
+           == NULL) {
+
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "symbol_table.c",
+                                   "d_symbol_table_initialize",
+                                   "'malloc' for command's lexeme");
+            return -1;
+        }
+
+        strcpy((char *)tmp_entry_lexeme, D_COMMANDS_NAMES_1[i]);
+        tmp_entry.lexeme = tmp_entry_lexeme;
+
+        tmp_entry.lexical_component = D_LC_IDENTIFIER_COMMAND;
+
+        tmp_entry.attribute.command.implementation.argc_1 = D_COMMANDS_IMPLEMENTATIONS_1[i];
+        tmp_entry.attribute.command.arg_count = 1;
+
+        d_symbol_table_add(&tmp_entry);
+
+        //#ifdef DEBUG
+        printf("[symbol_table][initialize] Added command: %s %p %p\n",
+               tmp_entry.lexeme, D_COMMANDS_IMPLEMENTATIONS_1[i],
+               tmp_entry.attribute.command.implementation.argc_1);
         //#endif
     }
 

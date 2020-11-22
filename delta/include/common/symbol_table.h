@@ -68,7 +68,7 @@ struct d_symbol_table_entry {
     union {
         double dec_value; /** The value of decimal variables and constants. */
         dec_function function; /** Pointer a function's implementation. */
-        comm_function command; /** Pointer a commands's implementation. */
+        struct d_command command; /** Pointer a commands's implementation. */
     } attribute;
 
     /** Makes this structure hashable by the library. */

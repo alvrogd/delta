@@ -93,6 +93,12 @@ const char *d_errors_get_template(
         case D_ERR_USER_INPUT_WRITE_CONSTANT:
             return "mathematical constants are inmutable";
 
+        case D_ERR_USER_INPUT_INCORRECT_ARG_COUNT:
+            return "incorrect amount of arguments, expected [..] args";
+
+        case D_ERR_USER_INPUT_INCORRECT_ARG_TYPE:
+            return "incorrect argument type, expected a [..]";
+
         default: // TODO change perror
             perror("error: invalid argument, 'error_code' not recognized\n"
                    " --> internal file : errors.c : d_errors_get_template()");

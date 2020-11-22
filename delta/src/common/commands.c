@@ -39,16 +39,24 @@ int d_commands_quit()
 }
 
 
-const char *D_COMMANDS_NAMES[] = {
+const char *D_COMMANDS_NAMES_0[] = {
     "help",
     "quit",
     "ws",
     "wsc"
 };
 
-const comm_function D_COMMANDS_IMPLEMENTATIONS[] = {
+const comm_function_0 D_COMMANDS_IMPLEMENTATIONS_0[] = {
     &d_commands_show_help,
     &d_commands_quit,
     &d_commands_show_workspace,
     &d_commands_clear_workspace,
+};
+
+const char *D_COMMANDS_NAMES_1[] = {
+    "load",
+};
+
+const comm_function_1 D_COMMANDS_IMPLEMENTATIONS_1[] = {
+    NULL,
 };

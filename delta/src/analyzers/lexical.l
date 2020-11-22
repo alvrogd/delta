@@ -29,6 +29,8 @@ FLOAT_DECIMALS      {DIGIT}({DIGIT}|_)*
 FLOAT_EXPONENT      (e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*
 FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
+PRINT   [ -²] 
+
 
 /* ═════════════════ Includes & local functions/variables ═════════════════ */
 
@@ -105,6 +107,17 @@ FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
  /* Comments (single line) */
 
  /*"#".*\n    { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; }*/
+
+
+
+ /* Double quoted strings */
+
+\"\"([cwd])?                                { d_errors_parse_show(3,
+                                                                  D_ERR_LEX_LITERALS_STRING_EMPTY,
+                                                                  current_line, current_column); }
+
+\"{PRINT}+\"    { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_STR);
+                                              return D_LC_LITERAL_STR; }
 
 
  /* Identifiers */
@@ -263,6 +276,18 @@ int _d_lexical_analyzer_literal_recognized(
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved floating "
                    "point number: %f\n", yylval.dec_value);
+            #endif
+
+            break;
+
+        case D_LC_LITERAL_STR:
+            strncpy(yylval.string, yytext, D_LC_LITERAL_STR_MAX_LENGTH);
+            // If yytext were to be larger, no '\0' would be found at the end
+            yylval.string[D_LC_LITERAL_STR_MAX_LENGTH - 1] = '\0';
+            
+            #ifdef D_DEBUG
+            printf("[lexical_analyzer][literal recognized] Saved string: "
+                   "%s\n", yylval.string);
             #endif
 
             break;

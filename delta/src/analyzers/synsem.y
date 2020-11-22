@@ -19,11 +19,16 @@
     #include <stdlib.h>
     /* Functions that are expected to be available in a calculator */
     #include <math.h>
+
+
+    /* Max length of string literals */
+    #define D_LC_LITERAL_STR_MAX_LENGTH 256
 }
 
 /* All possible semantic data types, for both terminal and non-terminal
     symbols */
 %union {
+    char string[D_LC_LITERAL_STR_MAX_LENGTH];    /* Literal strings */
     double                      dec_value; /* Decimal numbers */
     struct d_symbol_table_entry *st_entry; /* Identifiers */
 }
@@ -58,6 +63,9 @@
 
 /* Whitespace */
 %token D_LC_WHITESPACE_EOL
+
+/* Strings */
+%token <string> D_LC_LITERAL_STR
 
 /* Identifiers */
 %token <st_entry> D_LC_IDENTIFIER_VARIABLE
@@ -120,13 +128,44 @@ line:
             { printf("   %.10g\n>> ", $1); }
     |   D_LC_IDENTIFIER_COMMAND  D_LC_WHITESPACE_EOL
             {
-                if($1->attribute.command()) return 0; // Quit requested
-                printf("\n>> ");
+                if($1->attribute.command.arg_count == 0) {
+                    if($1->attribute.command.implementation.argc_0() == D_COMMAND_QUIT_REQUEST) return 0; // Quit requested
+                    printf("\n>> ");
+                }
+                else {
+                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @1.last_line, @1.last_column, "1");
+                }
             }
     |   D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
             {
-                if($1->attribute.command()) return 0; // Quit requested
-                printf("\n>> ");
+                if($1->attribute.command.arg_count == 0) {
+                    if($1->attribute.command.implementation.argc_0() == D_COMMAND_QUIT_REQUEST) return 0; // Quit requested
+                    printf("\n>> ");
+                }
+                else {
+                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "1");
+                }
+            }
+    |   D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+            {
+                if($1->attribute.command.arg_count == 0) {
+                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "0");
+
+                }
+                else { // Command that receives 1 arg
+                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_TYPE, @3.last_line, @3.last_column, "string");
+                }
+            }
+    |   D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_LITERAL_STR  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+            {
+                if($1->attribute.command.arg_count == 1) {
+                    /*if($1->attribute.command.implementation.argc_0() == D_COMMAND_QUIT_REQUEST) return 0; // Quit requested
+                    printf("\n>> ");*/
+                    printf("typed %s\n", $3);
+                }
+                else {
+                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "0");
+                }
             }
     |   error  D_LC_WHITESPACE_EOL
             { yyerrok; yyclearin; printf("\n>> "); }
