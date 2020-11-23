@@ -32,7 +32,7 @@ set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_C_STANDARD 99)
 set(
     CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -Wall -Wextra -lm -std=c99 -O3 -Wno-unused-parameter"
+    "${CMAKE_C_FLAGS} -Wall -Wextra -lm -std=c99 -O3 -Wno-unused-parameter -Wl,--no-as-needed -ldl"
 )
 
 

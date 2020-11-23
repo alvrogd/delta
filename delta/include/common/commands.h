@@ -62,8 +62,8 @@ extern const char *D_COMMANDS_NAMES_0[4];
 extern const comm_function_0 D_COMMANDS_IMPLEMENTATIONS_0[4];
 
 /* 1 args commands */
-extern const char *D_COMMANDS_NAMES_1[1];
-extern const comm_function_1 D_COMMANDS_IMPLEMENTATIONS_1[1];
+extern const char *D_COMMANDS_NAMES_1[4];
+extern const comm_function_1 D_COMMANDS_IMPLEMENTATIONS_1[4];
 
 
 #endif //D_COMMANDS
