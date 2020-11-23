@@ -107,6 +107,8 @@
     void yyerror(char const *);
 
     //yydebug = 1;
+
+    int is_floating_operation;
 }
 
 
@@ -192,27 +194,92 @@ expression:
             { $$ = $3; $1->attribute.dec_number = $3; }
     |   D_LC_IDENTIFIER_CONSTANT  D_LC_OP_ASSIGNMENT_ASSIGN  expression
             { d_errors_parse_show(3, D_ERR_USER_INPUT_WRITE_CONSTANT, @3.last_line, @3.last_column); }
-    /*|   D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
-            { $$ = $1->attribute.function($3); }
+    |   D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
+            { $$.values.floating = $1->attribute.function(d_dec_number_get_floating_value(&($3)));
+              $$.is_floating = 1;  }
     |   expression  D_LC_OP_ARITHMETIC_PLUS  expression
-            { $$ = $1 + $3; /*printf("bien: %f = %f + %f\n", $$, $1, $3);*/ /*}*/
-    /*|   expression  D_LC_OP_ARITHMETIC_MINUS  expression
-            { $$ = $1 - $3; }
+            {
+                is_floating_operation = d_dec_number_any_floating_value(&($1), &($3));
+
+                if(!is_floating_operation) {
+                    $$.is_floating = 0;
+                    $$.values.integer = d_dec_number_integer_op('+', $1.values.integer, $3.values.integer);
+                }
+                else {
+                    $$.is_floating = 1;
+                    $$.values.floating = d_dec_number_floating_op('+', d_dec_number_get_floating_value(&($1)), d_dec_number_get_floating_value(&($3)));
+                }
+            }
+    |   expression  D_LC_OP_ARITHMETIC_MINUS  expression
+            {
+                is_floating_operation = d_dec_number_any_floating_value(&($1), &($3));
+
+                if(!is_floating_operation) {
+                    $$.is_floating = 0;
+                    $$.values.integer = d_dec_number_integer_op('-', $1.values.integer, $3.values.integer);
+                }
+                else {
+                    $$.is_floating = 1;
+                    $$.values.floating = d_dec_number_floating_op('-', d_dec_number_get_floating_value(&($1)), d_dec_number_get_floating_value(&($3)));
+                }
+            }
     |   expression  D_LC_OP_ARITHMETIC_TIMES  expression
-            { $$ = $1 * $3; }
+            {
+                is_floating_operation = d_dec_number_any_floating_value(&($1), &($3));
+
+                if(!is_floating_operation) {
+                    $$.is_floating = 0;
+                    $$.values.integer = d_dec_number_integer_op('*', $1.values.integer, $3.values.integer);
+                }
+                else {
+                    $$.is_floating = 1;
+                    $$.values.floating = d_dec_number_floating_op('*', d_dec_number_get_floating_value(&($1)), d_dec_number_get_floating_value(&($3)));
+                }
+            }
     |   expression  D_LC_OP_ARITHMETIC_DIV  expression
             {
-                if($3 != 0) { $$ = $1 / $3; }
-                else { d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO, @3.last_line, @3.last_column); }
+                if($3.values.integer != 0 && $3.values.floating != 0.0) { /* TODO dunno if it works */
+                    if(!is_floating_operation) {
+                        $$.is_floating = 0;
+                        $$.values.integer = d_dec_number_integer_op('/', $1.values.integer, $3.values.integer);
+                    }
+                    else {
+                        $$.is_floating = 1;
+                        $$.values.floating = d_dec_number_floating_op('/', d_dec_number_get_floating_value(&($1)), d_dec_number_get_floating_value(&($3)));
+                    }
+                }
+                else {
+                    d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO, @3.last_line, @3.last_column);
+                }
             }
     |   D_LC_OP_ARITHMETIC_MINUS  expression  %prec  D_LC_OP_ARITHMETIC_NEG
-            { $$ = -$2; }
+            { 
+                if($2.is_floating) {
+                    $$.is_floating = 1;
+                    $$.values.floating = -($2.values.floating); 
+                }
+                else {
+                    $$.is_floating = 0;
+                    $$.values.integer = -($2.values.integer);
+                }
+            }
     |   expression  D_LC_OP_ARITHMETIC_EXPONENT  expression
-            { $$ = pow($1, $3); }
+            {
+                is_floating_operation = d_dec_number_any_floating_value(&($1), &($3));
+
+                if(!is_floating_operation) {
+                    $$.is_floating = 0;
+                    $$.values.integer = d_dec_number_integer_op('^', $1.values.integer, $3.values.integer);
+                }
+                else {
+                    $$.is_floating = 1;
+                    $$.values.floating = d_dec_number_floating_op('^', d_dec_number_get_floating_value(&($1)), d_dec_number_get_floating_value(&($3)));
+                }
+            }
     |   D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
             { $$ = $2; }
     |   D_LC_SEPARATOR_L_PARENTHESIS  error  D_LC_SEPARATOR_R_PARENTHESIS
-            { yyerrok; }*/
+            { yyerrok; }
     ;
 
 
