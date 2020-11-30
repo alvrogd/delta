@@ -425,7 +425,7 @@ int d_lexical_analyzer_new_file(
 
     if((new_file = fopen(filename, "r")) == NULL) {
 
-        d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+        d_errors_internal_show(3, D_ERR_USER_IO_FILE_INACCESSIBLE,
                                "lexical.l", "d_lexical_analyzer_new_file");
         return -1;
     }

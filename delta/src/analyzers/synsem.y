@@ -143,9 +143,21 @@
 /* ═══════════════════════ Local functions/variables ══════════════════════ */
 
 %code {
-    /** Declaration of the private fuction that Bison uses to report errors */
-    // TODO update function
-    void yyerror(char const *);
+    /**
+     * @brief Bison-required function for reporting parsing errors.
+     *
+     * @details
+     *  This function matches the prototype that Bison specifies for a
+     *  function for reporting parsing errors. It must provided by the user.
+     *
+     *  However, in delta all expected syntactic and semantic errors will be
+     *  manually catched using grammar rules to provide detailed feedback.
+     *  If this function were to be called, it would be due to some kind of
+     *  unexpected error.
+     *
+     * @param[in] msg The error message.
+     */
+    void yyerror(char const *msg);
 }
 
 
@@ -173,13 +185,15 @@ input:
      - A mathematical expression.
      - Or a built-in command issue.
 
-   The last rule in this subsection allows generic error recovery from syntax
-   errors.
+   The third rule in this subsection allows generic error recovery from
+   syntactic and semantic errors.
 */
 line:
         /* Just a '\n'. */
         D_LC_WHITESPACE_EOL
 
+
+    /* ═══ Mathematical expressions ═══ */
 
     |   /* A mathematical expression + '\n'. */
         expression  D_LC_WHITESPACE_EOL
@@ -194,13 +208,22 @@ line:
                 }
             }
 
-
     |   /* A mathematical expression + ';' + '\n'. */
         expression  D_LC_SEPARATOR_SEMICOL  D_LC_WHITESPACE_EOL
             {
                 /* ';' disables the echo */
             }
 
+
+    /* ═══ Error recovering  ═══ */
+
+    |   /* An error + '\n'. */
+        error  D_LC_WHITESPACE_EOL
+            /* Tells bison that the error has been catched and managed */
+            { yyclearin; yyerrok; }
+
+
+    /* ═══ Commands ═══ */
 
     |   /* A 0-arg command + '\n'. */
         D_LC_IDENTIFIER_COMMAND  D_LC_WHITESPACE_EOL
@@ -220,7 +243,7 @@ line:
 
                 else {
                     d_errors_parse_show(4,
-                                        D_ERR_USER_INPUT_INCORRECT_ARG_COUNT,
+                                        D_ERR_SEM_INCORRECT_ARG_COUNT,
                                         @1.last_line, @1.last_column, "0");
                 }
             }
@@ -241,8 +264,7 @@ line:
                 }
 
                 else {
-                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @1.last_line, @1.last_column,
-                                        "0");
+                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @1.last_line, @1.last_column, "0");
                 }
             }
 
@@ -252,12 +274,12 @@ line:
             {
                 /* If the command is not even supposed to take an argument */
                 if($1->attribute.command.arg_count == 0) {
-                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "0");
+                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "0");
                 }
 
                 /* Command that receives 1 argument, but a string-type one, not a mathematical expression */
                 else {
-                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_TYPE, @3.last_line, @3.last_column, "string");
+                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_TYPE, @3.last_line, @3.last_column, "string");
                 }
             }
 
@@ -271,15 +293,9 @@ line:
                 }
 
                 else {
-                    d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "1");
+                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "1");
                 }
             }
-
-
-    |   /* An error + '\n'. */
-        error  D_LC_WHITESPACE_EOL
-            /* Tells bison that the error has been catched and managed */
-            { yyerrok; yyclearin; printf("hola");}
     ;
 
 
@@ -289,12 +305,17 @@ line:
    errors.
 */
 expression:
+
+    /* ═══ Literal numbers ═══ */
+
         /* A base 10 integer. */
         D_LC_LITERAL_INT
 
     |   /* A base 10 floating point number. */
         D_LC_LITERAL_FP
 
+
+    /* ═══ Constants & variables, assignments ═══ */
 
     |   /* A predefined constant. */
         D_LC_IDENTIFIER_CONSTANT
@@ -309,7 +330,7 @@ expression:
             { $$ = $1->attribute.dec_number; }
 
     
-    |   /* Assigning a expression to a variable. */
+    |   /* Assigning an expression to a variable. */
         D_LC_IDENTIFIER_VARIABLE  D_LC_OP_ASSIGNMENT_ASSIGN  expression
             {
                 /* The expression's value is set as the variable's one */
@@ -319,28 +340,36 @@ expression:
                 $$ = $3;
             }
 
-    |   /* Assigning a expression to a constant.
+    |   /* Assigning an expression to a constant.
            This is not allowed. */
         D_LC_IDENTIFIER_CONSTANT  D_LC_OP_ASSIGNMENT_ASSIGN  expression
-            { d_errors_parse_show(3, D_ERR_USER_INPUT_WRITE_CONSTANT,
-                                  @1.last_line, @1.last_column);
+            {
+                d_errors_parse_show(3, D_ERR_SYN_WRITE_CONSTANT, @1.last_line,
+                                    @1.last_column);
+                /* Raises the error to discard the whole input line */
+                YYERROR;
             }
 
+
+    /* ═══ Mathematical functions ═══ */
 
     |   /* Calling a mathematical function with no argument.
            This is an error as math functions take exactly one argument. */
         D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_SEPARATOR_R_PARENTHESIS
             {
-                d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line,
+                d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @3.last_line,
                                     @3.last_column, "1");
+                /* Raises the error to discard the whole input line */
+                YYERROR;
             }
 
     |   /* Calling a mathematical function with a string as argument.
            This is an error as math functions take exactly a "double" argument. */
         D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_LITERAL_STR  D_LC_SEPARATOR_R_PARENTHESIS
             {
-                d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_TYPE, @3.last_line, @3.last_column,
-                                    "double");
+                d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_TYPE, @3.last_line, @3.last_column, "double");
+                /* Raises the error to discard the whole input line */
+                YYERROR;
             }
 
     |   /* Calling a mathematical function with one expression as argument. */
@@ -353,6 +382,7 @@ expression:
             }
 
 
+    /* ═══ Mathematical operations ═══ */
 
     |   /* Adding two expressions. */
         expression  D_LC_OP_ARITHMETIC_PLUS  expression
@@ -383,8 +413,10 @@ expression:
                 }
 
                 else {
-                    d_errors_parse_show(3, D_ERR_USER_INPUT_DIVISION_BY_ZERO,
+                    d_errors_parse_show(3, D_ERR_SEM_DIVISION_BY_ZERO,
                                         @3.last_line, @3.last_column);
+                    /* Raises the error to discard the whole input line */
+                    YYERROR;
                 }   
             }
 
@@ -401,17 +433,31 @@ expression:
             { $$ = d_dec_numbers_get_negated_value(&($2)); }
 
 
+    /* ═══ Parentheses usage ═══ */
+
     |   /* A expression between parentheses. */
         D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
             /* Its value gets directly set as the one of the recognized
                expression */
             { $$ = $2; }
 
+    |   /* An unmatched left parenthesis. */
+        D_LC_SEPARATOR_L_PARENTHESIS  expression
+            {
+                d_errors_parse_show(3, D_ERR_SYN_UNMATCHED_PARENTHESIS,
+                                    @1.last_line, @1.last_column);
+                /* Raises the error to discard the whole input line */
+                YYERROR;
+            }
 
-    |   /* An error that happens to be between parentheses. */
-        D_LC_SEPARATOR_L_PARENTHESIS  error  D_LC_SEPARATOR_R_PARENTHESIS
-            /* Tells bison that the error has been catched and managed */
-            { yyerrok; yyclearin; }
+    |   /* An unmatched right parenthesis. */
+        expression  D_LC_SEPARATOR_R_PARENTHESIS
+            {
+                d_errors_parse_show(3, D_ERR_SYN_UNMATCHED_PARENTHESIS,
+                                    @2.last_line, @2.last_column);
+                /* Raises the error to discard the whole input line */
+                YYERROR;
+            }
     ;
 
 
@@ -463,7 +509,11 @@ int d_synsem_analyzer_destroy(
 }
 
 
-void yyerror(char const *s)
+/**
+ * @brief Implementation of synsem.y/yyerror 
+ */
+void yyerror(char const *msg)
 {
-    fprintf(stderr, "%s", s);
+    fprintf(stderr, "[synsem_analyzer][yyerror] Catched an unexpected error: "
+                    "%s", msg);
 }

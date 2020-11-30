@@ -124,9 +124,8 @@ int _d_commands_load_function(
 
     if(_d_commands_table == NULL) {
 
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
-                               "commands.c", "_d_commands_load_function",
-                               "'_d_commands_table'");
+        d_errors_internal_show(3, D_ERR_USER_IO_NO_DYN_LIBRARY_SELECTED,
+                               "commands.c", "_d_commands_load_function");
         return -1;
     }
 
@@ -155,7 +154,7 @@ int _d_commands_load_function(
         if((loaded_object = dlsym(last_library->library, function))
            == NULL) {
 
-            d_errors_internal_show(3, D_ERR_USER_INPUT_FUNCTION_INACCESSIBLE,
+            d_errors_internal_show(3, D_ERR_USER_IO_FUNCTION_INACCESSIBLE,
                                    "commands.c", "_d_commands_load_function");
             #ifdef D_DEBUG
             printf("[commands][load function] dl error: %s\n", dlerror());
@@ -175,7 +174,7 @@ int _d_commands_load_function(
     }
 
     else {
-        d_errors_internal_show(3, D_ERR_USER_INPUT_FUNCTION_NAME_TAKEN,
+        d_errors_internal_show(3, D_ERR_USER_IO_FUNCTION_NAME_TAKEN,
                                "commands.c", "_d_commands_load_function");
 
         return -1;
@@ -239,7 +238,7 @@ int _d_commands_load_library(
         // If the library is not already loaded, there we go
         if((entry.library = dlopen(path, RTLD_LAZY)) == NULL) {
 
-            d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+            d_errors_internal_show(3, D_ERR_USER_IO_FILE_INACCESSIBLE,
                                    "commands.c", "_d_commands_load_library");
             #ifdef D_DEBUG
             printf("[commands][load library] dl error: %s\n", dlerror());
