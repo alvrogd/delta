@@ -12,29 +12,42 @@
 #include "common/lexical_comp.h"
 #include "common/symbol_table.h"
 
+#include "lib/uthash.h"
+
 
 #include <stdio.h>
 // For dynamic library loading
 #include <dlfcn.h>
 
 
+
 /**
  * @brief This structure will allow delta to load multiple dynamic libraries.
  *
  * @details
- *  This structure will allow delta to load multiple dynamic libraries, which
- *  will be saved using a stack.
+ *  Delta will rely on a hash table to keep track of each dynamic library that
+ *  has been loaded. In order to do so, this structure represents an entry in
+ *  that table.
  */
-struct _d_commands_bufstack {
-    /** Previous entry. */
-    struct _d_lexical_analyzer_bufstack *previous;
-    /** Opened library. */
+struct _d_commands_table_entry {
+
+    /** '\0' terminated string which is the given path through which the
+        library has been found and loaded. */
+    const char *path;
+    /** The opened library to which the entry corresponds. */
     void *library;
+    /** Makes this structure hashable by the library. */
+    UT_hash_handle hh;
 };
 
-/** The stack is empty at first. */
-struct _d_commands_bufstack *current_d_commands_bufstack = NULL;
-void *last_library = NULL;
+/** The library requires the hash table to be a pointer to its entry
+    type, initialized to NULL. */
+struct _d_commands_table_entry *_d_commands_table = NULL;
+
+/**
+ * The last selected library.
+ */
+struct _d_commands_table_entry *last_library = NULL;
 
 
 /**
@@ -86,11 +99,11 @@ int _d_commands_load_file(
 
 
 /**
- * @brief Loads a newly specified math function from the last opened dynamic
- *        library.
+ * @brief Loads a newly specified math function from the currently selected
+ *        dynamic library.
  *
  * @details
- *  Loads a newly specified math function from the last opened dynamic
+ *  Loads a newly specified math function from the currently selected dynamic
  *  library. The function must follow the "math_functions/dec_function"
  *  prototype.
  * 
@@ -104,40 +117,62 @@ int _d_commands_load_function(
     const char *function
 )
 {
-    struct d_symbol_table_entry tmp_entry;
-    unsigned char *tmp_entry_lexeme = NULL;
-
     void *loaded_object = NULL;
 
-    printf("3 %s\n", dlerror());
 
-    // TODO use same function as in symbol table
-    if((tmp_entry_lexeme =
-        malloc(strlen(function) + 1)) == NULL) {
+    if(_d_commands_table == NULL) {
 
-        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
-                                "commands.c",
-                                "d_commands_load_function",
-                                "'malloc' for math function's lexeme");
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "commands.c", "_d_commands_load_function",
+                               "'_d_commands_table'");
         return -1;
     }
 
-    strcpy((char *)tmp_entry_lexeme, function);
-    tmp_entry.lexeme = tmp_entry_lexeme;
+    if(function == NULL) {
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "commands.c", "_d_commands_load_function",
+                               "'function'");
+        return -1;
+    }
 
-    tmp_entry.lexical_component = D_LC_IDENTIFIER_FUNCTION;
 
-    tmp_entry.attribute.function = (dec_function)
-                                    dlsym(last_library, function);
-    printf("F %d\n", last_library == NULL);
-    d_symbol_table_add(&tmp_entry);
+    #ifdef D_DEBUG    
+    printf("[commands][load function] Clearing previous dl errors\n");
+    dlerror();
+    #endif
 
-    //#ifdef DEBUG
-    printf("[symbol_table][initialize] Added function: %s %p\n",
-            tmp_entry.lexeme, tmp_entry.attribute.function);
-    //#endif
-    printf("4 %s\n", dlerror());
+    #ifdef D_DEBUG
+    printf("[commands][load function] Specified function: %s\n", function);
+    #endif
 
+
+    // If the function has not been loaded yet
+    if(d_symbol_table_search(function) == NULL) {
+
+        // If the library is not already loaded, there we go
+        if((loaded_object = dlsym(last_library->library, function))
+           == NULL) {
+
+            // TODO change error
+            d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+                                   "commands.c", "_d_commands_load_function");
+            #ifdef D_DEBUG
+            printf("[commands][load function] dl error: %s\n", dlerror());
+            #endif
+
+            return -1;
+        }
+
+        // Now the library can be added to the symbol table
+        d_symbol_table_add_math_function(function,
+                                         (dec_function)loaded_object);
+    }
+
+    #ifdef DEBUG
+    printf("[commands][load function] Dynamically loaded function: %s %p\n",
+            function, loaded_object);
+    #endif
+    
 
     return 0;
 }
@@ -148,28 +183,99 @@ int _d_commands_load_function(
  *
  * @details
  *  Searches for a dynamic library and loads it, if it is not yet, while also
- *  setting it as the last opened dynamic library. 
+ *  setting it as the selected opened dynamic library. 
  * 
- * @param[in] function Relative or absolute path to the library.
+ * @param[in] path Relative or absolute path to the library.
  *
  * @return 0 if sucessful, any other value otherwise.
  */
 int _d_commands_load_library(
-    const char *filename
+    const char *path
 )
 {
-        printf("1 %s\n", dlerror());
+    struct _d_commands_table_entry entry;
+    struct _d_commands_table_entry *entry_in_table = NULL;
 
-    /* TODO add error handling */
-    void *library = dlopen(filename, RTLD_LAZY);
-    struct _d_commands_bufstack *bs = malloc(sizeof(struct _d_commands_bufstack));
 
-    bs->previous = current_d_commands_bufstack;
-    bs->library = last_library;
+    if(path == NULL) {
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "commands.c", "_d_commands_load_library",
+                               "'path'");
+        return -1;
+    }
 
-    last_library = library;
-    current_d_commands_bufstack = bs;
-    printf("2 %s\n", dlerror());
+
+    #ifdef D_DEBUG    
+    printf("[commands][load library] Clearing previous dl errors\n");
+    dlerror();
+    #endif
+
+    #ifdef D_DEBUG
+    printf("[commands][load library] Given path: %s\n", lexeme);
+    #endif
+
+
+    // Now the entry of the new library should be initialized in order to add
+    // it
+
+    // In order to do so, let's check first if a corresponding entry is
+    // already present
+    HASH_FIND_STR(_d_commands_table, (const char *)path, entry_in_table);
+
+    if(entry_in_table == NULL) {
+
+        #ifdef D_DEBUG
+        printf("[commands][load library] Library not present yet\n");
+        #endif
+
+        // If the library is not already loaded, there we go
+        if((entry.library = dlopen(path, RTLD_LAZY)) == NULL) {
+
+            d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+                                   "commands.c", "_d_commands_load_library");
+            #ifdef D_DEBUG
+            printf("[commands][load library] dl error: %s\n", dlerror());
+            #endif
+
+            return -1;
+        }
+
+        // Saving the path through which the library has been accessed
+        if((entry.path = (const char *) strdup(path)) == NULL) {
+
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "commands.c", "_d_commands_load_library",
+                                   "'strdup' of given path");
+            return -1;
+        }
+
+        // Now the library can be added to the table
+        // With each new entry, a new internally-managed structure is
+        // allocated
+        if((entry_in_table = malloc(sizeof(struct _d_commands_table_entry)))
+           == NULL) {
+
+            d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                   "commands.c", "_d_commands_load_library",
+                                   "'malloc' for struct "
+                                   "_d_commands_table_entry");
+            return -1;
+        }
+
+        entry_in_table->library = entry.library;
+        entry_in_table->path = entry.path;
+        // There is no need to copy the library's handle, it just needs to be
+        // present
+
+        HASH_ADD_KEYPTR(hh, _d_commands_table, entry_in_table->path,
+                        strlen((const char *)entry_in_table->path),
+                        entry_in_table);
+    }
+
+
+    // Anyways, the resulting entry, be it new or not, is set as the last
+    // selected library
+    last_library = entry_in_table;
 
 
     return 0;

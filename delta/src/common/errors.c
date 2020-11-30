@@ -97,6 +97,10 @@ const char *d_errors_get_template(
         case D_ERR_USER_INPUT_INCORRECT_ARG_TYPE:
             return "incorrect argument type, expected a [..]";
 
+        case D_ERR_USER_INPUT_NO_DYN_LIBRARY_SELECTED:
+            return "no dynamic library has been selected; check if the last "
+                   "specified library has been successfully opened";
+
         default:
             printf("error: invalid argument, 'error_code' not recognized\n"
                    " --> internal file : errors.c : "
