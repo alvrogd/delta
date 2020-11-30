@@ -7,20 +7,23 @@
  *
  * @details
  *  This is the definition of the symbol table that delta will use through all
- *  of its compilation phases. It will allow delta to keep track, at each time
- *  point, of the currently active identifiers, as well as all of their
- *  attributes.
- *
- *  As of now, it does not support scoping, as it assumes that all source code
- *  can be found in the same block.
+ *  of its interpretation phases. It will allow delta to keep track, at each
+ *  time point, of the currently active identifiers, math functions and built-
+ *  in commands, as well as all of their attributes.
  *
  *  The symbol table is internally represented by a single hash table, as
  *  there is no scoping at the moment. Specifically, the "uthash" library by
  *  Troy D. Hanson is the one who provides the whole hash table functionality.
  *
  *  It is also worth noting that, once the symbol table is created, its
- *  initial contents are the keywords in common/keywords.h, which need to be
- *  present in order to tell them apart from the source code's identifiers.
+ *  initial contents are:
+ *
+ *    - The built-in commands in common/commands.h
+ *    - The math constants in common/math_constants.h
+ *    - The math functions in common/math_functions.h
+ *
+ *  This will allow telling those elements apart from variables' identifiers,
+ *  as they are all alphanumeric strings.
  */
 
 
@@ -28,9 +31,9 @@
 #define D_SYMBOL_TABLE
 
 
-#include "common/math_functions.h"
 #include "common/commands.h"
 #include "common/dec_numbers.h"
+#include "common/math_functions.h"
 
 // External library 
 #include "lib/uthash.h"
@@ -66,9 +69,12 @@ struct d_symbol_table_entry {
     /** Union that holds any attribute of any kind that an entry may
         require. */
     union {
-        struct d_dec_number dec_number; /** For decimal variables and constants. */
-        dec_function function; /** Pointer a function's implementation. */
-        struct d_command command; /** For internal commadns implementation. */
+        /** For decimal variables and constants. */
+        struct d_dec_number dec_number;
+        /** For mathematical functions for decimal values. */
+        dec_function function;
+        /** For built-in commands. */
+        struct d_command command; 
     } attribute;
 
     /** Makes this structure hashable by the library. */
@@ -80,8 +86,8 @@ struct d_symbol_table_entry {
  * @brief Initializes the symbol table.
  *
  * @details
- *  Initializes the symbol table, filling it with all the reserved keywords in 
- *  keywords.h
+ *  Initializes the symbol table, filling it with all the math constants and
+ *  functions, and built-in commands.
  *
  * @return 0 if successful, any other value otherwise.
  */
@@ -95,7 +101,8 @@ int d_symbol_table_initialize();
  *  Searches in the symbol table an entry identified by the given key, and
  *  returning it if found.
  *
- * @param[in] key '\0' terminated string which represents the key of the entry.
+ * @param[in] key '\0' terminated string which represents the key of the
+ *                entry.
  *
  * @return Pointer to the requested entry, or NULL if not found.
  */
@@ -109,7 +116,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
  *
  * @details
  *  Adds the specified entry to the symbol table. The entry's key must NOT be
- *  already present.
+ *  present yet.
  *
  *  Every member in the given entry will be copied to a new entry internally
  *  managed by the symbol table.
@@ -118,10 +125,9 @@ struct d_symbol_table_entry *d_symbol_table_search(
  *           itself will be copied, whereas the contents of the region will
  *           not.
  *
- * @param[in,out] symbol_table The symbol table.
  * @param[in] entry The entry.
  *
- * @return 0 if successful, 1 if the key is duped, any other value otherwise.
+ * @return 0 if successful, any other value otherwise.
  */
 int d_symbol_table_add(
     struct d_symbol_table_entry *entry
@@ -129,14 +135,34 @@ int d_symbol_table_add(
 
 
 /**
+ * @brief Adds a new entry in the symbol table for the specified math
+ *        function.
+ *
+ * @details
+ *  Adds a new entry in the symbol table for the specified math function. The
+ *  entry's key must NOT be present yet; that is, a function that goes by the
+ *  same name.
+ *
+ * @param[in] funcion_name Name by which the function will be identified.
+ * @param[in] function_implementation Where the function's implementation can
+ *            be found.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_symbol_table_add_math_function(
+    const char *function_name,
+    dec_function function_implementation
+);
+
+
+/**
  * @brief Shows the symbol table.
  *
  * @details
- *  Shows the symbol table. That is, this function prints all of the currently
- *  registered:
+ *  Prints all the runtime-dependant entries in the symbol table:
  *
- *    - Constants.
- *    - Loaded math. functions.
+ *    - Math constants.
+ *    - Math loaded functions.
  *    - Variables.
  *
  * @return 0 if successful, any other value otherwise.

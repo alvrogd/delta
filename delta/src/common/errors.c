@@ -11,10 +11,8 @@
 
 #include "common/errors.h"
 
-
-#include <stdarg.h>
-#include <stddef.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 
 
@@ -99,9 +97,10 @@ const char *d_errors_get_template(
         case D_ERR_USER_INPUT_INCORRECT_ARG_TYPE:
             return "incorrect argument type, expected a [..]";
 
-        default: // TODO change perror
-            perror("error: invalid argument, 'error_code' not recognized\n"
-                   " --> internal file : errors.c : d_errors_get_template()");
+        default:
+            printf("error: invalid argument, 'error_code' not recognized\n"
+                   " --> internal file : errors.c : "
+                   "d_errors_get_template()\n");
 
             return "no template defined for the specified error code";
     }

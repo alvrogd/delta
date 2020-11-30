@@ -10,36 +10,24 @@
  *  All possible error messages that delta may show fall into two categories:
  *
  *    - On the one hand, there are the error messages that happen due to
- *      parsing the input source file. They are lexical, syntatic and semantic
+ *      parsing input setences. They are lexical, syntatic and semantic
  *      errors.
  *
  *    - On the other hand, delta can also raise internal errors, such as those
  *      that come from failed system calls.
  *
  *  No matter from where an error comes from, there will be a template for it.
- *
- *  Specifically, in order to raise:
- *
- *    - Parsing error messages: the mandatory argument is the unsigned error
- *                              code which uniquely identifies the error. If
- *                              the template allows one or more custom values
- *                              to be inserted (i.e. to point out to which
- *                              variable the error affects), delta may also
- *                              provide those values, and they will be printed
- *                              out just in the right places, accordingly
- *                              to the error template.
- *
-
- *
- *  However, it is worth noting that the functions that are defined in this
- *  file do not have prototypes that match the previous explanation, as they follow 
+ *  Moreover, if a template allows one or more custom values to be inserted
+ *  (i.e. to point out to which variable the error affects), delta may also
+ *  provide those values, and they will be printed out just in the right
+ *  places. Custom values are represented by "[..]" segments in the templates.
  */
 
 
 #ifndef D_ERRORS
 #define D_ERRORS
 
-
+// For functions with a variable amout of arguments
 #include <stdarg.h>
 
 
@@ -103,7 +91,7 @@
  * 
  * @param error_code The error code.
  *
- * @return const char* The string that represents the template.
+ * @return The string that represents the template.
  */
 const char *d_errors_get_template(
     int error_code
@@ -181,4 +169,4 @@ void d_errors_internal_show(
 );
 
 
-#endif
+#endif //D_ERRORS

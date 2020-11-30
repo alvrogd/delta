@@ -46,21 +46,38 @@ extern int yydebug;
 /* "%code requires" blocks.  */
 #line 12 "src/analyzers/synsem.y"
 
+    /* ════════════════ */
+    /* ═══ Includes ═══ */
+    /* ════════════════ */
+
     #include "analyzers/synsem.h"
 
     #include "common/errors.h"
     #include "common/symbol_table.h"
 
+
     #include <stdio.h>
     #include <stdlib.h>
-    /* Functions that are expected to be available in a calculator */
+
+    /* For some basic operations that are expected to be available in a
+       calculator */
     #include <math.h>
+    // To print int64_t data type
+    #include <inttypes.h>
 
 
-    /* Max length of string literals */
+    /* ═══════════════ */
+    /* ═══ Defines ═══ */
+    /* ═══════════════ */
+
+    /** Max length of string literals. Setting a static buffer for these
+        literals will avoid having to constantly reserve and free memory. */
     #define D_LC_LITERAL_STR_MAX_LENGTH 256
 
-#line 64 "include/common/lexical_comp.h"
+    /** Which string is shown as prompt when delta is waiting for orders. */
+    #define D_SYNSEM_PROMPT ">> "
+
+#line 81 "include/common/lexical_comp.h"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -69,10 +86,10 @@ extern int yydebug;
   {
     D_LC_WHITESPACE_EOL = 258,
     D_LC_LITERAL_STR = 259,
-    D_LC_IDENTIFIER_VARIABLE = 260,
-    D_LC_IDENTIFIER_FUNCTION = 261,
-    D_LC_IDENTIFIER_COMMAND = 262,
-    D_LC_IDENTIFIER_CONSTANT = 263,
+    D_LC_IDENTIFIER_COMMAND = 260,
+    D_LC_IDENTIFIER_CONSTANT = 261,
+    D_LC_IDENTIFIER_FUNCTION = 262,
+    D_LC_IDENTIFIER_VARIABLE = 263,
     D_LC_LITERAL_INT = 264,
     D_LC_LITERAL_FP = 265,
     D_LC_OP_ASSIGNMENT_ASSIGN = 266,
@@ -91,13 +108,16 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 30 "src/analyzers/synsem.y"
+#line 52 "src/analyzers/synsem.y"
 
-    char string[D_LC_LITERAL_STR_MAX_LENGTH];    /* Literal strings */
-    struct d_dec_number                      dec_number; /* Decimal numbers */
-    struct d_symbol_table_entry *st_entry; /* Identifiers */
+    /** Literal strings. */
+    char string[D_LC_LITERAL_STR_MAX_LENGTH];
+    /** Literal decimal numbers. */
+    struct d_dec_number dec_number;
+    /** Identifiers. */
+    struct d_symbol_table_entry *st_entry;
 
-#line 101 "include/common/lexical_comp.h"
+#line 121 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

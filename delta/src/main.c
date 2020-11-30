@@ -3,7 +3,6 @@
 
 #include "analyzers/lexical.h"
 #include "analyzers/synsem.h"
-#include "common/errors.h"
 #include "common/symbol_table.h"
 
 
@@ -27,10 +26,10 @@ int main(int argc, char *argv[])
     }
 
 
-    /* Input file parsing */
+    /* Input parsing */
 
-    // Running the syntactic analyzer, which will call by itself the lexical
-    // analyzer
+    // Running the syntactic & semantic analyzer, which will call by itself
+    // the lexical analyzer
     if(d_synsem_analyzer_parse() != 0) {
         exit(EXIT_FAILURE);
     }

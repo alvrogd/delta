@@ -7,30 +7,38 @@
  *
  * @details
  *  This is the definition of the lexical analyzer that delta will use 
- *  through the compilation process.
+ *  through the interpretation process. This analyzer relies on flex, a tool
+ *  for generating programs that perform pattern-matching on text, which
+ *  already includes its own I/O system.
  *
- *  Its duty is to parse the contents given by the I/O system, recognizing
- *  the lexical components that are present in it. These are defined in
- *  lexical_components.h
+ *  Its duty is to read the contents given by the user, recognizing the
+ *  lexical components that are present in it. The standard input source will
+ *  be stdin, but the user can order the lexical analyzer to read a certain
+ *  file at anytime.
+ *
+ *  As the lexical & semantic is implemented using Bison, the flex-bison
+ *  interaction means that those lexical components will be defined in another
+ *  bison-generated file, "lexical_components.h".
  *
  *  For some lexical components, it will be enough to just identify them
- *  through those lex. comp. definitions (i.e. an "if" has the same meaning
+ *  through those lex. comp. definitions (i.e. a "==" has the same meaning
  *  wherever it may appear), whereas others, such as identifiers and literals,
- *  will be returned along with some additional attributes:
+ *  will be returned along with some additional attributes, as each specific
+ *  lexeme in this categories has a different meaning:
  *
- *    - Both identifiers and literals will carry the lexemes (characters) that
- *      represent them in order to not lose their specific values.
+ *    - Identifiers will carry pointers to their entries in the symbol table.
+ *      Identifiers may correspond to variables, math functions/constants, and
+ *      built-in commands.
  *    
- *    - Furthermore, identifiers have many additional metadata, such as their
- *      data type, first appearance... That is why they will also point to
- *      their corresponding symbol table's entries, which will already contain
- *      all that metadata, instead of replicating it.
+ *    - Decimal numbers will carry a "struct d_dec_number" that represent
+ *      them.
  *
- *  This analyzer relies on flex, a tool for generating programs that perform
- *  pattern-matching on text, which already includes its own I/O system.
+ *    - Strings will carry a string that represent their quote-limited
+ *      characters.
  *
  * @see https://github.com/westes/flex
  */
+
 
 #ifndef D_LEXICAL_ANALYZER
 #define D_LEXICAL_ANALYZER
@@ -40,22 +48,13 @@
  * @brief Represents a lexical component.
  *
  * @details
- *  Opaque data type which represents a lexical analyzer.
+ *  Opaque data type which represents a lexical component.
  */
 struct d_lexical_component {
     /** Integer that represents the (sub)category to which the lexical
         component belongs. */
     int category;
-    /** Any attributes that the lexical component may carry along:
-          
-          - char * to its lexeme if the component is a literal.
-              (must be manually freed once de component is no longer needed,
-               using the d_lexical_analyzer_destroy_lexical_comp function)
-              
-          - struct d_symbol_table_entry * if the component is an identifier.
-              (there is no need to free it as the symbol table is responsible
-               of it)
-    */
+    /** Any attributes that the lexical component may carry along. */
     const void *attributes;
 };
 
@@ -63,15 +62,43 @@ struct d_lexical_component {
 /**
  * @brief Initializes the lexical analyzer.
  *
+ * @details
+ *  Initializes the lexical analyzer, setting stdin as the default input
+ *  source.
+ *
  * @return 0 if successful, any other value otherwise.
  */
 int d_lexical_analyzer_initialize();
 
+
+/**
+ * @brief Prepares to read new input file.
+ *
+ * @details
+ *  Prepares the lexical analyzer to read a new input file. Therefore, the
+ *  current input file, as well as all of its metadata, must be stored in the
+ *  stack for later usage.
+ *
+ * @param[in] filename Absolute or relative path to the new input file.
+ * 
+ * @return 0 if successful, any other value otherwise.
+ */
 int d_lexical_analyzer_new_file(
     const char *filename
 );
 
 
+/**
+ * @brief Closes the current input file.
+ *
+ * @details
+ *  Closes the current input file, and restores the file represented by
+ *  the currently accessible entry in the stack. Note that a "pop" may
+ *  only be issued if a corresponding "new_file" has been called
+ *  previously. Otherwise, you may end up trying to close stdin.
+ * 
+ * @return 0 if successful, any other value otherwise.
+ */
 int d_lexical_analyzer_pop_file(
     void
 );
@@ -82,11 +109,8 @@ int d_lexical_analyzer_pop_file(
  *        current source file.
  *
  * @details
- *  The lexical analyzer continues parsing the current source file,
- *  recognizing and returning its next lexical component.
- *
- *  If the component turns out to be an identifier, the analyzer will also
- *  take care of initializing its corresponding entry in the symbol table.
+ *  If there is no source file specified, the analyzer will just take data
+ *  from stdin by default.
  *
  * @return 0 if successful, any other value otherwise.
  */
@@ -94,52 +118,14 @@ int yylex();
 
 
 /**
- * @brief The lexical analyzer destroys a lexical component that has
- *        previously created.
+ * @brief Destroys the lexical analyzer.
  *
  * @details
- *  The lexical analyzer frees any resources that may have allocated
- *  previously for a given lexical component, and for which it must take
- *  responsability, as some of them may carry attributes.
- *
- *  Specifically, according to the different types of lexical components that
- *  have attributes:
- *
- *    - Those that have an entry in the symbol table are already memory-
- *      -managed by it. That is:
- *
- *        - If actual scopes were supported, closing one would imply deleting
- *          all of its identifiers. They must not be deleted earlier, as an
- *          identifier can be referenced multiple times in the same scope. As
- *          of now, the "only scope" would be terminated when destroying the
- *          symbol table. In such event, all allocated memory to each present
- *          identifier will be freed.
- *
- *        - Keywords cannot be removed from the table until the input file
- *          parsing has ended. Therefore, they will also be destroyed by the
- *          symbol table in the previous circumstances.
- *
- *    - Regarding the other components that also have attributes, but no
- *      entry, these attributes have been reserved on purpose when recognizing
- *      the lex. comp. from the input file, so they will not be freed unless
- *      the consumer requests it.
- *
- * @param[in,out] lexical_component Pointer to the lexical component that will
- *                                  be freed.
- *
- * @return 0 if successful, any other value otherwise.
- */
-int d_lexical_analyzer_destroy_lexical_com(
-    struct d_lexical_component *lexical_component
-);
-
-
-/**
- * @brief Destroys the lexical analyzer.
+ *  Destroys the lexical analyzer, while also closing any still opened files.
  *
  * @return 0 if successful, any other value otherwise.
  */
 int d_lexical_analyzer_destroy();
 
 
-#endif // D_LEXICAL_ANALYZER
+#endif //D_LEXICAL_ANALYZER

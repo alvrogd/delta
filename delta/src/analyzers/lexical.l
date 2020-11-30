@@ -3,7 +3,7 @@
  * @author Álvaro Goldar Dieste
  * @date Nov 2020
  *
- * @brief Implementation of analyzers/syntactic.h
+ * @brief Implementation of analyzers/lexical.h
  */
 
 
@@ -12,11 +12,10 @@
 /** 1-byte chars. */
 %option 8bit
 
-/** Always return to the caller (syntactic-semantic analyzer) after finding an
-    EOF. */
+/** EOFs will be manually managed in the rules section. */
 %option noyywrap
 
-/** The current lexeme will be a character pointer (= no max. length). */
+/** The current lexeme will be a character pointer (=> no max. length). */
 %option pointer
 
 
@@ -28,28 +27,41 @@ DIGIT   [0-9]
 
 FLOAT_DECIMALS      {DIGIT}({DIGIT}|_)*
 FLOAT_EXPONENT      (e|E)(\+|\-)?{DIGIT}({DIGIT}|_)*
+/* Integer part of a floating point number */
 FLOAT_INTEGER       {DIGIT}({DIGIT}|_)*
 
+/* Printable characters */
 PRINT   [ -²] 
 
 
 /* ═════════════════ Includes & local functions/variables ═════════════════ */
 
 %{
+    /* ════════════════ */
+    /* ═══ Includes ═══ */
+    /* ════════════════ */
+
     #include "analyzers/lexical.h"
 
     #include "common/lexical_comp.h"
     #include "common/errors.h"
     #include "common/symbol_table.h"
 
+
     /* File access */
     #include <stdio.h>
+
     /* To store lexemes */
     #include <string.h>
     #include <stdlib.h>
+    
     /* size_t */
     #include <stddef.h>
 
+
+    /* ═══════════════ */
+    /* ═══ Defines ═══ */
+    /* ═══════════════ */
 
     /** Block size in bytes. */
     /* TODO As of now, the block size has been set to 4096 bytes as delta
@@ -61,59 +73,132 @@ PRINT   [ -²]
     #define YY_BUF_SIZE 4096
 
 
+    /* ═════════════════════════ */
+    /* ═══ Private functions ═══ */
+    /* ═════════════════════════ */
+
     /* Declaration of some private fuctions that will be used in the rules
        section */
-    int _d_lexical_analyzer_identifer_recognized();
 
-    int _d_lexical_analyzer_literal_recognized();
+    /**
+     * @brief Makes sure that the current identifier (a lexical component) is
+     *        stored in the symbol table.
+     *
+     * @details
+     *  Makes sure that the current identifier (a lexical component) is stored
+     *  in the symbol table. That is, this function is meant to be called
+     *  after succesfully recognizing an identifier.
+     *
+     *  Identifiers can be categorized into:
+     * 
+     *    - New identifiers (not present in the table yet). They always
+     *      represent variables.
+     *    - Already present identifiers. They may represent commands,
+     *      functions, or previously declared variables.
+     *
+     *  If the identifier is not present yet, a new entry is added to the
+     *  symbol table to effectively declare a new variable. New variables are
+     *  initialized by default to the decimal integer number "0". Otherwise,
+     *  the already present entry will be retrieved.
+     *
+     *  In any case, the associated entry will be available in the "yylval"
+     *  variable so that the syntactic and semantic analyzer may use it.
+     *
+     * @return D_LC_IDENTIFIER if the identifier turned out to be a new
+     *         varible, the corresponding D_LC_XYZ if the identifier was
+     *         already present in an entry in the symbol table, any other
+     *         value otherwise.
+     */
+    int _d_lexical_analyzer_identifier_recognized();
 
+    /**
+    * @brief Stores the semantic value that is represented by the current
+    *        literal (a lexical component).
+    *
+    * @details
+    *  Interprets and stores the semantic value that is represented by the
+    *  current literal (a lexical component), as its category is enough for
+    *  the syntactic analyzer, but not for the semantic. Therefore, this
+    *  function is meant to be called after successfully recognizing a
+    *  literal.
+    *
+    *  Specifically:
+    *    - If the literal is a number, its lexeme is coverted to its
+    *      corresponding integer/floating value.
+    *    - If the literal is a string, its lexeme is directly copied, skipping
+    *      both the initial and ending double quotes.
+    *
+    *  The semantic value will be available in the "yylval" external variable.
+    *
+    * @param[in] lexical_component The lexical component category of the
+    *                              literal.
+    *
+    * @return 0 if successful, any other value otherwise.
+    */
+    int _d_lexical_analyzer_literal_recognized(
+        int lexical_component
+    );
+
+
+    /* ══════════════════════════ */
+    /* ═══ Current line & col ═══ */
+    /* ══════════════════════════ */
 
     /** How many '\n' have been seen in the input file that is being
         analyzed. */
     size_t current_line;
 
-    /** How many characters have been seen in the current line */
+    /** How many characters have been seen in the current line. */
     size_t current_column;
 
-    /** Each time that a lexical component is recognized, the lex. analyzer
-        points to the syntactic and semantic analyzer where it can be found,
-        for error reporting purposes. */
+    /** Each time that a rule is matched, the lex. analyzer updates its line
+        and col counters, as it may use them for error reporting purposes. The
+        syntactic & semantic analyzer may also use them for the same
+        purpose. */
     #define YY_USER_ACTION \
-        yylloc.first_line = current_line; yylloc.last_line = current_line; \
+        yylloc.first_line = current_line; \
+        yylloc.last_line = current_line; \
         yylloc.first_column = current_column; \
         current_column += yyleng; yylloc.last_column = current_column;
 
+
+    /* ══════════════════════════ */
+    /* ═══ Nested input files ═══ */
+    /* ══════════════════════════ */
 
     /**
      * @brief This structure will allow the lexical analyzer to parse nested
      *        input files.
      *
      * @details
-     *  A stack will be simulated.
+     *  A stack will be simulated in order to parse multiple files. The top of
+     *  the stack contains the entry of the current file that is being read.
+     *  Each time that a new "load" command is issued, a new entry for the new
+     *  input file will be pushed into the stack, and popped out when reaching
+     *  its EOF.
      *
-     * @see flex & bison by John Levine, chapter 2.5
+     * @see flex & bison by John Levine, 1st edition, chapter 2.5
      */
     struct _d_lexical_analyzer_bufstack {
-        /** Previous entry. */
-        struct _d_lexical_analyzer_bufstack *previous;
-        /** Saved flex buffer. */
+        /** Previous entry in the stack. */
+        struct _d_lexical_analyzer_bufstack *previous_entry;
+
+        /** Flex buffer of the file represented by the entry. */
         YY_BUFFER_STATE buffer_state;
-        /** Saved line and col counters. */
+        /** Line counter of the file represented by the entry. It only gets
+            updated when pushing another entry into the stack. */
         size_t line;
+        /** Col counter of the file represented by the entry. It only gets
+            updated when pushing another entry into the stack. */
         size_t column;
-        /** Saved filename. */
-        const char *filename;
-        /** Saved file. */
+        /** The file represented by the entry. */
         FILE *file;
+        /** Name of the file represented by the entry. */
+        const char *filename;
     };
 
-    /** The stack is empty at first (no nested files). */
+    /** Last entry in the stack. */
     struct _d_lexical_analyzer_bufstack *current_bufstack = NULL;
-    const char *current_filename = NULL;
-
-    /* Declaration of some public fuctions to manipulate the stack */
-    int d_lexical_analyzer_new_file(const char *filename);
-    int d_lexical_analyzer_pop_file(void);
 %}
 
 
@@ -122,7 +207,9 @@ PRINT   [ -²]
 
  /* ════════════════════════════════ Rules ═══════════════════════════════ */
 
- /* ** 1-char components ** */
+ /* ═════════════════════════ */
+ /* ═══ 1-char components ═══ */
+ /* ═════════════════════════ */
 
 "+"   { return D_LC_OP_ARITHMETIC_PLUS; }
 "-"   { return D_LC_OP_ARITHMETIC_MINUS; }
@@ -135,33 +222,32 @@ PRINT   [ -²]
 ")"   { return D_LC_SEPARATOR_R_PARENTHESIS; }
 
 
- /* ** Multiple-char components ** */
+ /* ════════════════════════════════ */
+ /* ═══ Multiple-char components ═══ */
+ /* ════════════════════════════════ */
 
- /* Comments (single line) */
+ /* ** Comments (single line) ** */
 
- /*"#".*\n    { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; }*/
+ /*"#".*\n    { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; } TODO just ignore them*/
 
 
+ /* ** Double quoted strings ** */
 
- /* Double quoted strings */
-
-\"\"([cwd])?                                { d_errors_parse_show(3,
-                                                                  D_ERR_LEX_LITERALS_STRING_EMPTY,
-                                                                  current_line, current_column); }
+\"\"            { d_errors_parse_show(3, D_ERR_LEX_LITERALS_STRING_EMPTY,
+                  current_line, current_column); }
 
 \"{PRINT}+\"    { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_STR);
-                                              return D_LC_LITERAL_STR; }
+                  return D_LC_LITERAL_STR; }
 
 
- /* Identifiers */
+ /* ** Identifiers ** */
 
-({ALPHA}|_)({DIGIT}|{ALPHA}|_)*     { return _d_lexical_analyzer_identifer_recognized(); }
+({ALPHA}|_)({DIGIT}|{ALPHA}|_)* { return _d_lexical_analyzer_identifier_recognized(); }
 
 
+ /* ** Numbers, binary integer ** */
 
- /* Numbers, binary integer */
-
- /*0[bB](_)*[01][01_]*                                     { _d_lexical_analyzer_literal_recognized(lexical_component);
+ /*0[bB](_)*[01][01_]*                                  { _d_lexical_analyzer_literal_recognized(lexical_component);
                                                           lexical_component->category = D_LC_LITERAL_INT;
                                                           return 0; }
 
@@ -178,23 +264,19 @@ PRINT   [ -²]
                                                           "-AND- '1' -AND- '_'"); }*/
 
 
- /* Numbers, decimal integer */
+ /* ** Numbers, decimal integer ** */
 
 {DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_INT);
                                                           return D_LC_LITERAL_INT; }
 
-{DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4,
-                                                          D_ERR_LEX_LITERALS_INTEGERS_BAD,
-                                                          current_line, current_column,
-                                                          "the only letters that may "
-                                                          "follow after an integer "
-                                                          "number are 'E' -OR- 'e' for "
-                                                          "floats (i.e. 10E+15) -AND- "
-                                                          "'B' -OR- 'b' for binaries "
+{DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BAD,
+                                                          current_line, current_column, "the only letters that may "
+                                                          "follow after an integer number are 'E' -OR- 'e' for "
+                                                          "floats (i.e. 10E+15) -AND- 'B' -OR- 'b' for binaries "
                                                           "(i.e. 0b011)"); }
 
 
- /* Numbers, decimal float */
+ /* ** Numbers, decimal float ** */
 
 {FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_FP); 
                                                                                                                           return D_LC_LITERAL_FP; }
@@ -236,13 +318,18 @@ PRINT   [ -²]
                                                                                                                           "-AND- '_'"); }
 
 
- /* ** Whitespace ** */
+ /* ══════════════════ */
+ /* ═══ Whitespace ═══ */
+ /* ══════════════════ */
 
 [ \t]+  /* Ignore */
-\n      { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; }
+\n      { ++current_line; current_column = 1;
+          return D_LC_WHITESPACE_EOL; }
 
 
- /* ** EOF ** */
+ /* ═══════════ */
+ /* ═══ EOF ═══ */
+ /* ═══════════ */
 
 <<EOF>>     { d_lexical_analyzer_pop_file(); }
 
@@ -257,102 +344,174 @@ PRINT   [ -²]
  */
 int d_lexical_analyzer_initialize()
 {
-    // All input will be given by the user
+    // By default, all input will be given by the user through stdin...
     yyin = stdin;
-
-
-    // The counters need to be initialized
+    
+    // The error-reporting counters need to be initialized
     current_line = 1;
     current_column = 1;
 
 
-    /* TODO add error handling */
-    struct _d_lexical_analyzer_bufstack *bs = malloc(sizeof(struct _d_lexical_analyzer_bufstack));
+    // ... Therefore, stdin gets registered as the first entry in the stack
+    if((current_bufstack =
+        malloc(sizeof(struct _d_lexical_analyzer_bufstack))) == NULL) {
+        
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                "lexical.l", "d_lexical_analyzer_initialize",
+                                "'malloc' for first entry in bufstack");
+        return -1;
+    }
 
-    bs->previous = current_bufstack;
+    // No input file opened yet
+    current_bufstack->previous_entry = NULL;
 
-    bs->buffer_state = yy_create_buffer(stdin, YY_BUF_SIZE);
-    bs->file = stdin;
-    bs->filename = "stdin";
-    yy_switch_to_buffer(bs->buffer_state);
-    current_bufstack = bs;
+    // Creates a new flex state that is dedicated to stdin
+    current_bufstack->buffer_state = yy_create_buffer(stdin, YY_BUF_SIZE);
 
-    current_line = 1;
-    current_column = 1;
-    current_filename = "stdin";
+    current_bufstack->file = stdin;
+    current_bufstack->filename = strdup("stdin");
 
+    // And sets the state as the current one
+    yy_switch_to_buffer(current_bufstack->buffer_state);
 
-    return 0;
-}
-
-
-int d_lexical_analyzer_new_file(
-    const char *filename
-)
-{
-    /* TODO add error handling */
-    FILE *fl = fopen(filename, "r");
-    struct _d_lexical_analyzer_bufstack *bs = malloc(sizeof(struct _d_lexical_analyzer_bufstack));
-
-    // There will always be a stacked entry, as stdio will never be removed
-    current_bufstack->line = current_line;
-    current_bufstack->column = current_column;
-
-    bs->previous = current_bufstack;
-
-    bs->buffer_state = yy_create_buffer(fl, YY_BUF_SIZE);
-    bs->file = fl;
-    bs->filename = filename; /* TODO segfault assured */
-    yy_switch_to_buffer(bs->buffer_state);
-    current_bufstack = bs;
-
-    current_line = 1;
-    current_column = 1;
-    current_filename = filename; /* TODO segfault assured */
-
-    return 0;
-}
-
-
-int d_lexical_analyzer_pop_file(
-    void
-)
-{
-    struct _d_lexical_analyzer_bufstack *bs = current_bufstack;
-    struct _d_lexical_analyzer_bufstack *previous = NULL;
-
-    fclose(bs->file);
-    yy_delete_buffer(bs->buffer_state);
-
-    previous = bs->previous;
-    free(bs);
-
-    yy_switch_to_buffer(previous->buffer_state);
-    current_bufstack = previous;
-    current_line = previous->line;
-    current_column = previous->column;
-    current_filename = previous->filename;
 
     return 0;
 }
 
 
 /**
- * @brief Stores the semantic value that represents the current literal
- *        (a lexical component).
- *
- * @details
- *  Stores the semantic value that represents the current literal (a lexical
- *  component), as its category is enough for the syntactic analyzer, but not
- *  for the semantic.
- *
- *  Specifically:
- *    - If the literal is a number, its lexeme is coverted to its
- *      corresponding integer/floating type.
- *
- *  The semantic value will be available in the "yylval" external variable.
- *
- * @return 0 if successful, any other value otherwise.
+ * @brief Implementation of lexical.h/d_lexical_analyzer_new_file
+ */
+int d_lexical_analyzer_new_file(
+    const char *filename
+)
+{
+    FILE *new_file = NULL;
+    struct _d_lexical_analyzer_bufstack *new_entry = NULL;
+
+
+    if(current_bufstack == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "lexical.l", "d_lexical_analyzer_new_file",
+                               "'current_bufstack'");
+        return -1;
+    }
+
+    if(filename == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "lexical.l", "d_lexical_analyzer_new_file",
+                               "'filename'");
+        return -1;
+    }
+
+
+    if((new_file = fopen(filename, "r")) == NULL) {
+
+        d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+                               "lexical.l", "d_lexical_analyzer_new_file");
+        return -1;
+    }
+
+    if((new_entry = malloc(sizeof(struct _d_lexical_analyzer_bufstack)))
+       == NULL) {
+        
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                "lexical.l", "d_lexical_analyzer_new_file",
+                                "'malloc' for new_entry");
+        return -1;
+    }
+
+
+    // There will always be a stacked entry, as stdio shoud never be removed,
+    // so there are no NULL deferencing concerns
+
+    // First of all, the current error-reporting counters in the last stack
+    // entry must be updated
+    current_bufstack->line = current_line;
+    current_bufstack->column = current_column;
+
+
+    // Now, the new entry can be set-up
+    new_entry->previous_entry = current_bufstack;
+    current_bufstack = new_entry;
+
+    // Creates a new flex state that is dedicated to the new file
+    new_entry->buffer_state = yy_create_buffer(new_file, YY_BUF_SIZE);
+
+    new_entry->file = new_file;
+    new_entry->filename = strdup(filename);
+
+    // And sets the state as the current one
+    yy_switch_to_buffer(new_entry->buffer_state);
+
+    // Also, the error-reporting counters must be reset
+    current_line = 1;
+    current_column = 1;
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Implementation of symbol_table.h/d_lexical_analyzer_pop_file
+ */
+int d_lexical_analyzer_pop_file(
+    void
+)
+{
+    struct _d_lexical_analyzer_bufstack *last_entry = NULL;
+    struct _d_lexical_analyzer_bufstack *previous_entry = NULL;
+
+
+    if(current_bufstack == NULL) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "lexical.l", "d_lexical_analyzer_new_file",
+                               "'current_bufstack'");
+        return -1;
+    }
+
+
+    last_entry = current_bufstack;
+    previous_entry = last_entry->previous_entry;
+
+
+    // The last opened file gets completely closed
+    if(fclose(last_entry->file) == EOF) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                               "lexical.l", "d_lexical_analyzer_pop_file",
+                               "'fclose' on last entry's file");
+        return -1;
+    }
+
+    free(last_entry->filename);
+    yy_delete_buffer(last_entry->buffer_state);
+    
+    // And its entry gets erased
+    free(last_entry);
+
+
+    // Now, the flex state of the previous file is loaded
+    yy_switch_to_buffer(previous_entry->buffer_state);
+
+    // Its error-reporting counters are reset
+    current_line = previous_entry->line;
+    current_column = previous_entry->column;
+
+    // And gets set as the last entry of the stack
+    current_bufstack = previous_entry;
+
+
+    return 0;
+}
+
+
+/**
+ * @brief Implementation of "lexical.l/_d_lexical_analyzer_literal_recognized"
  */
 int _d_lexical_analyzer_literal_recognized(
     int lexical_component
@@ -361,38 +520,50 @@ int _d_lexical_analyzer_literal_recognized(
     switch(lexical_component) {
 
         case D_LC_LITERAL_INT:
-            yylval.dec_number.values.integer = strtoll(yytext, NULL, 10); // To int64_t
+
+            yylval.dec_number.values.integer =
+                                      strtoll(yytext, NULL, 10); // To int64_t
             yylval.dec_number.is_floating = 0;
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved integer "
-                   "number as fp: %d\n", yylval.dec_value);
+                   "decimal number: %d\n", yylval.dec_number.values.integer);
             #endif
 
             break;
 
+
         case D_LC_LITERAL_FP:
+
             yylval.dec_number.values.floating = atof(yytext);
             yylval.dec_number.is_floating = 1;
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved floating "
-                   "point number: %f\n", yylval.dec_value);
+                   "point decimal number: %f\n",
+                   yylval.dec_number.values.floating);
             #endif
 
             break;
 
+
         case D_LC_LITERAL_STR:
+
             // +1 to ignore the first quote
-            strncpy(yylval.string, yytext + 1, D_LC_LITERAL_STR_MAX_LENGTH);
+            strncpy(yylval.string, yytext + 1,
+                    D_LC_LITERAL_STR_MAX_LENGTH - 1);
 
-            // If yytext were to be larger than the max. allowed size, no '\0'
-            // would be found at the end
-            yylval.string[D_LC_LITERAL_STR_MAX_LENGTH - 1] = '\0';
-
+            // If yytext were to be larger than the max. allowed size, a '\0'
+            // needs to be manually added at the end of the resulting string
+            // as strncpy will not find it
+            //
+            // Otherwise, the last character of the resulting string is set to
+            // '\0' to effectively remove the second quote
             yylval.string[
-                yyleng - 2
-            ] = '\0'; /* TODO clean up, it is for removing the last quote */
+                yyleng - 2 < D_LC_LITERAL_STR_MAX_LENGTH - 1 ?
+                    yyleng - 2 :
+                    D_LC_LITERAL_STR_MAX_LENGTH - 1
+            ] = '\0';
             
             #ifdef D_DEBUG
             printf("[lexical_analyzer][literal recognized] Saved string: "
@@ -401,8 +572,14 @@ int _d_lexical_analyzer_literal_recognized(
 
             break;
 
+
         default:
-            printf("Unexpected\n");
+            d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_INVALID,
+                                   "lexical.l",
+                                   "_d_lexical_analyzer_literal_recognized",
+                                   "the specified type of literal lexical "
+                                   "component is not supported");
+            return -1;
     }
 
 
@@ -411,30 +588,10 @@ int _d_lexical_analyzer_literal_recognized(
 
 
 /**
- * @brief Makes sure that the current identifier (a lexical component) is
- *        stored in the symbol table.
- *
- * @details
- *  Identifiers can be categorized into:
- *    - New identifiers; they always represent variables.
- *    - Already present identifiers; they may represent keywords, functions or
- *      previously declared variables.
- *
- *  If the identifier is not present yet, an entry, which has its lexeme and
- *  is initialized to '0.0', will be added to the table. Otherwise, the
- *  already present entry will be retrieved.
- *
- *  In any case, the associated entry will be available in the "yylval"
- *  variable so that the syntactic and semantic analyzer may use it.
- *
- * @param[out] lexical_component Pointer to a struct d_lexical_analyzer to
- *                               which the lexical component's data will be
- *                               written.
- *
- * @return D_LC_IDENTIFIER if successful, D_LC_IDENTIFIER if the component
- *         turned out to be a keyword, any other value otherwise.
+ * @brief Implementation of
+ *        "lexical.l/_d_lexical_analyzer_identifier_recognized"
  */
-int _d_lexical_analyzer_identifer_recognized(
+int _d_lexical_analyzer_identifier_recognized(
     struct d_lexical_component *lexical_component
 )
 {
@@ -449,7 +606,7 @@ int _d_lexical_analyzer_identifer_recognized(
 
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                "lexical.l",
-                               "_d_lexical_analyzer_literal_recognized",
+                               "_d_lexical_analyzer_identifier_recognized",
                                "'strdup' of current lexeme");
         return -1;
     }
@@ -479,12 +636,22 @@ int _d_lexical_analyzer_identifer_recognized(
                "yet\n");
         #endif
 
-        // If it is not already present, it is a new variable
+        // If it is not already present, it will be a new variable
         entry.lexeme = lexeme;
         entry.lexical_component = D_LC_IDENTIFIER_VARIABLE;
 
+        // '0' decimal integer by default
+        entry.attribute.dec_number.is_floating = 0;
+        entry.attribute.dec_number.values.integer = 0;
+
         d_symbol_table_add(&entry);
         entry_in_table = d_symbol_table_search(lexeme);
+    }
+
+    else {
+        // If it is already present, the lexeme (key) must be freed as it is
+        // already present in the retrieved entry
+        free(lexeme);
     }
 
 
@@ -498,53 +665,15 @@ int _d_lexical_analyzer_identifer_recognized(
 
 
 /**
- * @brief Implementation of lexical.h/d_lexical_analyzer_destroy_lexical_com
- */
-int d_lexical_analyzer_destroy_lexical_com(
-    struct d_lexical_component *lexical_component
-)
-{
-    if(lexical_component == NULL) {
-
-        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL, "lexical.l",
-                               "d_lexical_analyzer_destroy_lexical_com",
-                               "'lexical_component'");
-        return -1;
-    }
-
-
-    lexical_component->category = -1; // Gets invalidated
-
-/* TODO update */ /*
-    if(lexical_component->attributes != NULL) {
-
-        // If the component is a literal, its attribute is its lexeme
-        //   -> must be freed by the lex. analyzer
-        if(lexical_component->category / D_LC_DISTANCE_CATEGORY ==
-           D_LC_LITERAL / D_LC_DISTANCE_CATEGORY) {
-
-            free((void *) lexical_component->attributes);
-        }
-
-        // Otherwise, its attribute must be a pointer to its entry in the
-        // symbol table
-        //   -> the symbol table will take care of it
-
-
-        lexical_component->attributes = NULL;  // Gets invalidated
-    }*/
-
-
-    return 0;
-}
-
-
-/**
  * @brief Implementation of lexical.h/d_lexical_analyzer_destroy
  */
 int d_lexical_analyzer_destroy()
 {   
-    // No clean-up is needed as of now
+    // All input files that have not been closed yet
+    while(current_bufstack->file != stdin) {
+        d_lexical_analyzer_pop_file();
+    }
+
 
     return 0;
 }

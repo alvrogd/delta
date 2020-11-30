@@ -8,20 +8,22 @@
 
 
 #include "common/commands.h"
+
 #include "common/lexical_comp.h"
 #include "common/symbol_table.h"
 
 
-#include <dlfcn.h>
 #include <stdio.h>
-// TODO '_' in function names
+// For dynamic library loading
+#include <dlfcn.h>
+
 
 /**
- * @brief This structure will allow the lexical analyzer to load multiple
- *        dynamic libraries.
+ * @brief This structure will allow delta to load multiple dynamic libraries.
  *
  * @details
- *  A stack will be simulated.
+ *  This structure will allow delta to load multiple dynamic libraries, which
+ *  will be saved using a stack.
  */
 struct _d_commands_bufstack {
     /** Previous entry. */
@@ -35,20 +37,70 @@ struct _d_commands_bufstack *current_d_commands_bufstack = NULL;
 void *last_library = NULL;
 
 
-int d_commands_clear_workspace()
+/**
+ * @brief Clears the current workspace.
+ *
+ * @details
+ *  Clears the current workspace; that is, all registered variables are
+ *  deleted.
+ * 
+ * @return 0 if successful, any other value otherwise.
+ */
+int _d_commands_clear_workspace()
 {
     return d_symbol_table_delete(D_LC_IDENTIFIER_VARIABLE);
 }
 
-int d_commands_load_file(
+
+/**
+ * @brief Opens a file which contains statements written in the delta's
+ *        language.
+ * 
+ *
+ * @details
+ *  Opens a file which contains statements written in the delta's language.
+ *  They are all executed as they are read.
+ *
+ * @param[in] filename Relative or absolute path to the file.
+ *
+ * @return 0 if sucessful, any other value otherwise.
+ */
+int _d_commands_load_file(
     const char *filename
 )
 {
-    printf("d_commands_load_file %s\n", filename);
+    if(filename == NULL) {
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "commands.c", "_d_commands_load_file",
+                               "'filename'");
+        return -1;
+    }
+
+
+    #ifdef D_DEBUG
+    printf("[commands][load_file] Loading: %s\n", filename);
+    #endif
+
     return d_lexical_analyzer_new_file(filename);
 }
 
-int d_commands_load_function(
+
+/**
+ * @brief Loads a newly specified math function from the last opened dynamic
+ *        library.
+ *
+ * @details
+ *  Loads a newly specified math function from the last opened dynamic
+ *  library. The function must follow the "math_functions/dec_function"
+ *  prototype.
+ * 
+ * @param[in] function Name by which the function can be identified. A
+ *                     function that goes by the same name must not be present
+ *                     yet in the symbol table.
+ *
+ * @return 0 if sucessful, any other value otherwise.
+ */
+int _d_commands_load_function(
     const char *function
 )
 {
@@ -90,7 +142,19 @@ int d_commands_load_function(
     return 0;
 }
 
-int d_commands_load_library(
+
+/**
+ * @brief Searches for a dynamic library and loads it.
+ *
+ * @details
+ *  Searches for a dynamic library and loads it, if it is not yet, while also
+ *  setting it as the last opened dynamic library. 
+ * 
+ * @param[in] function Relative or absolute path to the library.
+ *
+ * @return 0 if sucessful, any other value otherwise.
+ */
+int _d_commands_load_library(
     const char *filename
 )
 {
@@ -111,34 +175,75 @@ int d_commands_load_library(
     return 0;
 } /* TODO close all when exiting */
 
-int d_commands_show_help()
+
+/**
+ * @brief Shows generic help about delta.
+ * 
+ * @return 0 if successful, any other value otherwise.
+ */
+int _d_commands_show_help()
 {
     printf("[!] Help TODO"); // TODO just like README.md
 
     return 0;
 }
 
-int d_commands_show_detailed_help(
+
+/**
+ * @brief Shows detailed help about the specified delta section.
+ * 
+ * @param[in] topic The section.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int _d_commands_show_detailed_help(
     const char *topic
 )
 {
+    if(topic == NULL) {
+        d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
+                               "commands.c", "_d_commands_load_file",
+                               "'topic'");
+        return -1;
+    }
+
+
     // TODO strcmp
     printf("[!] Help %s TODO", topic); // TODO just like README.md
 
     return 0;
 }
 
-int d_commands_show_workspace()
+
+/**
+ * @brief Shows the current workspace.
+ *
+ * @details
+ *  Shows the current workspace; that is, shows the symbol table.
+ * 
+ * @return 0 if successful, any other value otherwise.
+ */
+int _d_commands_show_workspace()
 {
     return d_symbol_table_show();
 }
 
-int d_commands_quit()
+
+/**
+ * @brief Returns the "quit" numeric code so that the lexical and semantic
+ *        analyzer stops parsing.
+ * 
+ * @return The "quit" numeric code.
+ */
+int _d_commands_quit()
 {
     return D_COMMAND_QUIT_REQUEST;
 }
 
 
+/** 0 args commands **/
+
+/** Which names the user may specify to call the no arg built-in commands. */
 const char *D_COMMANDS_NAMES_0[] = {
     "help",
     "quit",
@@ -146,13 +251,18 @@ const char *D_COMMANDS_NAMES_0[] = {
     "wsc"
 };
 
+/** Pointers to the implementations of the no arg built-in commands. */
 const comm_function_0 D_COMMANDS_IMPLEMENTATIONS_0[] = {
-    &d_commands_show_help,
-    &d_commands_quit,
-    &d_commands_show_workspace,
-    &d_commands_clear_workspace,
+    &_d_commands_show_help,
+    &_d_commands_quit,
+    &_d_commands_show_workspace,
+    &_d_commands_clear_workspace,
 };
 
+
+/** 1 args commands **/
+
+/** Which names the user may specify to call the 1 arg built-in commands. */
 const char *D_COMMANDS_NAMES_1[] = {
     "dhelp",
     "import",
@@ -160,9 +270,10 @@ const char *D_COMMANDS_NAMES_1[] = {
     "load",
 };
 
+/** Pointers to the implementations of the 1 arg built-in commands. */
 const comm_function_1 D_COMMANDS_IMPLEMENTATIONS_1[] = {
-    &d_commands_show_detailed_help,
-    &d_commands_load_function,
-    &d_commands_load_library,
-    &d_commands_load_file,
+    &_d_commands_show_detailed_help,
+    &_d_commands_load_function,
+    &_d_commands_load_library,
+    &_d_commands_load_file,
 };

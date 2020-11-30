@@ -9,9 +9,11 @@
 
 #include "common/math_functions.h"
 
+// The preloaded math functions are directly taken from this library
 #include <math.h>
 
 
+/** Which names the user may specify to call the preloaded math functions. */
 const char *D_MATH_FUNCTIONS_NAMES[] = {
     "atan",
     "cos",
@@ -21,6 +23,7 @@ const char *D_MATH_FUNCTIONS_NAMES[] = {
     "sqrt",
 };
 
+/** Pointers to the implementations of the preloaded math functions. */
 const dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
     &atan,
     &cos,
