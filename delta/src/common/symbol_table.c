@@ -12,8 +12,8 @@
 #include "common/lexical_comp.h"
 
 #include "common/commands.h"
-#include "common/math_constants.h"
-#include "common/math_functions.h"
+#include "math/math_constants.h"
+#include "math/math_functions.h"
 
 
 #include <stdio.h>

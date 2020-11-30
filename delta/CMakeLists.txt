@@ -43,14 +43,16 @@ set(
 set(
     HEADERS
     include/analyzers/lexical.h include/analyzers/synsem.h include/common/lexical_comp.h
-    include/common/commands.h include/common/dec_numbers.h include/common/errors.h include/common/math_constants.h include/common/math_functions.h include/common/symbol_table.h
+    include/common/commands.h include/common/errors.h include/common/symbol_table.h
     include/lib/uthash.h
+    include/math/dec_numbers.h include/math/math_constants.h include/math/math_functions.h
 )
 set(
     SOURCES
     src/main.c
     ${FLEX_deltalex_OUTPUTS} ${BISON_deltaparser_OUTPUTS}
-    src/common/commands.c src/common/dec_numbers.c src/common/errors.c src/common/math_constants.c src/common/math_functions.c src/common/symbol_table.c
+    src/common/commands.c src/common/errors.c src/common/symbol_table.c
+    src/math/dec_numbers.c src/math/math_constants.c src/math/math_functions.c
 )
 
 

@@ -19,8 +19,8 @@
  *  initial contents are:
  *
  *    - The built-in commands in common/commands.h
- *    - The math constants in common/math_constants.h
- *    - The math functions in common/math_functions.h
+ *    - The math constants in math/math_constants.h
+ *    - The math functions in math/math_functions.h
  *
  *  This will allow telling those elements apart from variables' identifiers,
  *  as they are all alphanumeric strings.
@@ -32,8 +32,8 @@
 
 
 #include "common/commands.h"
-#include "common/dec_numbers.h"
-#include "common/math_functions.h"
+#include "math/dec_numbers.h"
+#include "math/math_functions.h"
 
 // External library 
 #include "lib/uthash.h"

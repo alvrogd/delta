@@ -44,7 +44,8 @@
 #define D_ERR_INTERN_ARGUMENT_NULL 1102
 
 // Subcategory: syscall errors
-#define D_ERR_INTERN_SYSCALL_FAILED 1200
+#define D_ERR_INTERN_SYSCALL 1200
+#define D_ERR_INTERN_SYSCALL_FAILED 1201
 
 // Subcategory: inner workings' logic errors
 #define D_ERR_INTERN_LOGIC 1300
@@ -52,27 +53,17 @@
 
 /* Category: lexical analysis errors */
 #define D_ERR_LEX 2000
+#define D_ERR_LEX_CHARACTER_NOT_SUPPORTED 2001
 
 // Subcategory: literals errors
 #define D_ERR_LEX_LITERALS 2300
 #define D_ERR_LEX_LITERALS_FLOATS 2310
-#define D_ERR_LEX_LITERALS_FLOATS_BAD 2311 // : ...
+#define D_ERR_LEX_LITERALS_FLOATS_BAD 2311
 #define D_ERR_LEX_INTEGERS 2320
-#define D_ERR_LEX_LITERALS_INTEGERS_BAD 2321 // : ...
-#define D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD 2322 // : ...
-#define D_ERR_LEX_LITERALS_INTEGERS_BASE10_BAD 2323 // : ...
+#define D_ERR_LEX_LITERALS_INTEGERS_BAD 2321
+#define D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD 2322
 #define D_ERR_LEX_LITERALS_STRINGS 2330
 #define D_ERR_LEX_LITERALS_STRING_EMPTY 2331
-#define D_ERR_LEX_LITERALS_STRING_UNSUPPORTED_ESCAPE 2332 // Expected...
-#define D_ERR_LEX_LITERALS_STRING_EOF 2333 // Expected...
-
-// Subcategory: operators errors
-#define D_ERR_LEX_OPERATORS 2400
-#define D_ERR_LEX_OPERATORS_UNSUPPORTED 2401 // Expected ...
-
-// Subcategory: whitespace errors
-#define D_ERR_LEX_WHITESPACE 2600
-#define D_ERR_LEX_WHITESPACE_COMMENT_EOF 2601
 
 
 /* Category: user errors */

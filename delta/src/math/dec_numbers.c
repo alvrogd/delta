@@ -3,11 +3,11 @@
  * @author Álvaro Goldar Dieste
  * @date Nov 2020
  *
- * @brief Implementation of common/dec_numbers.h
+ * @brief Implementation of math/dec_numbers.h
  */
 
 
-#include "common/dec_numbers.h"
+#include "math/dec_numbers.h"
 
 #include "common/errors.h"
 

@@ -3,11 +3,11 @@
  * @author Álvaro Goldar Dieste
  * @date Nov 2020
  *
- * @brief Implementation of common/math_functions.h
+ * @brief Implementation of math/math_functions.h
  */
 
 
-#include "common/math_functions.h"
+#include "math/math_functions.h"
 
 // The preloaded math functions are directly taken from this library
 #include <math.h>

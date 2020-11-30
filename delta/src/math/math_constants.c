@@ -3,11 +3,11 @@
  * @author Álvaro Goldar Dieste
  * @date Nov 2020
  *
- * @brief Implementation of common/math_constants.h
+ * @brief Implementation of math/math_constants.h
  */
 
 
-#include "common/math_constants.h"
+#include "math/math_constants.h"
 
 
 /** Which names the user may specify to reference the math constants. */

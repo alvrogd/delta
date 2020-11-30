@@ -336,6 +336,14 @@ PRINT   [ -²]
 <<EOF>>     { d_lexical_analyzer_pop_file(); }
 
 
+ /* ════════════════════ */
+ /* ═══ Default rule ═══ */
+ /* ════════════════════ */
+
+ /* Catches non-supported characters */
+.   { d_errors_parse_show(3, D_ERR_LEX_CHARACTER_NOT_SUPPORTED, current_line,
+                          current_column); }
+
 %%
 
 
