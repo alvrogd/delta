@@ -30,12 +30,14 @@ struct d_dec_number d_dec_numbers_get_negated_value(
     struct d_dec_number negated_value;
 
 
+    memset(&negated_value, 0, sizeof(struct d_dec_number));
+
+
     if(dec_number == NULL) {
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "dec_numbers.c",
                                "d_dec_numbers_get_negated_value",
                                "'dec_number'");
-        memset(&negated_value, 0, sizeof(struct d_dec_number));
         return negated_value;
     }
 
@@ -67,7 +69,7 @@ double d_dec_numbers_get_floating_value(
                                "dec_numbers.c",
                                "d_dec_numbers_get_floating_value",
                                "'dec_number'");
-        return -1;
+        return -1.0;
     }
 
 
@@ -123,6 +125,9 @@ struct d_dec_number d_dec_numbers_compute_operation(
 
     double double_value_1 = 0.0;
     double double_value_2 = 0.0;
+
+
+    memset(&result, 0, sizeof(struct d_dec_number));
 
 
     if(dec_number_1 == NULL) {

@@ -52,7 +52,7 @@
 %union {
     /** Literal strings. */
     char string[D_LC_LITERAL_STR_MAX_LENGTH];
-    /** Literal decimal numbers. */
+    /** Literal base 10 numbers. */
     struct d_dec_number dec_number;
     /** Identifiers. */
     struct d_symbol_table_entry *st_entry;
@@ -61,6 +61,8 @@
 
 /* ══════════════════════════ Compilation Options ═════════════════════════ */
 
+/* Symbol location tracking */
+%locations
 
 
 /* ═══════════════════════════ Bison declarations ═════════════════════════ */
@@ -94,8 +96,9 @@
 /* The operator precedence is determined by the line in which a symbol is
    defined. A higher line number means a greater operator precedence. */
 
-/* ** Whitespace ** */
+/* ** Line ending ** */
 %token D_LC_WHITESPACE_EOL
+%token D_LC_SEPARATOR_SEMICOL
 
 /* ** Strings ** */
 %token <string> D_LC_LITERAL_STR
@@ -143,10 +146,6 @@
     /** Declaration of the private fuction that Bison uses to report errors */
     // TODO update function
     void yyerror(char const *);
-
-    /** This variable is used by the semantic procedures in order to be able
-        to tell if the issued operation involves floating point arithmetic. */
-    int is_floating_operation;
 }
 
 
@@ -193,6 +192,13 @@ line:
                 else {
                     printf("   %" PRId64 "\n", $1.values.integer);
                 }
+            }
+
+
+    |   /* A mathematical expression + ';' + '\n'. */
+        expression  D_LC_SEPARATOR_SEMICOL  D_LC_WHITESPACE_EOL
+            {
+                /* ';' disables the echo */
             }
 
 
@@ -273,20 +279,20 @@ line:
     |   /* An error + '\n'. */
         error  D_LC_WHITESPACE_EOL
             /* Tells bison that the error has been catched and managed */
-            { yyerrok; yyclearin; }
+            { yyerrok; yyclearin; printf("hola");}
     ;
 
 
-/* Mathematical expressions. They are always represented by a decimal number.
+/* Mathematical expressions. They are always represented by a base 10 number.
    
    The last rule in this subsection allows generic error recovery from syntax
    errors.
 */
 expression:
-        /* A integer decimal. */
+        /* A base 10 integer. */
         D_LC_LITERAL_INT
 
-    |   /* A floating point decimal. */
+    |   /* A base 10 floating point number. */
         D_LC_LITERAL_FP
 
 
@@ -296,7 +302,7 @@ expression:
                expression */
             { $$ = $1->attribute.dec_number; }
 
-    |   /* A decimal variable. */
+    |   /* A base 10 variable. */
         D_LC_IDENTIFIER_VARIABLE
             /* Its value gets directly set as the one of the recognized
                expression */
@@ -317,7 +323,7 @@ expression:
            This is not allowed. */
         D_LC_IDENTIFIER_CONSTANT  D_LC_OP_ASSIGNMENT_ASSIGN  expression
             { d_errors_parse_show(3, D_ERR_USER_INPUT_WRITE_CONSTANT,
-                                  @3.last_line, @3.last_column);
+                                  @1.last_line, @1.last_column);
             }
 
 
@@ -325,8 +331,8 @@ expression:
            This is an error as math functions take exactly one argument. */
         D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_SEPARATOR_R_PARENTHESIS
             {
-                d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @2.last_line,
-                                    @2.last_column, "1");
+                d_errors_parse_show(4, D_ERR_USER_INPUT_INCORRECT_ARG_COUNT, @3.last_line,
+                                    @3.last_column, "1");
             }
 
     |   /* Calling a mathematical function with a string as argument.
@@ -417,7 +423,9 @@ expression:
 /**
  * @brief Implementation of synsem.h/d_synsem_analyzer_initialize
  */
-int d_synsem_analyzer_initialize()
+int d_synsem_analyzer_initialize(
+    void
+)
 {
     // No initializacions are needed as of now
 
@@ -429,7 +437,9 @@ int d_synsem_analyzer_initialize()
 /**
  * @brief Implementation of synsem.h/d_synsem_analyzer_parse
  */
-int d_synsem_analyzer_parse()
+int d_synsem_analyzer_parse(
+    void
+)
 {
     // Shows the promtp and starts the parsing process
     printf(D_SYNSEM_PROMPT);
@@ -442,7 +452,9 @@ int d_synsem_analyzer_parse()
 /**
  * @brief Implementation of synsem.h/d_synsem_analyzer_destroy
  */
-int d_synsem_analyzer_destroy()
+int d_synsem_analyzer_destroy(
+    void
+)
 {
     // No clean-up is needed as of now
 

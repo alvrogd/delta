@@ -98,7 +98,7 @@ PRINT   [ -²]
      *
      *  If the identifier is not present yet, a new entry is added to the
      *  symbol table to effectively declare a new variable. New variables are
-     *  initialized by default to the decimal integer number "0". Otherwise,
+     *  initialized by default to the base 10 integer number "0". Otherwise,
      *  the already present entry will be retrieved.
      *
      *  In any case, the associated entry will be available in the "yylval"
@@ -109,7 +109,9 @@ PRINT   [ -²]
      *         already present in an entry in the symbol table, any other
      *         value otherwise.
      */
-    int _d_lexical_analyzer_identifier_recognized();
+    int _d_lexical_analyzer_identifier_recognized(
+        void
+    );
 
     /**
     * @brief Stores the semantic value that is represented by the current
@@ -167,11 +169,11 @@ PRINT   [ -²]
     /* ══════════════════════════ */
 
     /**
-     * @brief This structure will allow the lexical analyzer to parse nested
+     * @brief This structure will allow the lexical analyzer to read nested
      *        input files.
      *
      * @details
-     *  A stack will be simulated in order to parse multiple files. The top of
+     *  A stack will be simulated in order to read multiple files. The top of
      *  the stack contains the entry of the current file that is being read.
      *  Each time that a new "load" command is issued, a new entry for the new
      *  input file will be pushed into the stack, and popped out when reaching
@@ -217,7 +219,7 @@ PRINT   [ -²]
 "/"   { return D_LC_OP_ARITHMETIC_DIV; }
 "^"   { return D_LC_OP_ARITHMETIC_EXPONENT; }
 "="   { return D_LC_OP_ASSIGNMENT_ASSIGN; }
- /*";"   { lexical_component->category = D_LC_SEPARATOR_SEMICOL; return 0; }*/
+";"   { return D_LC_SEPARATOR_SEMICOL; }
 "("   { return D_LC_SEPARATOR_L_PARENTHESIS; }
 ")"   { return D_LC_SEPARATOR_R_PARENTHESIS; }
 
@@ -264,7 +266,7 @@ PRINT   [ -²]
                                                           "-AND- '1' -AND- '_'"); }*/
 
 
- /* ** Numbers, decimal integer ** */
+ /* ** Numbers, base 10 integer ** */
 
 {DIGIT}({DIGIT}|_)*                                     { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_INT);
                                                           return D_LC_LITERAL_INT; }
@@ -276,7 +278,7 @@ PRINT   [ -²]
                                                           "(i.e. 0b011)"); }
 
 
- /* ** Numbers, decimal float ** */
+ /* ** Numbers, base 10 float ** */
 
 {FLOAT_INTEGER}\.(({FLOAT_DECIMALS})({FLOAT_EXPONENT})?)?                                                               { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_FP); 
                                                                                                                           return D_LC_LITERAL_FP; }
@@ -342,7 +344,9 @@ PRINT   [ -²]
 /**
  * @brief Implementation of lexical.h/d_lexical_analyzer_initialize
  */
-int d_lexical_analyzer_initialize()
+int d_lexical_analyzer_initialize(
+    void
+)
 {
     // By default, all input will be given by the user through stdin...
     yyin = stdin;
@@ -357,8 +361,8 @@ int d_lexical_analyzer_initialize()
         malloc(sizeof(struct _d_lexical_analyzer_bufstack))) == NULL) {
         
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
-                                "lexical.l", "d_lexical_analyzer_initialize",
-                                "'malloc' for first entry in bufstack");
+                               "lexical.l", "d_lexical_analyzer_initialize",
+                               "'malloc' for first entry in bufstack");
         return -1;
     }
 
@@ -369,7 +373,11 @@ int d_lexical_analyzer_initialize()
     current_bufstack->buffer_state = yy_create_buffer(stdin, YY_BUF_SIZE);
 
     current_bufstack->file = stdin;
-    current_bufstack->filename = strdup("stdin");
+    if((current_bufstack->filename = strdup("stdin")) == NULL) {
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                               "lexical.l", "d_lexical_analyzer_initialize",
+                               "'strdup' on filename");
+    }
 
     // And sets the state as the current one
     yy_switch_to_buffer(current_bufstack->buffer_state);
@@ -441,7 +449,11 @@ int d_lexical_analyzer_new_file(
     new_entry->buffer_state = yy_create_buffer(new_file, YY_BUF_SIZE);
 
     new_entry->file = new_file;
-    new_entry->filename = strdup(filename);
+    if((new_entry->filename = strdup(filename)) == NULL) {
+        d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                               "lexical.l", "d_lexical_analyzer_initialize",
+                               "'strdup' on filename");
+    }
 
     // And sets the state as the current one
     yy_switch_to_buffer(new_entry->buffer_state);
@@ -469,9 +481,17 @@ int d_lexical_analyzer_pop_file(
     if(current_bufstack == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
-                               "lexical.l", "d_lexical_analyzer_new_file",
+                               "lexical.l", "d_lexical_analyzer_pop_file",
                                "'current_bufstack'");
         return -1;
+    }
+
+    if(current_bufstack->file == stdin) {
+
+        d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.l",
+                               "d_lexical_analyzer_pop_file", "tried to "
+                               "close stdin");
+        return 1;
     }
 
 
@@ -488,7 +508,7 @@ int d_lexical_analyzer_pop_file(
         return -1;
     }
 
-    free(last_entry->filename);
+    free((void *) last_entry->filename);
     yy_delete_buffer(last_entry->buffer_state);
     
     // And its entry gets erased
@@ -526,8 +546,8 @@ int _d_lexical_analyzer_literal_recognized(
             yylval.dec_number.is_floating = 0;
             
             #ifdef D_DEBUG
-            printf("[lexical_analyzer][literal recognized] Saved integer "
-                   "decimal number: %d\n", yylval.dec_number.values.integer);
+            printf("[lexical_analyzer][literal recognized] Saved base 10 "
+                   "integer number: %d\n", yylval.dec_number.values.integer);
             #endif
 
             break;
@@ -539,8 +559,8 @@ int _d_lexical_analyzer_literal_recognized(
             yylval.dec_number.is_floating = 1;
             
             #ifdef D_DEBUG
-            printf("[lexical_analyzer][literal recognized] Saved floating "
-                   "point decimal number: %f\n",
+            printf("[lexical_analyzer][literal recognized] Saved base 10 "
+                   "floating point number: %f\n",
                    yylval.dec_number.values.floating);
             #endif
 
@@ -592,17 +612,17 @@ int _d_lexical_analyzer_literal_recognized(
  *        "lexical.l/_d_lexical_analyzer_identifier_recognized"
  */
 int _d_lexical_analyzer_identifier_recognized(
-    struct d_lexical_component *lexical_component
+    void
 )
 {
-    const unsigned char *lexeme = NULL;
+    const char *lexeme = NULL;
 
     struct d_symbol_table_entry entry;
     struct d_symbol_table_entry *entry_in_table = NULL;
     
 
     // Saving the lexeme
-    if((lexeme = (const unsigned char *) strdup(yytext)) == NULL) {
+    if((lexeme = (const char *) strdup(yytext)) == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                "lexical.l",
@@ -640,7 +660,7 @@ int _d_lexical_analyzer_identifier_recognized(
         entry.lexeme = lexeme;
         entry.lexical_component = D_LC_IDENTIFIER_VARIABLE;
 
-        // '0' decimal integer by default
+        // '0' base 10 integer by default
         entry.attribute.dec_number.is_floating = 0;
         entry.attribute.dec_number.values.integer = 0;
 
@@ -651,7 +671,7 @@ int _d_lexical_analyzer_identifier_recognized(
     else {
         // If it is already present, the lexeme (key) must be freed as it is
         // already present in the retrieved entry
-        free(lexeme);
+        free((void *) lexeme);
     }
 
 
@@ -667,12 +687,21 @@ int _d_lexical_analyzer_identifier_recognized(
 /**
  * @brief Implementation of lexical.h/d_lexical_analyzer_destroy
  */
-int d_lexical_analyzer_destroy()
+int d_lexical_analyzer_destroy(
+    void
+)
 {   
     // All input files that have not been closed yet
     while(current_bufstack->file != stdin) {
         d_lexical_analyzer_pop_file();
     }
+
+    // stdin cannot be closed, but its flex state should be freed before
+    // exiting
+    yy_delete_buffer(current_bufstack->buffer_state);
+    // As well as its other attributes in the stack entry
+    free((void *) current_bufstack->filename);
+    free((void *) current_bufstack);
 
 
     return 0;

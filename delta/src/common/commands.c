@@ -59,7 +59,9 @@ struct _d_commands_table_entry *last_library = NULL;
  * 
  * @return 0 if successful, any other value otherwise.
  */
-int _d_commands_clear_workspace()
+int _d_commands_clear_workspace(
+    void
+)
 {
     return d_symbol_table_delete(D_LC_IDENTIFIER_VARIABLE);
 }
@@ -104,7 +106,7 @@ int _d_commands_load_file(
  *
  * @details
  *  Loads a newly specified math function from the currently selected dynamic
- *  library. The function must follow the "math_functions/dec_function"
+ *  library. The function must follow the "math_functions/d_dec_function"
  *  prototype.
  * 
  * @param[in] function Name by which the function can be identified. A
@@ -153,8 +155,7 @@ int _d_commands_load_function(
         if((loaded_object = dlsym(last_library->library, function))
            == NULL) {
 
-            // TODO change error
-            d_errors_internal_show(3, D_ERR_USER_INPUT_FILE_INACCESSIBLE,
+            d_errors_internal_show(3, D_ERR_USER_INPUT_FUNCTION_INACCESSIBLE,
                                    "commands.c", "_d_commands_load_function");
             #ifdef D_DEBUG
             printf("[commands][load function] dl error: %s\n", dlerror());
@@ -165,13 +166,20 @@ int _d_commands_load_function(
 
         // Now the library can be added to the symbol table
         d_symbol_table_add_math_function(function,
-                                         (dec_function)loaded_object);
+                                         (d_dec_function)loaded_object);
+
+        #ifdef D_DEBUG
+        printf("[commands][load function] Dynamically loaded function: %s "
+               "%p\n", function, loaded_object);
+        #endif
     }
 
-    #ifdef DEBUG
-    printf("[commands][load function] Dynamically loaded function: %s %p\n",
-            function, loaded_object);
-    #endif
+    else {
+        d_errors_internal_show(3, D_ERR_USER_INPUT_FUNCTION_NAME_TAKEN,
+                               "commands.c", "_d_commands_load_function");
+
+        return -1;
+    }
     
 
     return 0;
@@ -287,7 +295,9 @@ int _d_commands_load_library(
  * 
  * @return 0 if successful, any other value otherwise.
  */
-int _d_commands_show_help()
+int _d_commands_show_help(
+    void
+)
 {
     printf("[!] Help TODO"); // TODO just like README.md
 
@@ -329,7 +339,9 @@ int _d_commands_show_detailed_help(
  * 
  * @return 0 if successful, any other value otherwise.
  */
-int _d_commands_show_workspace()
+int _d_commands_show_workspace(
+    void
+)
 {
     return d_symbol_table_show();
 }
@@ -341,7 +353,9 @@ int _d_commands_show_workspace()
  * 
  * @return The "quit" numeric code.
  */
-int _d_commands_quit()
+int _d_commands_quit(
+    void
+)
 {
     return D_COMMAND_QUIT_REQUEST;
 }

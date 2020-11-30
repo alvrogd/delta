@@ -11,7 +11,7 @@
  *  functions.
  *
  *  Currently, the only supported math function is that which operates on
- *  decimal numbers. It must take exactly 1 "double" argument, and return a
+ *  base 10 numbers. It must take exactly 1 "double" argument, and return a
  *  "double" value.
  *
  *  Some functions from the "math.h" C library are preloaded when launching
@@ -33,15 +33,15 @@
 #define D_MATH_FUNCTIONS
 
 
-/** Template for the math functions that operate on decimal numbers. */
-typedef double (*dec_function) (double);
+/** Template for the math functions that operate on base 10 numbers. */
+typedef double (*d_dec_function) (double);
 
 
 /** Which names the user may specify to call the preloaded math functions. */
 extern const char *D_MATH_FUNCTIONS_NAMES[6];
 
 /** Pointers to the implementations of the preloaded math functions. */
-extern const dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[6];
+extern const d_dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[6];
 
 
 #endif //D_MATH_FUNCTIONS

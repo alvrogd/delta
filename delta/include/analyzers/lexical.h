@@ -30,7 +30,7 @@
  *      Identifiers may correspond to variables, math functions/constants, and
  *      built-in commands.
  *    
- *    - Decimal numbers will carry a "struct d_dec_number" that represent
+ *    - Base 10 numbers will carry a "struct d_dec_number" that represent
  *      them.
  *
  *    - Strings will carry a string that represent their quote-limited
@@ -68,7 +68,9 @@ struct d_lexical_component {
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_lexical_analyzer_initialize();
+int d_lexical_analyzer_initialize(
+    void
+);
 
 
 /**
@@ -114,7 +116,9 @@ int d_lexical_analyzer_pop_file(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int yylex();
+int yylex(
+    void
+);
 
 
 /**
@@ -125,7 +129,9 @@ int yylex();
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_lexical_analyzer_destroy();
+int d_lexical_analyzer_destroy(
+    void
+);
 
 
 #endif //D_LEXICAL_ANALYZER

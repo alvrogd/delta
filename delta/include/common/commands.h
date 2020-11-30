@@ -21,7 +21,7 @@
  *                          opened dynamic library. 
  *    - import(function): loads a newly specified math function from the last
  *                        opened dynamic library; the function must follow the
- *                        "math_functions/dec_function" prototype.
+ *                        "math_functions/d_dec_function" prototype.
  *
  *    - load(file): opens a file which contains statements written in the
  *                  delta's language; they are all executed as they are read.

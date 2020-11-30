@@ -48,10 +48,11 @@ struct d_symbol_table *symbol_table = NULL;
 /**
  * @brief Implementation of symbol_table.h/d_symbol_table_initialize
  */
-int d_symbol_table_initialize()
+int d_symbol_table_initialize(
+    void
+)
 {
     struct d_symbol_table_entry tmp_entry;
-    unsigned char *tmp_entry_lexeme = NULL;
 
     size_t i = 0;
 
@@ -95,18 +96,14 @@ int d_symbol_table_initialize()
 
     for(i = 0; i < constant_count; ++i) {
 
-        if((tmp_entry_lexeme = malloc(strlen(D_MATH_CONSTANTS_NAMES[i]) + 1))
-           == NULL) {
+        if((tmp_entry.lexeme = strdup(D_MATH_CONSTANTS_NAMES[i])) == NULL) {
 
             d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                    "symbol_table.c",
                                    "d_symbol_table_initialize",
-                                   "'malloc' for math constant's lexeme");
+                                   "'strdup' on math constant's lexeme");
             return -1;
         }
-
-        strcpy((char *)tmp_entry_lexeme, D_MATH_CONSTANTS_NAMES[i]);
-        tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_IDENTIFIER_CONSTANT;
 
@@ -117,7 +114,7 @@ int d_symbol_table_initialize()
 
         d_symbol_table_add(&tmp_entry);
 
-        #ifdef DEBUG
+        #ifdef D_DEBUG
         printf("[symbol_table][initialize] Added constant: %s %f\n",
                tmp_entry.lexeme,
                tmp_entry.attribute.dec_number.values.floating);
@@ -130,7 +127,7 @@ int d_symbol_table_initialize()
         d_symbol_table_add_math_function(D_MATH_FUNCTIONS_NAMES[i],
                                          D_MATH_FUNCTIONS_IMPLEMENTATIONS[i]);
 
-        #ifdef DEBUG
+        #ifdef D_DEBUG
         printf("[symbol_table][initialize] Added function: %s %p\n",
                tmp_entry.lexeme, D_MATH_FUNCTIONS_IMPLEMENTATIONS[i]);
         #endif
@@ -139,18 +136,14 @@ int d_symbol_table_initialize()
 
     for(i = 0; i < command_count; ++i) {
 
-        if((tmp_entry_lexeme = malloc(strlen(D_COMMANDS_NAMES_0[i]) + 1))
-           == NULL) {
+        if((tmp_entry.lexeme = strdup(D_COMMANDS_NAMES_0[i])) == NULL) {
 
             d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                    "symbol_table.c",
                                    "d_symbol_table_initialize",
-                                   "'malloc' for 0 arg command's lexeme");
+                                   "'strdup' on 0 arg command's lexeme");
             return -1;
         }
-
-        strcpy((char *)tmp_entry_lexeme, D_COMMANDS_NAMES_0[i]);
-        tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_IDENTIFIER_COMMAND;
 
@@ -160,7 +153,7 @@ int d_symbol_table_initialize()
 
         d_symbol_table_add(&tmp_entry);
 
-        #ifdef DEBUG
+        #ifdef D_DEBUG
         printf("[symbol_table][initialize] Added 0 arg command: %s %p %p\n",
                tmp_entry.lexeme, D_COMMANDS_IMPLEMENTATIONS_0[i],
                tmp_entry.attribute.command.implementation.argc_0);
@@ -170,18 +163,14 @@ int d_symbol_table_initialize()
 
     for(i = 0; i < command_count_1; ++i) {
 
-        if((tmp_entry_lexeme = malloc(strlen(D_COMMANDS_NAMES_1[i]) + 1))
-           == NULL) {
+        if((tmp_entry.lexeme = strdup(D_COMMANDS_NAMES_1[i])) == NULL) {
 
             d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                    "symbol_table.c",
                                    "d_symbol_table_initialize",
-                                   "'malloc' for 1 arg command's lexeme");
+                                   "'strdup' on 1 arg command's lexeme");
             return -1;
         }
-
-        strcpy((char *)tmp_entry_lexeme, D_COMMANDS_NAMES_1[i]);
-        tmp_entry.lexeme = tmp_entry_lexeme;
 
         tmp_entry.lexical_component = D_LC_IDENTIFIER_COMMAND;
 
@@ -191,7 +180,7 @@ int d_symbol_table_initialize()
 
         d_symbol_table_add(&tmp_entry);
 
-        #ifdef DEBUG
+        #ifdef D_DEBUG
         printf("[symbol_table][initialize] Added 1 arg command: %s %p %p\n",
                tmp_entry.lexeme, D_COMMANDS_IMPLEMENTATIONS_1[i],
                tmp_entry.attribute.command.implementation.argc_1);
@@ -207,7 +196,7 @@ int d_symbol_table_initialize()
  * @brief Implementation of symbol_table.h/d_symbol_table_search
  */
 struct d_symbol_table_entry *d_symbol_table_search(
-    const unsigned char* key
+    const char* key
 )
 {
     struct d_symbol_table_entry *entry = NULL;
@@ -265,7 +254,7 @@ int d_symbol_table_add(
     }
 
 
-    #ifdef DEBUG
+    #ifdef D_DEBUG
     // Should already be checked from the caller
     // No entry with the same key can be already present in the table
     if(d_symbol_table_search(entry->lexeme) != NULL) {
@@ -308,11 +297,10 @@ int d_symbol_table_add(
  */
 int d_symbol_table_add_math_function(
     const char *function_name,
-    dec_function function_implementation
+    d_dec_function function_implementation
 )
 {
     struct d_symbol_table_entry internal_entry;
-    unsigned char *internal_entry_lexeme = NULL;
 
 
     if(symbol_table == NULL) {
@@ -335,17 +323,14 @@ int d_symbol_table_add_math_function(
 
 
     // The function's name is its lexeme
-    if((internal_entry_lexeme = malloc(strlen(function_name) + 1)) == NULL) {
+    if((internal_entry.lexeme = strdup(function_name)) == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                 "symbol_table.c",
                                 "d_symbol_table_add_math_function",
-                                "'malloc' for math function's lexeme");
+                                "'strdup' on 1 math function's lexeme");
         return -1;
     }
-    
-    strcpy((char *)internal_entry_lexeme, function_name);
-    internal_entry.lexeme = internal_entry_lexeme;
 
     internal_entry.lexical_component = D_LC_IDENTIFIER_FUNCTION;
 
@@ -359,7 +344,9 @@ int d_symbol_table_add_math_function(
 /**
  * @brief Implementation of symbol_table.h/d_symbol_table_show
  */
-int d_symbol_table_show()
+int d_symbol_table_show(
+    void
+)
 {
     struct d_symbol_table_entry *current_entry;
     struct d_symbol_table_entry *tmp;
@@ -459,7 +446,7 @@ int d_symbol_table_delete(
             HASH_DEL(symbol_table->table, current_entry);
 
             // Each internally-managed entry must be properly freed
-            free((unsigned char *) current_entry->lexeme);
+            free((char *) current_entry->lexeme);
             free(current_entry);
         }
     }
@@ -472,7 +459,9 @@ int d_symbol_table_delete(
 /**
  * @brief Implementation of symbol_table.h/d_symbol_table_destroy
  */
-int d_symbol_table_destroy()
+int d_symbol_table_destroy(
+    void
+)
 {
     struct d_symbol_table_entry *current_entry;
     struct d_symbol_table_entry *tmp;
@@ -495,7 +484,7 @@ int d_symbol_table_destroy()
         HASH_DEL(symbol_table->table, current_entry);
 
         // Each internally-managed entry must be properly freed
-        free((unsigned char *) current_entry->lexeme);
+        free((char *) current_entry->lexeme);
         free(current_entry);
     }
 

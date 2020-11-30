@@ -85,22 +85,23 @@ extern int yydebug;
   enum yytokentype
   {
     D_LC_WHITESPACE_EOL = 258,
-    D_LC_LITERAL_STR = 259,
-    D_LC_IDENTIFIER_COMMAND = 260,
-    D_LC_IDENTIFIER_CONSTANT = 261,
-    D_LC_IDENTIFIER_FUNCTION = 262,
-    D_LC_IDENTIFIER_VARIABLE = 263,
-    D_LC_LITERAL_INT = 264,
-    D_LC_LITERAL_FP = 265,
-    D_LC_OP_ASSIGNMENT_ASSIGN = 266,
-    D_LC_OP_ARITHMETIC_PLUS = 267,
-    D_LC_OP_ARITHMETIC_MINUS = 268,
-    D_LC_OP_ARITHMETIC_TIMES = 269,
-    D_LC_OP_ARITHMETIC_DIV = 270,
-    D_LC_SEPARATOR_L_PARENTHESIS = 271,
-    D_LC_SEPARATOR_R_PARENTHESIS = 272,
-    D_LC_OP_ARITHMETIC_NEG = 273,
-    D_LC_OP_ARITHMETIC_EXPONENT = 274
+    D_LC_SEPARATOR_SEMICOL = 259,
+    D_LC_LITERAL_STR = 260,
+    D_LC_IDENTIFIER_COMMAND = 261,
+    D_LC_IDENTIFIER_CONSTANT = 262,
+    D_LC_IDENTIFIER_FUNCTION = 263,
+    D_LC_IDENTIFIER_VARIABLE = 264,
+    D_LC_LITERAL_INT = 265,
+    D_LC_LITERAL_FP = 266,
+    D_LC_OP_ASSIGNMENT_ASSIGN = 267,
+    D_LC_OP_ARITHMETIC_PLUS = 268,
+    D_LC_OP_ARITHMETIC_MINUS = 269,
+    D_LC_OP_ARITHMETIC_TIMES = 270,
+    D_LC_OP_ARITHMETIC_DIV = 271,
+    D_LC_SEPARATOR_L_PARENTHESIS = 272,
+    D_LC_SEPARATOR_R_PARENTHESIS = 273,
+    D_LC_OP_ARITHMETIC_NEG = 274,
+    D_LC_OP_ARITHMETIC_EXPONENT = 275
   };
 #endif
 
@@ -112,12 +113,12 @@ union YYSTYPE
 
     /** Literal strings. */
     char string[D_LC_LITERAL_STR_MAX_LENGTH];
-    /** Literal decimal numbers. */
+    /** Literal base 10 numbers. */
     struct d_dec_number dec_number;
     /** Identifiers. */
     struct d_symbol_table_entry *st_entry;
 
-#line 121 "include/common/lexical_comp.h"
+#line 122 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

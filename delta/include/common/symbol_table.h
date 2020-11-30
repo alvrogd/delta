@@ -61,7 +61,7 @@ struct d_symbol_table_entry {
     /** '\0' terminated string which represents the lexeme that originated the
         entry, as well as serving as its key. It will be automatically freed
         once the entry is deleted. */
-    const unsigned char *lexeme;
+    const char *lexeme;
 
     /** Lexical component which corresponds to the entry's lexeme. */
     int lexical_component;
@@ -69,10 +69,10 @@ struct d_symbol_table_entry {
     /** Union that holds any attribute of any kind that an entry may
         require. */
     union {
-        /** For decimal variables and constants. */
+        /** For base 10 variables and constants. */
         struct d_dec_number dec_number;
-        /** For mathematical functions for decimal values. */
-        dec_function function;
+        /** For mathematical functions that operate on decimal values. */
+        d_dec_function function;
         /** For built-in commands. */
         struct d_command command; 
     } attribute;
@@ -91,7 +91,9 @@ struct d_symbol_table_entry {
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_symbol_table_initialize();
+int d_symbol_table_initialize(
+    void
+);
 
 
 /**
@@ -107,7 +109,7 @@ int d_symbol_table_initialize();
  * @return Pointer to the requested entry, or NULL if not found.
  */
 struct d_symbol_table_entry *d_symbol_table_search(
-    const unsigned char* key
+    const char* key
 );
 
 
@@ -151,7 +153,7 @@ int d_symbol_table_add(
  */
 int d_symbol_table_add_math_function(
     const char *function_name,
-    dec_function function_implementation
+    d_dec_function function_implementation
 );
 
 
@@ -167,7 +169,9 @@ int d_symbol_table_add_math_function(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_symbol_table_show();
+int d_symbol_table_show(
+    void
+);
 
 
 /**
@@ -190,7 +194,9 @@ int d_symbol_table_delete(
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_symbol_table_destroy();
+int d_symbol_table_destroy(
+    void
+);
 
 
 #endif //D_SYMBOL_TABLE

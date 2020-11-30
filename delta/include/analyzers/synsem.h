@@ -38,7 +38,9 @@
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_synsem_analyzer_initialize();
+int d_synsem_analyzer_initialize(
+    void
+);
 
 
 /**
@@ -51,7 +53,9 @@ int d_synsem_analyzer_initialize();
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_synsem_analyzer_parse();
+int d_synsem_analyzer_parse(
+    void
+);
 
 
 /**
@@ -59,7 +63,9 @@ int d_synsem_analyzer_parse();
  *
  * @return 0 if successful, any other value otherwise.
  */
-int d_synsem_analyzer_destroy();
+int d_synsem_analyzer_destroy(
+    void
+);
 
 
 #endif //D_SYNTACTIC_SEMANTIC_ANALYZER

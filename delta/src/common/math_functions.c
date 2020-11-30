@@ -24,7 +24,7 @@ const char *D_MATH_FUNCTIONS_NAMES[] = {
 };
 
 /** Pointers to the implementations of the preloaded math functions. */
-const dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
+const d_dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
     &atan,
     &cos,
     &exp,

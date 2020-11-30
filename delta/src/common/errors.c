@@ -57,8 +57,8 @@ const char *d_errors_get_template(
         case D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD:
             return "malformed binary integer number, [..]";
 
-        case D_ERR_LEX_LITERALS_INTEGERS_DECIMAL_BAD:
-            return "malformed decimal integer number, [..]";
+        case D_ERR_LEX_LITERALS_INTEGERS_BASE10_BAD:
+            return "malformed base 10 integer number, [..]";
 
         case D_ERR_LEX_LITERALS_STRING_EMPTY:
             return "a string cannot be empty";
@@ -100,6 +100,15 @@ const char *d_errors_get_template(
         case D_ERR_USER_INPUT_NO_DYN_LIBRARY_SELECTED:
             return "no dynamic library has been selected; check if the last "
                    "specified library has been successfully opened";
+
+        case D_ERR_USER_INPUT_FUNCTION_INACCESSIBLE:
+            return "no function by the given name could be found; check if "
+                   "the name is right, and if it should be in the currently "
+                   "selected library";
+
+        case D_ERR_USER_INPUT_FUNCTION_NAME_TAKEN:
+            return "a mathematical function that goes by the same name is "
+                   "already loaded";
 
         default:
             printf("error: invalid argument, 'error_code' not recognized\n"
