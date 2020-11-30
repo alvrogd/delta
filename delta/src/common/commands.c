@@ -349,13 +349,50 @@ int _d_commands_show_workspace(
 /**
  * @brief Returns the "quit" numeric code so that the lexical and semantic
  *        analyzer stops parsing.
+ *
+ * @details
+ *  Returns the "quit" numeric code so that the lexical and semantic analyzer
+ *  stops parsing. Naturally, as delta is supposed to quit, all dynamically
+ *  loaded libraries while parsing are closed.
  * 
- * @return The "quit" numeric code.
+ * @return The "quit" numeric code, -1 if failed.
  */
 int _d_commands_quit(
     void
 )
 {
+    struct _d_commands_table_entry *current_entry;
+    struct _d_commands_table_entry *tmp;
+
+
+    if(_d_commands_table != NULL) {
+
+        HASH_ITER(hh, _d_commands_table, current_entry, tmp) {
+
+            // Closes the library and deletes its entry before proceeding to
+            // the next one
+            HASH_DEL(_d_commands_table, current_entry);
+
+            // Closing the library implies automatically closing all loaded
+            // functions that are present in it
+            if(dlclose(current_entry->library) != 0) {
+
+                d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
+                                       "commands.c", "_d_commands_quit",
+                                       "'dlclose' on a dynamically loaded "
+                                       "library");
+                return -1;
+            }
+
+            free((char *) current_entry->path);
+            free(current_entry);
+        }
+    }
+
+    _d_commands_table = NULL;
+    last_library = NULL;
+
+
     return D_COMMAND_QUIT_REQUEST;
 }
 
