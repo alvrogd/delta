@@ -42,7 +42,7 @@ struct d_symbol_table {
 /**
  * @brief Globally accessible symbol table that will be used.
  */
-struct d_symbol_table *symbol_table = NULL;
+struct d_symbol_table *_symbol_table = NULL;
 
 
 /**
@@ -76,7 +76,7 @@ int d_symbol_table_initialize(
     // well as all its only member, which must point to NULL in order for the
     // library to properly work
 
-    if((symbol_table = malloc(sizeof(struct d_symbol_table))) == NULL) {
+    if((_symbol_table = malloc(sizeof(struct d_symbol_table))) == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                "symbol_table.c", "d_symbol_table_initialize",
@@ -84,7 +84,7 @@ int d_symbol_table_initialize(
         return -1;
     }
 
-    symbol_table->table = NULL;
+    _symbol_table->table = NULL;
 
 
     // TODO It would be nice to not replicate all the code lines in the
@@ -202,11 +202,11 @@ struct d_symbol_table_entry *d_symbol_table_search(
     struct d_symbol_table_entry *entry = NULL;
 
 
-    if(symbol_table == NULL) {
+    if(_symbol_table == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "symbol_table.c", "d_symbol_table_search",
-                               "'symbol_table'");
+                               "'_symbol_table'");
         return NULL;
     }
 
@@ -220,7 +220,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
 
 
     // Returns NULL if no corresponding entry is found
-    HASH_FIND_STR(symbol_table->table, (const char *)key, entry);
+    HASH_FIND_STR(_symbol_table->table, (const char *)key, entry);
 
 
     return entry;
@@ -237,11 +237,11 @@ int d_symbol_table_add(
     struct d_symbol_table_entry *internal_entry;
 
 
-    if(symbol_table == NULL) {
+    if(_symbol_table == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "symbol_table.c", "d_symbol_table_add",
-                               "'symbol_table'");
+                               "'_symbol_table'");
         return -1;
     }
 
@@ -283,7 +283,7 @@ int d_symbol_table_add(
     // present
 
     // As previously said, the "lexeme" member is used as the key
-    HASH_ADD_KEYPTR(hh, symbol_table->table, internal_entry->lexeme,
+    HASH_ADD_KEYPTR(hh, _symbol_table->table, internal_entry->lexeme,
                     strlen((const char *)internal_entry->lexeme),
                     internal_entry);
 
@@ -303,12 +303,12 @@ int d_symbol_table_add_math_function(
     struct d_symbol_table_entry internal_entry;
 
 
-    if(symbol_table == NULL) {
+    if(_symbol_table == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "symbol_table.c",
                                "d_symbol_table_add_math_function",
-                               "'symbol_table'");
+                               "'_symbol_table'");
         return -1;
     }
 
@@ -352,11 +352,11 @@ int d_symbol_table_show(
     struct d_symbol_table_entry *tmp;
 
 
-    if(symbol_table == NULL) {
+    if(_symbol_table == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "symbol_table.c", "d_symbol_table_show",
-                               "'symbol_table'");
+                               "'_symbol_table'");
         return -1;
     }
 
@@ -371,7 +371,7 @@ int d_symbol_table_show(
 
     // This iteration procedure is directly taken from the library's
     // reference
-    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+    HASH_ITER(hh, _symbol_table->table, current_entry, tmp) {   
 
         if(current_entry->lexical_component == D_LC_IDENTIFIER_CONSTANT) {
 
@@ -383,7 +383,7 @@ int d_symbol_table_show(
 
     printf("   2. Loaded mathematical functions:\n");
 
-    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+    HASH_ITER(hh, _symbol_table->table, current_entry, tmp) {   
 
         if(current_entry->lexical_component == D_LC_IDENTIFIER_FUNCTION) {
 
@@ -394,7 +394,7 @@ int d_symbol_table_show(
 
     printf("   3. Your variables:\n");
 
-    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {   
+    HASH_ITER(hh, _symbol_table->table, current_entry, tmp) {   
 
         if(current_entry->lexical_component == D_LC_IDENTIFIER_VARIABLE) {
 
@@ -428,22 +428,22 @@ int d_symbol_table_delete(
     struct d_symbol_table_entry *tmp;
 
 
-    if(symbol_table == NULL) {
+    if(_symbol_table == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "symbol_table.c", "d_symbol_table_delete",
-                               "'symbol_table'");
+                               "'_symbol_table'");
         return -1;
     }
 
     
     // This iteration procedure is directly taken from the library's reference
-    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {
+    HASH_ITER(hh, _symbol_table->table, current_entry, tmp) {
 
         // Deletes the entry, if applicable
         if(current_entry->lexical_component == lexical_component) {
 
-            HASH_DEL(symbol_table->table, current_entry);
+            HASH_DEL(_symbol_table->table, current_entry);
 
             // Each internally-managed entry must be properly freed
             free((char *) current_entry->lexeme);
@@ -467,21 +467,21 @@ int d_symbol_table_destroy(
     struct d_symbol_table_entry *tmp;
 
 
-    if(symbol_table == NULL) {
+    if(_symbol_table == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "symbol_table.c", "d_symbol_table_destroy",
-                               "'symbol_table'");
+                               "'_symbol_table'");
         return -1;
     }
 
     
     // This "all deletion" procedure is directly taken from the library's
     // reference
-    HASH_ITER(hh, symbol_table->table, current_entry, tmp) {
+    HASH_ITER(hh, _symbol_table->table, current_entry, tmp) {
 
         // Deletes the entry before proceeding to the next one
-        HASH_DEL(symbol_table->table, current_entry);
+        HASH_DEL(_symbol_table->table, current_entry);
 
         // Each internally-managed entry must be properly freed
         free((char *) current_entry->lexeme);
@@ -489,7 +489,7 @@ int d_symbol_table_destroy(
     }
 
     // The symbol table structure itself must also be freed
-    free(symbol_table);
+    free(_symbol_table);
 
 
     return 0;

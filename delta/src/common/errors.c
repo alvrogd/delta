@@ -18,7 +18,7 @@
 
 /** Global buffer that should be plenty for any metadata. It avoids allocating
     new memory each time that a message must be shown. */
-char char_buffer[128];
+char _char_buffer[128];
 
 
 /**
@@ -255,11 +255,11 @@ void d_errors_parse_show(
     // Generating metadata about the error...
     line = va_arg(valist, size_t);
     col = va_arg(valist, size_t);
-    snprintf(char_buffer, sizeof(char_buffer), "input file : ln %zu : col "
+    snprintf(_char_buffer, sizeof(_char_buffer), "input file : ln %zu : col "
              "%zu", line, col);
 
     // Showing the whole error...
-    _d_errors_show(error_code, char_buffer, arg_count - 3, &valist);
+    _d_errors_show(error_code, _char_buffer, arg_count - 3, &valist);
 
     // Cleaning up...
     va_end(valist);
@@ -296,11 +296,11 @@ void d_errors_internal_show(
     // Generating metadata about the error...
     strncpy(file, va_arg(valist, const char *), sizeof(file) - 1);
     strncpy(function, va_arg(valist, const char *), sizeof(function) - 1);
-    snprintf(char_buffer, sizeof(char_buffer), "internal file : %s : %s()",
+    snprintf(_char_buffer, sizeof(_char_buffer), "internal file : %s : %s()",
              file, function);
 
     // Showing the whole error...
-    _d_errors_show(error_code, char_buffer, arg_count - 3, &valist);
+    _d_errors_show(error_code, _char_buffer, arg_count - 3, &valist);
 
     // Cleaning up...
     va_end(valist);

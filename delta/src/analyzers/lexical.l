@@ -148,20 +148,20 @@ PRINT   [ -²]
 
     /** How many '\n' have been seen in the input file that is being
         analyzed. */
-    size_t current_line;
+    size_t _current_line;
 
     /** How many characters have been seen in the current line. */
-    size_t current_column;
+    size_t _current_column;
 
     /** Each time that a rule is matched, the lex. analyzer updates its line
         and col counters, as it may use them for error reporting purposes. The
         syntactic & semantic analyzer may also use them for the same
         purpose. */
     #define YY_USER_ACTION \
-        yylloc.first_line = current_line; \
-        yylloc.last_line = current_line; \
-        yylloc.first_column = current_column; \
-        current_column += yyleng; yylloc.last_column = current_column;
+        yylloc.first_line = _current_line; \
+        yylloc.last_line = _current_line; \
+        yylloc.first_column = _current_column; \
+        _current_column += yyleng; yylloc.last_column = _current_column;
 
 
     /* ══════════════════════════ */
@@ -230,13 +230,13 @@ PRINT   [ -²]
 
  /* ** Comments (single line) ** */
 
- /*"#".*\n    { ++current_line; current_column = 1; return D_LC_WHITESPACE_EOL; } TODO just ignore them*/
+ /*"#".*\n    { ++_current_line; _current_column = 1; return D_LC_WHITESPACE_EOL; } TODO just ignore them*/
 
 
  /* ** Double quoted strings ** */
 
 \"\"            { d_errors_parse_show(3, D_ERR_LEX_LITERALS_STRING_EMPTY,
-                  current_line, current_column); }
+                  _current_line, _current_column); }
 
 \"{PRINT}+\"    { _d_lexical_analyzer_literal_recognized(D_LC_LITERAL_STR);
                   return D_LC_LITERAL_STR; }
@@ -255,13 +255,13 @@ PRINT   [ -²]
 
 0[bB](_)*[^01]({DIGIT}|{ALPHA}|_)*                      { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
-                                                          current_line, current_column,
+                                                          _current_line, _current_column,
                                                           "a binary number needs at least one "
                                                           "'0' -OR- '1' (i.e. 0b1)"); }
 
 0[bB](_)*[01][01_]*([2-9]|{ALPHA})({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4,
                                                           D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD,
-                                                          current_line, current_column,
+                                                          _current_line, _current_column,
                                                           "a binary number may only have '0' "
                                                           "-AND- '1' -AND- '_'"); }*/
 
@@ -272,7 +272,7 @@ PRINT   [ -²]
                                                           return D_LC_LITERAL_INT; }
 
 {DIGIT}({DIGIT}|_)*[aAcCdDf-zF-Z]({DIGIT}|{ALPHA}|_)*   { d_errors_parse_show(4, D_ERR_LEX_LITERALS_INTEGERS_BAD,
-                                                          current_line, current_column, "the only letters that may "
+                                                          _current_line, _current_column, "the only letters that may "
                                                           "follow after an integer number are 'E' -OR- 'e' for "
                                                           "floats (i.e. 10E+15) -AND- 'B' -OR- 'b' for binaries "
                                                           "(i.e. 0b011)"); }
@@ -290,32 +290,32 @@ PRINT   [ -²]
                                                                                                                           return D_LC_LITERAL_FP; }
 
 {FLOAT_INTEGER}\.{ALPHA}({DIGIT}|{ALPHA}|_)*                                                                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
+                                                                                                                          _current_line, _current_column,
                                                                                                                           "the only letter that may follow after a float's "
                                                                                                                           "decimal dot is 'E' -OR- 'e', providing that there "
                                                                                                                           "is at least a digit beforehand (i.e. 10.3E+15)"); }
 
 ({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})([a-dA-Df-zF-Z])({DIGIT}|{ALPHA}|_)*                                              { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
+                                                                                                                          _current_line, _current_column,
                                                                                                                           "the only letter that may be in a float's decimal "
                                                                                                                           "part is 'E' -OR- 'e' for its exponent (i.e. "
                                                                                                                           "10.3E+15)"); }
 
 
 ((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE][^0-9+-]({DIGIT}|{ALPHA}|_)*                            { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
+                                                                                                                          _current_line, _current_column,
                                                                                                                           "the only characters that may follow after a "
                                                                                                                           "float's 'E' -OR- 'e', are '+' -OR- '-' -OR- 'a "
                                                                                                                           "digit' (i.e. 10.3E+15, 10.3E10)"); }
 
 ((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?[^0-9]({DIGIT}|{ALPHA}|_)*                      { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
+                                                                                                                          _current_line, _current_column,
                                                                                                                           "the only characters that may follow after a "
                                                                                                                           "float's exponent and sign declaration are digits "
                                                                                                                           "(i.e. 10.3E+15, 10.3E10_5)"); }
 
 ((({FLOAT_INTEGER})?\.({FLOAT_DECIMALS})|({FLOAT_INTEGER})))[eE](\+|\-)?{DIGIT}({DIGIT}|_)*{ALPHA}({DIGIT}|{ALPHA}|_)*  { d_errors_parse_show(4, D_ERR_LEX_LITERALS_FLOATS_BAD,
-                                                                                                                          current_line, current_column,
+                                                                                                                          _current_line, _current_column,
                                                                                                                           "a float's decimal number may only have 'digits' "
                                                                                                                           "-AND- '_'"); }
 
@@ -325,7 +325,7 @@ PRINT   [ -²]
  /* ══════════════════ */
 
 [ \t]+  /* Ignore */
-\n      { ++current_line; current_column = 1;
+\n      { ++_current_line; _current_column = 1;
           return D_LC_WHITESPACE_EOL; }
 
 
@@ -341,8 +341,8 @@ PRINT   [ -²]
  /* ════════════════════ */
 
  /* Catches non-supported characters */
-.   { d_errors_parse_show(3, D_ERR_LEX_CHARACTER_NOT_SUPPORTED, current_line,
-                          current_column); }
+.   { d_errors_parse_show(3, D_ERR_LEX_CHARACTER_NOT_SUPPORTED, _current_line,
+                          _current_column); }
 
 %%
 
@@ -360,8 +360,8 @@ int d_lexical_analyzer_initialize(
     yyin = stdin;
     
     // The error-reporting counters need to be initialized
-    current_line = 1;
-    current_column = 1;
+    _current_line = 1;
+    _current_column = 1;
 
 
     // ... Therefore, stdin gets registered as the first entry in the stack
@@ -445,8 +445,8 @@ int d_lexical_analyzer_new_file(
 
     // First of all, the current error-reporting counters in the last stack
     // entry must be updated
-    current_bufstack->line = current_line;
-    current_bufstack->column = current_column;
+    current_bufstack->line = _current_line;
+    current_bufstack->column = _current_column;
 
 
     // Now, the new entry can be set-up
@@ -467,8 +467,8 @@ int d_lexical_analyzer_new_file(
     yy_switch_to_buffer(new_entry->buffer_state);
 
     // Also, the error-reporting counters must be reset
-    current_line = 1;
-    current_column = 1;
+    _current_line = 1;
+    _current_column = 1;
 
 
     return 0;
@@ -527,8 +527,8 @@ int d_lexical_analyzer_pop_file(
     yy_switch_to_buffer(previous_entry->buffer_state);
 
     // Its error-reporting counters are reset
-    current_line = previous_entry->line;
-    current_column = previous_entry->column;
+    _current_line = previous_entry->line;
+    _current_column = previous_entry->column;
 
     // And gets set as the last entry of the stack
     current_bufstack = previous_entry;

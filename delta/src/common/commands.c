@@ -47,7 +47,7 @@ struct _d_commands_table_entry *_d_commands_table = NULL;
 /**
  * The last selected library.
  */
-struct _d_commands_table_entry *last_library = NULL;
+struct _d_commands_table_entry *_last_library = NULL;
 
 
 /**
@@ -151,7 +151,7 @@ int _d_commands_load_function(
     if(d_symbol_table_search(function) == NULL) {
 
         // If the library is not already loaded, there we go
-        if((loaded_object = dlsym(last_library->library, function))
+        if((loaded_object = dlsym(_last_library->library, function))
            == NULL) {
 
             d_errors_internal_show(3, D_ERR_USER_IO_FUNCTION_INACCESSIBLE,
@@ -282,7 +282,7 @@ int _d_commands_load_library(
 
     // Anyways, the resulting entry, be it new or not, is set as the last
     // selected library
-    last_library = entry_in_table;
+    _last_library = entry_in_table;
 
 
     return 0;
@@ -390,7 +390,7 @@ int _d_commands_quit(
     }
 
     _d_commands_table = NULL;
-    last_library = NULL;
+    _last_library = NULL;
 
 
     return D_COMMAND_QUIT_REQUEST;
