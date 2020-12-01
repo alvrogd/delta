@@ -63,7 +63,13 @@ int _d_commands_clear_workspace(
     void
 )
 {
-    return d_symbol_table_delete(D_LC_IDENTIFIER_VARIABLE);
+    int result = d_symbol_table_delete(D_LC_IDENTIFIER_VARIABLE);
+
+    if(result == 0) {
+        printf("   Workspace successfully cleared\n");
+    }
+
+    return result;
 }
 
 
@@ -96,7 +102,13 @@ int _d_commands_load_file(
     printf("[commands][load_file] Loading: %s\n", filename);
     #endif
 
-    return d_lexical_analyzer_new_file(filename);
+    // Tells the syntactic & semantic analyzer to load the file when it is
+    // ready
+    d_synsem_load_file = 1;
+    d_synsem_load_file_path = filename;
+
+
+    return 0;
 }
 
 
@@ -171,6 +183,8 @@ int _d_commands_load_function(
         printf("[commands][load function] Dynamically loaded function: %s "
                "%p\n", function, loaded_object);
         #endif
+
+        printf("   Function successfully loaded\n");
     }
 
     else {
@@ -277,6 +291,12 @@ int _d_commands_load_library(
         HASH_ADD_KEYPTR(hh, _d_commands_table, entry_in_table->path,
                         strlen((const char *)entry_in_table->path),
                         entry_in_table);
+
+        printf("   Library successfully loaded\n");
+    }
+
+    else {
+        printf("   Library successfully selected\n");
     }
 
 
@@ -286,7 +306,7 @@ int _d_commands_load_library(
 
 
     return 0;
-} /* TODO close all when exiting */
+}
 
 
 /**

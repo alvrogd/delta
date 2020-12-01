@@ -70,6 +70,9 @@ const char *d_errors_get_template(
 
         /* Category: syntactic analysis errors */
 
+        case D_ERR_SYN:
+            return "syntax error";
+
         case D_ERR_SYN_WRITE_CONSTANT:
             return "mathematical constants are inmutable";
 

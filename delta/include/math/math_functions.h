@@ -38,10 +38,10 @@ typedef double (*d_dec_function) (double);
 
 
 /** Which names the user may specify to call the preloaded math functions. */
-extern const char *D_MATH_FUNCTIONS_NAMES[6];
+extern const char *D_MATH_FUNCTIONS_NAMES[20];
 
 /** Pointers to the implementations of the preloaded math functions. */
-extern const d_dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[6];
+extern const d_dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[20];
 
 
 #endif //D_MATH_FUNCTIONS

@@ -96,6 +96,9 @@
 /* The operator precedence is determined by the line in which a symbol is
    defined. A higher line number means a greater operator precedence. */
 
+/* ** File ending ** */
+%token D_LC_WHITESPACE_EOF
+
 /* ** Line ending ** */
 %token D_LC_WHITESPACE_EOL
 %token D_LC_SEPARATOR_SEMICOL
@@ -121,10 +124,9 @@
 %left       D_LC_OP_ARITHMETIC_TIMES D_LC_OP_ARITHMETIC_DIV
 
 /* ** Separators ** */
-%token D_LC_SEPARATOR_L_PARENTHESIS
-%token D_LC_SEPARATOR_R_PARENTHESIS
+%token D_LC_SEPARATOR_L_PARENTHESIS D_LC_SEPARATOR_R_PARENTHESIS
 
-/* ** More (even higher precedence) arithmetic operators ** */
+/* ** Higher precedence arithmetic operators ** */
 %precedence D_LC_OP_ARITHMETIC_NEG /* This precedence rule will be used in a following section to negate expresions */
 %right      D_LC_OP_ARITHMETIC_EXPONENT
 
@@ -158,6 +160,28 @@
      * @param[in] msg The error message.
      */
     void yyerror(char const *msg);
+
+
+    /**
+     * @brief Flag that tells the syntactic & semantic analyzer if it must
+     *        request the lexical analyzer to read another file.
+     *
+     * @details
+     *  Flag that tells the syntactic & semantic analyzer if it must request
+     *  the lexical analyzer to read another file. Depending on its value:
+     *
+     *    - 0: no other file needs to be read.
+     *    - Otherwise: after reading the whole current line, the request will
+     *                 be issued to the lexical analyzer and the flag's value
+     *                 will be reset.
+     */
+     int d_synsem_load_file;
+
+     /**
+      * @brief Path of the other file that the lexical analyzer must read, if
+      *        any.
+      */
+     const char *d_synsem_load_file_path;
 }
 
 
@@ -174,18 +198,30 @@ input:
     |   /* Read as many lines as possible. */
         input  line
         {
+            /* If the analyzer has been requested to point the lexical one to
+               load another file */
+            if(d_synsem_load_file) {
+
+                d_synsem_load_file = 0;
+
+                if(d_lexical_analyzer_new_file(d_synsem_load_file_path)
+                   == 0) {
+                    printf("   File successfully loaded\n");
+                }
+            }
+
             /* Shown after each line that the user types in */
-            printf(D_SYNSEM_PROMPT);
+            if(d_lex_is_stdin) {
+                printf(D_SYNSEM_PROMPT);            
+            }
         }
     ;
 
 
-/* All lines will be '\n'-terminated, and they may also contain:
-
-     - A mathematical expression.
-     - Or a built-in command issue.
-
-   The third rule in this subsection allows generic error recovery from
+/* All lines will be '\n'-terminated, maybe also containing a sentence, or
+   just EOF.
+   
+   The fifth rule in this subsection allows generic error recovery from
    syntactic and semantic errors.
 */
 line:
@@ -193,10 +229,55 @@ line:
         D_LC_WHITESPACE_EOL
 
 
+    |   /* Just EOF. */
+        D_LC_WHITESPACE_EOF
+
+
+    |   /* A sentence + '\n' */
+        sentence  D_LC_WHITESPACE_EOL
+
+
+    /* ═══ Dangling parentheses ═══ */
+
+    |   /* An unmatched left parenthesis. */
+        D_LC_SEPARATOR_L_PARENTHESIS  sentence  D_LC_WHITESPACE_EOL
+            {
+                d_errors_parse_show(3, D_ERR_SYN_UNMATCHED_PARENTHESIS,
+                                    @1.last_line, @1.last_column);
+                /* Raises the error to discard the whole input line */
+                //YYERROR;
+            }
+
+    |   /* An unmatched right parenthesis. */
+        sentence  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+            {
+                d_errors_parse_show(3, D_ERR_SYN_UNMATCHED_PARENTHESIS,
+                                    @2.last_line, @2.last_column);
+                /* Raises the error to discard the whole input line */
+                //YYERROR;
+            }
+
+
+    /* ═══ Error recovering  ═══ */
+
+    |   /* An error + '\n'. */
+        error  D_LC_WHITESPACE_EOL
+            /* Tells bison that the error has been catched and managed */
+            { yyclearin; yyerrok; }
+    ;
+
+
+/* Sentences may be:
+
+     - A mathematical expression.
+     - Or a built-in command issue.
+*/
+sentence:
+
     /* ═══ Mathematical expressions ═══ */
 
-    |   /* A mathematical expression + '\n'. */
-        expression  D_LC_WHITESPACE_EOL
+       /* A mathematical expression + '\n'. */
+        expression 
             {
                 /* Always shows the value of the expression */
 
@@ -209,24 +290,17 @@ line:
             }
 
     |   /* A mathematical expression + ';' + '\n'. */
-        expression  D_LC_SEPARATOR_SEMICOL  D_LC_WHITESPACE_EOL
+        expression  D_LC_SEPARATOR_SEMICOL 
             {
                 /* ';' disables the echo */
             }
 
 
-    /* ═══ Error recovering  ═══ */
-
-    |   /* An error + '\n'. */
-        error  D_LC_WHITESPACE_EOL
-            /* Tells bison that the error has been catched and managed */
-            { yyclearin; yyerrok; }
-
 
     /* ═══ Commands ═══ */
 
     |   /* A 0-arg command + '\n'. */
-        D_LC_IDENTIFIER_COMMAND  D_LC_WHITESPACE_EOL
+        D_LC_IDENTIFIER_COMMAND  
             {
                 /* Checking if the specified command is indeed a 0-arg one */
                 if($1->attribute.command.arg_count == 0) {
@@ -249,7 +323,7 @@ line:
             }
 
     |   /* A 0-arg command + () + '\n'. */
-        D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+        D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_SEPARATOR_R_PARENTHESIS 
             {
                 /* Checking if the specified command is indeed a 0-arg one */
                 if($1->attribute.command.arg_count == 0) {
@@ -270,7 +344,7 @@ line:
 
     |   /* A 1-arg command + ( + math_expression + ) + '\n'.
            It will always be an error, as commands may only take one string as argument at most. */
-        D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+        D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS 
             {
                 /* If the command is not even supposed to take an argument */
                 if($1->attribute.command.arg_count == 0) {
@@ -284,7 +358,7 @@ line:
             }
 
     |   /* A 1-arg command + ( + string + ) + '\n'. */
-        D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_LITERAL_STR  D_LC_SEPARATOR_R_PARENTHESIS  D_LC_WHITESPACE_EOL
+        D_LC_IDENTIFIER_COMMAND  D_LC_SEPARATOR_L_PARENTHESIS  D_LC_LITERAL_STR  D_LC_SEPARATOR_R_PARENTHESIS 
             {
                 /* Checking if the specified command is indeed a 1-arg one */
                 if($1->attribute.command.arg_count == 1) {
@@ -310,9 +384,11 @@ expression:
 
         /* A base 10 integer. */
         D_LC_LITERAL_INT
+        /* Its value is implicitely copied to the recognized expression */
 
     |   /* A base 10 floating point number. */
         D_LC_LITERAL_FP
+        /* Its value is implicitely copied to the recognized expression */
 
 
     /* ═══ Constants & variables, assignments ═══ */
@@ -373,13 +449,13 @@ expression:
             }
 
     |   /* Calling a mathematical function with one expression as argument. */
-        D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
-            {
-                /* The function gets executed and its result is set as the recognized expression's
-                   one; math functions always return "double" (floating) values */
-                $$.values.floating = $1->attribute.function(d_dec_numbers_get_floating_value(&($3)));
-                $$.is_floating = 1;
-            }
+    D_LC_IDENTIFIER_FUNCTION  D_LC_SEPARATOR_L_PARENTHESIS  expression  D_LC_SEPARATOR_R_PARENTHESIS
+        {
+            /* The function gets executed and its result is set as the recognized expression's
+                one; math functions always return "double" (floating) values */
+            $$.values.floating = $1->attribute.function(d_dec_numbers_get_floating_value(&($3)));
+            $$.is_floating = 1;
+        }
 
 
     /* ═══ Mathematical operations ═══ */
@@ -440,24 +516,6 @@ expression:
             /* Its value gets directly set as the one of the recognized
                expression */
             { $$ = $2; }
-
-    |   /* An unmatched left parenthesis. */
-        D_LC_SEPARATOR_L_PARENTHESIS  expression
-            {
-                d_errors_parse_show(3, D_ERR_SYN_UNMATCHED_PARENTHESIS,
-                                    @1.last_line, @1.last_column);
-                /* Raises the error to discard the whole input line */
-                YYERROR;
-            }
-
-    |   /* An unmatched right parenthesis. */
-        expression  D_LC_SEPARATOR_R_PARENTHESIS
-            {
-                d_errors_parse_show(3, D_ERR_SYN_UNMATCHED_PARENTHESIS,
-                                    @2.last_line, @2.last_column);
-                /* Raises the error to discard the whole input line */
-                YYERROR;
-            }
     ;
 
 
@@ -473,7 +531,9 @@ int d_synsem_analyzer_initialize(
     void
 )
 {
-    // No initializacions are needed as of now
+    // Flags get set to a false state
+    d_synsem_load_file = 0;
+    d_synsem_load_file_path = NULL;
 
 
     return 0;
@@ -514,6 +574,6 @@ int d_synsem_analyzer_destroy(
  */
 void yyerror(char const *msg)
 {
-    fprintf(stderr, "[synsem_analyzer][yyerror] Catched an unexpected error: "
-                    "%s\n", msg);
+    d_errors_parse_show(3, D_ERR_SYN, d_lex_current_line,
+                        d_lex_current_column);
 }

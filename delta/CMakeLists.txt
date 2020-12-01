@@ -66,5 +66,5 @@ target_link_libraries(${PROJECT_NAME} m) # math.h
 
 # There are two additional targets, one for each dynamic library which is
 # provided for testing purposes
-add_library(test_dl_1 SHARED test/dynamic_libraries/test_dl_1.c)
-add_library(test_dl_2 SHARED test/dynamic_libraries/test_dl_2.c)
+add_library(dl_radians SHARED test/dynamic_libraries/dl_radians.c)
+add_library(dl_degrees SHARED test/dynamic_libraries/dl_degrees.c)

@@ -15,20 +15,68 @@
 
 /** Which names the user may specify to call the preloaded math functions. */
 const char *D_MATH_FUNCTIONS_NAMES[] = {
+    
+    // Generic functions
+    "fabs",
+
+    // Exponential functions
+    "exp",
+    "exp2",
+    "log",
+    "log2",
+    "log10",
+
+    // Power functions
+    "cbrt",
+    "sqrt",
+
+    // Trigonometic functions
+    "acos",
+    "asin",
     "atan",
     "cos",
-    "exp",
-    "log",
     "sin",
-    "sqrt",
+    "tan",
+
+    // Hyperbolic functions
+    "acosh",
+    "asinh",
+    "atanh",
+    "cosh",
+    "sinh",
+    "tanh",
 };
 
 /** Pointers to the implementations of the preloaded math functions. */
 const d_dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
+    
+    // Generic functions
+    &fabs,
+
+    // Exponential functions
+    &exp,
+    &exp2,
+    &log,
+    &log2,
+    &log10,
+
+    // Power functions
+    &cbrt,
+    &sqrt,
+
+    // Trigonometic functions
+    &acos,
+    &asin,
     &atan,
     &cos,
-    &exp,
-    &log,
     &sin,
-    &sqrt,
+    &tan,
+
+    // Hyperbolic functions
+    &acosh,
+    &asinh,
+    &atanh,
+    &cosh,
+    &sinh,
+    &tanh,
 };

@@ -34,6 +34,27 @@
 
 
 /**
+ * @brief Flag that tells the syntactic & semantic analyzer if it must request
+ *        the lexical analyzer to read another file.
+ *
+ * @details
+ *  Flag that tells the syntactic & semantic analyzer if it must request the
+ *  lexical analyzer to read another file. Depending on its value:
+ *
+ *    - 0: no other file needs to be read.
+ *    - Otherwise: after reading the whole current line, the request will be
+ *                 issued to the lexical analyzer and the flag's value will be
+ *                 reset.
+ */
+extern int d_synsem_load_file;
+
+/**
+ * @brief Path of the other file that the lexical analyzer must read, if any.
+ */
+extern const char *d_synsem_load_file_path;
+
+
+/**
  * @brief Initializes the syntactic analyzer.
  *
  * @return 0 if successful, any other value otherwise.

@@ -1,0 +1,4 @@
+hello_from_notebook_2 = 1
+load("../test/notebooks/notebook_3.delta")
+result = hello_from_notebook_2 + hello_from_notebook_3
+

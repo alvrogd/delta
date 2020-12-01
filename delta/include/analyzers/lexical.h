@@ -44,10 +44,32 @@
 #define D_LEXICAL_ANALYZER
 
 
+/* size_t */
+#include <stddef.h>
+
+
 /**
  * @brief Path to the file that is currently being read.
  */
 extern const char *d_lex_current_file;
+
+/**
+ * @brief If the lexical analyzer is currently reading input from stdin or
+ *        not.
+ */
+extern int d_lex_is_stdin;
+
+
+/**
+ * @brief How many '\n' have been seen in the input file that is being
+ *        analyzed.
+ */
+extern size_t d_lex_current_line;
+
+/**
+ * @brief How many characters have been seen in the current line.
+ */
+extern size_t d_lex_current_column;
 
 
 /**
