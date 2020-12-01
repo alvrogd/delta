@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+
 # Welcome to the Delta project!
 project(delta VERSION 0.0.1)
+set(CMAKE_BUILD_TYPE Release)
 
 
 # Flex will be used to generate Delta's lexical analyzer
@@ -56,7 +58,13 @@ set(
 )
 
 
-# The only target is the Delta's executable
+# The main target is the Delta's executable
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_link_libraries(${PROJECT_NAME} m) # math.h
+
+
+# There are two additional targets, one for each dynamic library which is
+# provided for testing purposes
+add_library(test_dl_1 SHARED test/dynamic_libraries/test_dl_1.c)
+add_library(test_dl_2 SHARED test/dynamic_libraries/test_dl_2.c)
