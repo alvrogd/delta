@@ -515,5 +515,5 @@ int d_synsem_analyzer_destroy(
 void yyerror(char const *msg)
 {
     fprintf(stderr, "[synsem_analyzer][yyerror] Catched an unexpected error: "
-                    "%s", msg);
+                    "%s\n", msg);
 }

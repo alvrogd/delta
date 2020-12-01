@@ -11,6 +11,10 @@
 
 #include "common/errors.h"
 
+// To know which file is currently begin parsed
+#include "analyzers/lexical.h"
+
+
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -255,8 +259,8 @@ void d_errors_parse_show(
     // Generating metadata about the error...
     line = va_arg(valist, size_t);
     col = va_arg(valist, size_t);
-    snprintf(_char_buffer, sizeof(_char_buffer), "input file : ln %zu : col "
-             "%zu", line, col);
+    snprintf(_char_buffer, sizeof(_char_buffer), "%s : ln %zu : col %zu",
+             d_lex_current_file, line, col);
 
     // Showing the whole error...
     _d_errors_show(error_code, _char_buffer, arg_count - 3, &valist);

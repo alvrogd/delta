@@ -164,6 +164,16 @@ PRINT   [ -²]
         _current_column += yyleng; yylloc.last_column = _current_column;
 
 
+    /* ════════════════════ */
+    /* ═══ Current file ═══ */
+    /* ════════════════════ */
+
+    /**
+     * @brief Path to the file that is currently being read.
+     */
+    const char *d_lex_current_file = NULL;
+
+
     /* ══════════════════════════ */
     /* ═══ Nested input files ═══ */
     /* ══════════════════════════ */
@@ -200,7 +210,7 @@ PRINT   [ -²]
     };
 
     /** Last entry in the stack. */
-    struct _d_lexical_analyzer_bufstack *current_bufstack = NULL;
+    struct _d_lexical_analyzer_bufstack *_current_bufstack = NULL;
 %}
 
 
@@ -365,7 +375,7 @@ int d_lexical_analyzer_initialize(
 
 
     // ... Therefore, stdin gets registered as the first entry in the stack
-    if((current_bufstack =
+    if((_current_bufstack =
         malloc(sizeof(struct _d_lexical_analyzer_bufstack))) == NULL) {
         
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
@@ -375,20 +385,21 @@ int d_lexical_analyzer_initialize(
     }
 
     // No input file opened yet
-    current_bufstack->previous_entry = NULL;
+    _current_bufstack->previous_entry = NULL;
 
     // Creates a new flex state that is dedicated to stdin
-    current_bufstack->buffer_state = yy_create_buffer(stdin, YY_BUF_SIZE);
+    _current_bufstack->buffer_state = yy_create_buffer(stdin, YY_BUF_SIZE);
 
-    current_bufstack->file = stdin;
-    if((current_bufstack->filename = strdup("stdin")) == NULL) {
+    _current_bufstack->file = stdin;
+    if((_current_bufstack->filename = strdup("stdin")) == NULL) {
         d_errors_internal_show(4, D_ERR_INTERN_SYSCALL_FAILED,
                                "lexical.l", "d_lexical_analyzer_initialize",
                                "'strdup' on filename");
     }
+    d_lex_current_file = _current_bufstack->filename;
 
     // And sets the state as the current one
-    yy_switch_to_buffer(current_bufstack->buffer_state);
+    yy_switch_to_buffer(_current_bufstack->buffer_state);
 
 
     return 0;
@@ -406,11 +417,11 @@ int d_lexical_analyzer_new_file(
     struct _d_lexical_analyzer_bufstack *new_entry = NULL;
 
 
-    if(current_bufstack == NULL) {
+    if(_current_bufstack == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "lexical.l", "d_lexical_analyzer_new_file",
-                               "'current_bufstack'");
+                               "'_current_bufstack'");
         return -1;
     }
 
@@ -445,13 +456,13 @@ int d_lexical_analyzer_new_file(
 
     // First of all, the current error-reporting counters in the last stack
     // entry must be updated
-    current_bufstack->line = _current_line;
-    current_bufstack->column = _current_column;
+    _current_bufstack->line = _current_line;
+    _current_bufstack->column = _current_column;
 
 
     // Now, the new entry can be set-up
-    new_entry->previous_entry = current_bufstack;
-    current_bufstack = new_entry;
+    new_entry->previous_entry = _current_bufstack;
+    _current_bufstack = new_entry;
 
     // Creates a new flex state that is dedicated to the new file
     new_entry->buffer_state = yy_create_buffer(new_file, YY_BUF_SIZE);
@@ -462,6 +473,7 @@ int d_lexical_analyzer_new_file(
                                "lexical.l", "d_lexical_analyzer_initialize",
                                "'strdup' on filename");
     }
+    d_lex_current_file = new_entry->filename;
 
     // And sets the state as the current one
     yy_switch_to_buffer(new_entry->buffer_state);
@@ -486,15 +498,15 @@ int d_lexical_analyzer_pop_file(
     struct _d_lexical_analyzer_bufstack *previous_entry = NULL;
 
 
-    if(current_bufstack == NULL) {
+    if(_current_bufstack == NULL) {
 
         d_errors_internal_show(4, D_ERR_INTERN_ARGUMENT_NULL,
                                "lexical.l", "d_lexical_analyzer_pop_file",
-                               "'current_bufstack'");
+                               "'_current_bufstack'");
         return -1;
     }
 
-    if(current_bufstack->file == stdin) {
+    if(_current_bufstack->file == stdin) {
 
         d_errors_internal_show(4, D_ERR_INTERN_LOGIC, "lexical.l",
                                "d_lexical_analyzer_pop_file", "tried to "
@@ -503,7 +515,7 @@ int d_lexical_analyzer_pop_file(
     }
 
 
-    last_entry = current_bufstack;
+    last_entry = _current_bufstack;
     previous_entry = last_entry->previous_entry;
 
 
@@ -531,7 +543,8 @@ int d_lexical_analyzer_pop_file(
     _current_column = previous_entry->column;
 
     // And gets set as the last entry of the stack
-    current_bufstack = previous_entry;
+    _current_bufstack = previous_entry;
+    d_lex_current_file = previous_entry->filename;
 
 
     return 0;
@@ -700,16 +713,21 @@ int d_lexical_analyzer_destroy(
 )
 {   
     // All input files that have not been closed yet
-    while(current_bufstack->file != stdin) {
+    while(_current_bufstack->file != stdin) {
         d_lexical_analyzer_pop_file();
     }
 
     // stdin cannot be closed, but its flex state should be freed before
     // exiting
-    yy_delete_buffer(current_bufstack->buffer_state);
+    yy_delete_buffer(_current_bufstack->buffer_state);
+
     // As well as its other attributes in the stack entry
-    free((void *) current_bufstack->filename);
-    free((void *) current_bufstack);
+    free((void *) _current_bufstack->filename);
+    free((void *) _current_bufstack);
+
+
+    _current_bufstack = NULL;
+    d_lex_current_file = NULL;
 
 
     return 0;

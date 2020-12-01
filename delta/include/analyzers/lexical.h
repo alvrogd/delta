@@ -45,6 +45,12 @@
 
 
 /**
+ * @brief Path to the file that is currently being read.
+ */
+extern const char *d_lex_current_file;
+
+
+/**
  * @brief Represents a lexical component.
  *
  * @details
