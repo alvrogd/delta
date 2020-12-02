@@ -159,23 +159,27 @@ struct d_dec_number d_dec_numbers_compute_operation(
 
         switch(operation) {
             case '+':
-                result.values.floating =  double_value_1 + double_value_2;
+                result.values.floating = double_value_1 + double_value_2;
                 break;
 
             case '-':
-                result.values.floating =  double_value_1 - double_value_2;
+                result.values.floating = double_value_1 - double_value_2;
                 break;
 
             case '*':
-                result.values.floating =  double_value_1 * double_value_2;
+                result.values.floating = double_value_1 * double_value_2;
                 break;
 
             case '/':
-                result.values.floating =  double_value_1 / double_value_2;
+                result.values.floating = double_value_1 / double_value_2;
+                break;
+
+            case '%':
+                result.values.floating = fmod(double_value_1, double_value_2);
                 break;
 
             case '^':
-                result.values.floating =  pow(double_value_1, double_value_2);
+                result.values.floating = pow(double_value_1, double_value_2);
                 break;
 
             default:
@@ -197,30 +201,35 @@ struct d_dec_number d_dec_numbers_compute_operation(
         
         switch(operation) {
             case '+':
-                result.values.integer =  dec_number_1->values.integer +
-                                         dec_number_2->values.integer;
+                result.values.integer = dec_number_1->values.integer +
+                                        dec_number_2->values.integer;
                 break;
 
             case '-':
-                result.values.integer =  dec_number_1->values.integer -
-                                         dec_number_2->values.integer;
+                result.values.integer = dec_number_1->values.integer -
+                                        dec_number_2->values.integer;
                 break;
 
             case '*':
-                result.values.integer =  dec_number_1->values.integer *
-                                         dec_number_2->values.integer;
+                result.values.integer = dec_number_1->values.integer *
+                                        dec_number_2->values.integer;
                 break;
 
             case '/':
-                result.values.integer =  dec_number_1->values.integer /
-                                         dec_number_2->values.integer;
+                result.values.integer = dec_number_1->values.integer /
+                                        dec_number_2->values.integer;
+                break;
+
+            case '%':
+                result.values.integer = dec_number_1->values.integer %
+                                        dec_number_2->values.integer;
                 break;
 
             case '^':
-                result.values.integer =  (int64_t) pow(
-                                            dec_number_1->values.integer,
-                                            dec_number_2->values.integer
-                                         );
+                result.values.integer = (int64_t) pow(
+                                           dec_number_1->values.integer,
+                                           dec_number_2->values.integer
+                                        );
                 break;
 
             default:

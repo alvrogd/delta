@@ -33,7 +33,14 @@ As of now, only **base-10 numbers are supported**.
 
 ### Basic operations
 
-Delta supports the following **basic mathematical operations**: addition, subtraction, multiplication, division, and exponentiation.
+Delta supports the following **basic mathematical operations**:
+
+ * Addition.
+ * Subtraction.
+ * Multiplication.
+ * Division.
+ * Modulo.
+ * Exponentiation.
 
 These operations can be issued just as you would usually do in any programming language:
 
@@ -74,6 +81,15 @@ Moreover, you must be careful when issuing division operations. Just as in the C
    2
 >> 5.0 / 2
    2.5
+```
+
+The modulo operations supports both times of arithmetic:
+
+```
+>> 5 % 2
+   1
+>> 5.5 % 2
+   1.5
 ```
 
 Divisions by zero will also be caught and reported:

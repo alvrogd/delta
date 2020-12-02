@@ -113,6 +113,7 @@ int d_dec_numbers_any_floating_value(
  *    - Substraction.
  *    - Multiplication.
  *    - Division.
+ *    - Modulo.
  *    - Exponentiation.
  *
  *  The data type of the resulting base 10 number depends on the type of both
@@ -120,7 +121,7 @@ int d_dec_numbers_any_floating_value(
  *  number will also be one. Otherwise, it will be an integer number.
  * 
  * @param[in] operation The symbol that represents the mathematical operation
- *                      (+, -, *, /, ^).
+ *                      (+, -, *, /, %, ^).
  * @param[in] dec_value_1 The first base 10 number.
  * @param[in] dec_value_2 The second base 10 number.
  *

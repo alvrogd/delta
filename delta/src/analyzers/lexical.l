@@ -226,6 +226,7 @@ PRINT   [ -²]
 "-"   { return D_LC_OP_ARITHMETIC_MINUS; }
 "*"   { return D_LC_OP_ARITHMETIC_TIMES; }
 "/"   { return D_LC_OP_ARITHMETIC_DIV; }
+"%"   { return D_LC_OP_ARITHMETIC_MOD; }
 "^"   { return D_LC_OP_ARITHMETIC_EXPONENT; }
 "="   { return D_LC_OP_ASSIGNMENT_ASSIGN; }
 ";"   { return D_LC_SEPARATOR_SEMICOL; }

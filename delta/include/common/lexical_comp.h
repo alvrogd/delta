@@ -99,10 +99,11 @@ extern int yydebug;
     D_LC_OP_ARITHMETIC_MINUS = 270,
     D_LC_OP_ARITHMETIC_TIMES = 271,
     D_LC_OP_ARITHMETIC_DIV = 272,
-    D_LC_SEPARATOR_L_PARENTHESIS = 273,
-    D_LC_SEPARATOR_R_PARENTHESIS = 274,
-    D_LC_OP_ARITHMETIC_NEG = 275,
-    D_LC_OP_ARITHMETIC_EXPONENT = 276
+    D_LC_OP_ARITHMETIC_MOD = 273,
+    D_LC_SEPARATOR_L_PARENTHESIS = 274,
+    D_LC_SEPARATOR_R_PARENTHESIS = 275,
+    D_LC_OP_ARITHMETIC_NEG = 276,
+    D_LC_OP_ARITHMETIC_EXPONENT = 277
   };
 #endif
 
@@ -119,7 +120,7 @@ union YYSTYPE
     /** Identifiers. */
     struct d_symbol_table_entry *st_entry;
 
-#line 123 "include/common/lexical_comp.h"
+#line 124 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -121,7 +121,7 @@
 
 /* ** Arithmetic operators ** */
 %left       D_LC_OP_ARITHMETIC_PLUS D_LC_OP_ARITHMETIC_MINUS
-%left       D_LC_OP_ARITHMETIC_TIMES D_LC_OP_ARITHMETIC_DIV
+%left       D_LC_OP_ARITHMETIC_TIMES D_LC_OP_ARITHMETIC_DIV D_LC_OP_ARITHMETIC_MOD
 
 /* ** Separators ** */
 %token D_LC_SEPARATOR_L_PARENTHESIS D_LC_SEPARATOR_R_PARENTHESIS
@@ -486,6 +486,24 @@ expression:
                     /* The value of the recognized expression is computed
                        through an auxiliar function */
                     $$ =  d_dec_numbers_compute_operation('/', &($1), &($3));
+                }
+
+                else {
+                    d_errors_parse_show(3, D_ERR_SEM_DIVISION_BY_ZERO,
+                                        @3.last_line, @3.last_column);
+                    /* Raises the error to discard the whole input line */
+                    YYERROR;
+                }   
+            }
+
+    |   /* Modulus between two expressions. */
+        expression  D_LC_OP_ARITHMETIC_MOD  expression
+            {
+                if(d_dec_numbers_get_floating_value(&($3)) != 0.0) {
+
+                    /* The value of the recognized expression is computed
+                       through an auxiliar function */
+                    $$ =  d_dec_numbers_compute_operation('%', &($1), &($3));
                 }
 
                 else {
