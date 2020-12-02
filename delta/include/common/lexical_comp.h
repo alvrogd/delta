@@ -53,6 +53,7 @@ extern int yydebug;
     #include "analyzers/synsem.h"
 
     #include "common/errors.h"
+    #include "common/help.h"
     #include "common/symbol_table.h"
 
 
@@ -77,7 +78,7 @@ extern int yydebug;
     /** Which string is shown as prompt when delta is waiting for orders. */
     #define D_SYNSEM_PROMPT ">> "
 
-#line 81 "include/common/lexical_comp.h"
+#line 82 "include/common/lexical_comp.h"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -111,7 +112,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 52 "src/analyzers/synsem.y"
+#line 53 "src/analyzers/synsem.y"
 
     /** Literal strings. */
     char string[D_LC_LITERAL_STR_MAX_LENGTH];
@@ -120,7 +121,7 @@ union YYSTYPE
     /** Identifiers. */
     struct d_symbol_table_entry *st_entry;
 
-#line 124 "include/common/lexical_comp.h"
+#line 125 "include/common/lexical_comp.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

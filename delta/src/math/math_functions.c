@@ -30,7 +30,7 @@ const char *D_MATH_FUNCTIONS_NAMES[] = {
     "cbrt",
     "sqrt",
 
-    // Trigonometic functions
+    // Trigonometric functions
     "acos",
     "asin",
     "atan",
@@ -64,7 +64,7 @@ const d_dec_function D_MATH_FUNCTIONS_IMPLEMENTATIONS[] = {
     &cbrt,
     &sqrt,
 
-    // Trigonometic functions
+    // Trigonometric functions
     &acos,
     &asin,
     &atan,

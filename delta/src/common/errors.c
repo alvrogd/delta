@@ -74,16 +74,16 @@ const char *d_errors_get_template(
             return "syntax error";
 
         case D_ERR_SYN_WRITE_CONSTANT:
-            return "mathematical constants are inmutable";
+            return "mathematical constants are immutable";
 
         case D_ERR_SYN_UNMATCHED_PARENTHESIS:
-            return "catched a dangling parenthesis";
+            return "caught a dangling parenthesis";
 
 
         /* Category: semantic analysis errors */
 
         case D_ERR_SEM_DIVISION_BY_ZERO:
-            return "catched a division by 0";
+            return "caught a division by 0";
 
         case D_ERR_SEM_INCORRECT_ARG_COUNT:
             return "incorrect amount of arguments, expected [..] args";

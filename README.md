@@ -1,6 +1,6 @@
 # Delta
 
-Delta is a **mathematical expressions interpreter** written in C.
+Delta is a **mathematical expression interpreter** written in C.
 
 ## Features
 
@@ -74,7 +74,7 @@ Beware that if the result of a floating point operation has no decimal digits, t
 
 It is true that integer numbers could also be represented using the floating point data type. However, integer arithmetic is used whenever it is possible as floating point arithmetic is well known to have accuracy problems.
 
-Moreover, you must be careful when issuing division operations. Just as in the C language, a division between two interger numbers will not report any decimal digits:
+Moreover, you must be careful when issuing division operations. Just as in the C language, a division between two integer numbers will not report any decimal digits:
 
 ```
 >> 5 / 2
@@ -100,7 +100,7 @@ Divisions by zero will also be caught and reported:
 >> 5.0 / 2
    2.5
 >> 5 / (1 - 1)
-error[E4001]: catched a division by 0
+error[E4001]: caught a division by 0
  --> stdin : ln 57 : col 12
 ```
 
@@ -118,11 +118,11 @@ And dangling parentheses will be reported as errors:
 ```
 >> (1 + 2))
    3
-error[E3002]: catched a dangling parenthesis
+error[E3002]: caught a dangling parenthesis
  --> stdin : ln 19 : col 9
 ```
 
-### Basic functions
+### Basic mathematical functions
 
 Delta also preloads some **basic mathematical functions**:
 
@@ -140,18 +140,18 @@ Delta also preloads some **basic mathematical functions**:
    * `cbrt()`: cubic root.
    * `sqrt()`: square root.
 
- * **Trigonometic functions**:
-   * `acos()`: arccosine.
-   * `asin()`: arcsine.
-   * `atan()`: arctangent.
+ * **Trigonometric functions**:
+   * `acos()`: arc cosine.
+   * `asin()`: arc sine.
+   * `atan()`: arc tangent.
    * `cos()`: cosine.
    * `sin()`: sine.
    * `tan()`: tangent.
 
  * **Hyperbolic functions**:
-   * `acosh()`: hyperbolic arccosine.
-   * `asinh()`: hyperbolic arcsine.
-   * `atanh()`: hyperbolic arctangent.
+   * `acosh()`: hyperbolic arc cosine.
+   * `asinh()`: hyperbolic arc sine.
+   * `atanh()`: hyperbolic arc tangent.
    * `cosh()`: hyperbolic cosine.
    * `sinh()`: hyperbolic sine.
    * `tanh()`: hyperbolic tangent.
@@ -168,7 +168,7 @@ error[E4002]: incorrect amount of arguments, expected 1 args
  --> stdin : ln 23 : col 6
 ```
 
-Beware that trigonometic functions expect that the input value is given in radians:
+Beware that trigonometric functions expect that the input value is given in radians:
 
 ```
 >> sin(3.14)
@@ -264,7 +264,7 @@ But trying to overwrite them will result in an error:
 
 ```
 >> e = 1.2
-error[E3001]: mathematical constants are inmutable
+error[E3001]: mathematical constants are immutable
  --> stdin : ln 41 : col 2
 ```
 
@@ -273,7 +273,7 @@ error[E3001]: mathematical constants are inmutable
 The **Delta WorkSpace, which can be shown using the `ws` built-in command**, as previously seen, **contains a handful of information** about the current session:
 
 1. Which mathematical constants have been loaded.
-2. Which mathematical funcions have been loaded.
+2. Which mathematical functions have been loaded.
 3. Which variables have been defined.
 
 All defined **variables can be cleared using the `wsc` (_WorkSpace Clear_) built-in command**:
@@ -306,7 +306,7 @@ All defined **variables can be cleared using the `wsc` (_WorkSpace Clear_) built
 
 It is worth noting that commands that take no arguments can be called with or without `()`.
 
-### Additional mathematical functions
+### Loading additional mathematical functions
 
 Delta supports **dynamically loading external libraries and their functions**, in order to expand the repertoire of available mathematical functions.
 
@@ -321,7 +321,7 @@ For instance, Delta includes two small dynamic libraries just for testing purpos
    Library successfully loaded
 ```
 
-2. Secondly, you need to remeber that the last loaded library is the one from which new functions will be loaded. Right now, `libdl_degrees.so` is the currently selected library. In order to select another library, you can just use the same `from` command. Do not worry, it will not load once again the library if it already is:
+2. Secondly, you need to remember that the last loaded library is the one from which new functions will be loaded. Right now, `libdl_degrees.so` is the currently selected library. In order to select another library, you can just use the same `from` command. Do not worry, it will not load once again the library if it already is:
 
 ```
 >> from("./libdl_radians.so")
@@ -405,7 +405,7 @@ Anyways, if we load that first Notebook, Delta will define a new variable `pie` 
 
 It is worth noting that the read statements are not printed, but just executed and their results shown.
 
-Furthermore, **Delta supports nested NoteBooks**; that is, Notebooks that issue a `load` on another Notebooks.
+Furthermore, **Delta supports nested Notebooks**; that is, Notebooks that issue a `load` on another Notebooks.
 
 For instance, the second test Notebook is as follows:
 
@@ -435,7 +435,7 @@ Non only that, but the third Notebook will produce an error in order to show tha
    File successfully loaded
    1
    123
-error[E3002]: catched a dangling parenthesis
+error[E3002]: caught a dangling parenthesis
  --> ../test/notebooks/notebook_3.delta : ln 2 : col 7
 
    2
@@ -455,7 +455,7 @@ error[E3002]: catched a dangling parenthesis
 
 ### Switching echo on and off
 
-After each recognized mathematical expression, Delta outputs its value. You can disable this behaviour just by adding a semicolon at the end of the line:
+After each recognized mathematical expression, Delta outputs its value. You can disable this behavior just by adding a semicolon at the end of the line:
 
 ```
 >> 1 + 2
@@ -476,6 +476,53 @@ After each recognized mathematical expression, Delta outputs its value. You can 
 
 
 ### Requesting help
+
+When launching Delta, the following welcome message will be shown first:
+
+```
+# Delta
+
+Delta is a **mathematical expression interpreter** written in C.
+
+Type `help` or `help()` for information on how to use Delta.
+
+```
+
+You may use the **`help` built-in command to get information on how to use Delta**. More specifically, it will show a list of topics:
+
+```
+### Requesting help
+
+On which topic would you like to get information?
+
+    -   10. Overview of Delta's features.
+    -   11. Data types.
+    -   12. Basic operations.
+    -   13. Basic mathematical functions.
+    -   14. Variables and constants.
+    -   15. The WorkSpace.
+    -   16. Loading additional mathematical functions.
+    -   17. Notebooks.
+    -   18. Switching echo on and off.
+    -   19. Exiting Delta.
+
+Type `dhelp(topic_id)` for information on the specified topic.
+
+```
+
+And you will be able to **request detailed information on any of the given topics, through the `dhelp()` built-in command**. In essence, this command will show the section in this README which corresponds to the requested topic.
+
+For instance, to get information on data types:
+
+```
+>> dhelp("11")   
+### Data types
+
+As of now, only **base-10 numbers are supported**.
+
+-   **Integer numbers** contain one or more digits. They are represented
+    <..>
+```
 
 
 ### Exiting Delta
@@ -540,7 +587,7 @@ It is worth noting that both flex's specification file (`src/analyzers/lexical.l
 
 ### Regarding any warnings that show up during compilation
 
-Due to the warning-related compiler flags, GCC will report non harmful warnings, which come from the source file that flex generates. Specifically, the following warnings should show up:
+Due to the warning-related compiler flags, GCC will report non-harmful warnings, which come from the source file that flex generates. Specifically, the following warnings should show up:
 
 * _warning: "YY_BUF_SIZE" redefined_
     * flex uses an I/O buffer size of 16 KB by default, which has been reduced to 4 KB. That is where the redefinition comes from.
@@ -549,7 +596,7 @@ Due to the warning-related compiler flags, GCC will report non harmful warnings,
 * _warning: ‘yyunput’ defined but not used [-Wunused-function]_
     * These are two functions that are not needed by the lexical analyzer, but that flex generates by itself. That is why they are defined anyways.
 
-Moreover, also due to the warning-related flags, Bison will report another non harmful warning when translating the `src/analyzers/synsem.y` file:
+Moreover, also due to the warning-related flags, Bison will report another non-harmful warning when translating the `src/analyzers/synsem.y` file:
 
 * *warning: useless associativity for D_LC_OP_ASSIGNMENT_ASSIGN, use %precedence [-Wprecedence]*
     * This associativity parameter is actually useful as it avoids some shift/reduce conflicts when generating the syntactic and semantic analyzer. That is why it has been left anyways.
@@ -574,7 +621,7 @@ And its prompt will be shown, ready to take any instructions from the user:
 
 ## Future work
 
-The following features were intented to be added to Delta, but have been left out due to time constraints:
+The following features were intended to be added to Delta, but have been left out due to time constraints:
 
 * **Binary operators:** They could directly work on integer numbers, or a new data type for them could also be implemented.
 * **Vectors:** Both mathematical functions that operate on multiple numbers at a time, and a new data type to represent them.
@@ -584,7 +631,7 @@ However, just for the sake of learning, it would certainly be nice to pick up th
 ## Built With
 
 * [C 99]() - A good ol' trusty language.
-* [CMake](https://cmake.org/) - Which eases the portability accross different systems.
+* [CMake](https://cmake.org/) - Which eases the portability across different systems.
 * [flex](https://github.com/westes/flex) - To assist in building the lexical analyzer.
 * [Bison](https://www.gnu.org/software/bison/) - To assist in building the syntactic and semantic analyzer.
 * [uthash](https://troydhanson.github.io/uthash/) - A handy hast table ready to be used in C.

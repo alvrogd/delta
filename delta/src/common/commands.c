@@ -318,7 +318,8 @@ int _d_commands_show_help(
     void
 )
 {
-    printf("[!] Help TODO"); // TODO just like README.md
+    d_help_show_topic_help(D_HELP_FEATURES_HELP);
+
 
     return 0;
 }
@@ -343,8 +344,8 @@ int _d_commands_show_detailed_help(
     }
 
 
-    // TODO strcmp
-    printf("[!] Help %s TODO", topic); // TODO just like README.md
+    d_help_show_topic_help(atoi(topic));
+
 
     return 0;
 }

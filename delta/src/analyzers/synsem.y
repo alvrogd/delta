@@ -17,6 +17,7 @@
     #include "analyzers/synsem.h"
 
     #include "common/errors.h"
+    #include "common/help.h"
     #include "common/symbol_table.h"
 
 
@@ -153,7 +154,7 @@
      *  function for reporting parsing errors. It must provided by the user.
      *
      *  However, in delta all expected syntactic and semantic errors will be
-     *  manually catched using grammar rules to provide detailed feedback.
+     *  manually caught using grammar rules to provide detailed feedback.
      *  If this function were to be called, it would be due to some kind of
      *  unexpected error.
      *
@@ -262,7 +263,7 @@ line:
 
     |   /* An error + '\n'. */
         error  D_LC_WHITESPACE_EOL
-            /* Tells bison that the error has been catched and managed */
+            /* Tells bison that the error has been caught and managed */
             { yyclearin; yyerrok; }
     ;
 
@@ -552,6 +553,9 @@ int d_synsem_analyzer_initialize(
     // Flags get set to a false state
     d_synsem_load_file = 0;
     d_synsem_load_file_path = NULL;
+
+    // And shows the user the initial tip
+    d_help_show_topic_help(D_HELP_INTRO);
 
 
     return 0;
