@@ -3,30 +3,37 @@
  * @author Álvaro Goldar Dieste
  * @date Oct 2020
  *
- * @brief This is the symbol table that the delta compiler will use.
+ * @brief This is the symbol table that delta will use.
  *
  * @details
- *  This is the definition of the symbol table that the delta compiler will
- *  use through all of its compilation phases. It will allow the compiler to
- *  keep track, at each time point, of the currently active identifiers, as
- *  well as all of their attributes.
- *
- *  As of now, it does not support scoping, as it assumes that all source code
- *  can be found in the same block.
+ *  This is the definition of the symbol table that delta will use through all
+ *  of its interpretation phases. It will allow delta to keep track, at each
+ *  time point, of the currently active identifiers, math functions and built-
+ *  in commands, as well as all of their attributes.
  *
  *  The symbol table is internally represented by a single hash table, as
  *  there is no scoping at the moment. Specifically, the "uthash" library by
  *  Troy D. Hanson is the one who provides the whole hash table functionality.
  *
  *  It is also worth noting that, once the symbol table is created, its
- *  initial contents are the keywords in common/keywords.h, which need to be
- *  present in order to tell them apart from the source code's identifiers.
+ *  initial contents are:
+ *
+ *    - The built-in commands in common/commands.h
+ *    - The math constants in math/math_constants.h
+ *    - The math functions in math/math_functions.h
+ *
+ *  This will allow telling those elements apart from variables' identifiers,
+ *  as they are all alphanumeric strings.
  */
 
 
 #ifndef D_SYMBOL_TABLE
 #define D_SYMBOL_TABLE
 
+
+#include "common/commands.h"
+#include "math/dec_numbers.h"
+#include "math/math_functions.h"
 
 // External library 
 #include "lib/uthash.h"
@@ -54,28 +61,38 @@ struct d_symbol_table_entry {
     /** '\0' terminated string which represents the lexeme that originated the
         entry, as well as serving as its key. It will be automatically freed
         once the entry is deleted. */
-    const unsigned char *lexeme;
+    const char *lexeme;
+
     /** Lexical component which corresponds to the entry's lexeme. */
     int lexical_component;
+
+    /** Union that holds any attribute of any kind that an entry may
+        require. */
+    union {
+        /** For base 10 variables and constants. */
+        struct d_dec_number dec_number;
+        /** For mathematical functions that operate on decimal values. */
+        d_dec_function function;
+        /** For built-in commands. */
+        struct d_command command; 
+    } attribute;
+
     /** Makes this structure hashable by the library. */
     UT_hash_handle hh;
 };
 
 
 /**
- * @brief Initializes a symbol table.
+ * @brief Initializes the symbol table.
  *
  * @details
- *  Initializes a symbol table, filling it with all the reserved keywords in 
- *  keywords.h
- *
- * @param[out] symbol_table Reference to the pointer where the address of the
- *                          new symbol table will be stored.
+ *  Initializes the symbol table, filling it with all the math constants and
+ *  functions, and built-in commands.
  *
  * @return 0 if successful, any other value otherwise.
  */
 int d_symbol_table_initialize(
-    struct d_symbol_table **symbol_table
+    void
 );
 
 
@@ -86,14 +103,13 @@ int d_symbol_table_initialize(
  *  Searches in the symbol table an entry identified by the given key, and
  *  returning it if found.
  *
- * @param[in,out] symbol_table The symbol table.
- * @param[in] '\0' terminated string which represents the key of the entry.
+ * @param[in] key '\0' terminated string which represents the key of the
+ *                entry.
  *
  * @return Pointer to the requested entry, or NULL if not found.
  */
 struct d_symbol_table_entry *d_symbol_table_search(
-    struct d_symbol_table *symbol_table,
-    const unsigned char* key
+    const char* key
 );
 
 
@@ -102,7 +118,7 @@ struct d_symbol_table_entry *d_symbol_table_search(
  *
  * @details
  *  Adds the specified entry to the symbol table. The entry's key must NOT be
- *  already present.
+ *  present yet.
  *
  *  Every member in the given entry will be copied to a new entry internally
  *  managed by the symbol table.
@@ -111,30 +127,75 @@ struct d_symbol_table_entry *d_symbol_table_search(
  *           itself will be copied, whereas the contents of the region will
  *           not.
  *
- * @param[in,out] symbol_table The symbol table.
- * @param[in] The entry.
+ * @param[in] entry The entry.
  *
- * @return 0 if successful, 1 if the key is duped, any other value otherwise.
+ * @return 0 if successful, any other value otherwise.
  */
 int d_symbol_table_add(
-    struct d_symbol_table *symbol_table,
     struct d_symbol_table_entry *entry
 );
 
 
 /**
- * @brief Destroys a symbol table.
+ * @brief Adds a new entry in the symbol table for the specified math
+ *        function.
  *
  * @details
- *  Destroys the specified symbol table, as well as all of its entries.
+ *  Adds a new entry in the symbol table for the specified math function. The
+ *  entry's key must NOT be present yet; that is, a function that goes by the
+ *  same name.
  *
- * @param[out] symbol_table Reference to the pointer where the address of the
- *                          symbol table can be found.
+ * @param[in] funcion_name Name by which the function will be identified.
+ * @param[in] function_implementation Where the function's implementation can
+ *            be found.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_symbol_table_add_math_function(
+    const char *function_name,
+    d_dec_function function_implementation
+);
+
+
+/**
+ * @brief Shows the symbol table.
+ *
+ * @details
+ *  Prints all the runtime-dependant entries in the symbol table:
+ *
+ *    - Math constants.
+ *    - Math loaded functions.
+ *    - Variables.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_symbol_table_show(
+    void
+);
+
+
+/**
+ * @brief Deletes all entries that belong to the specified lexical component.
+ *
+ * @param[in] lexical_component The lexical component category.
+ *
+ * @return 0 if successful, any other value otherwise.
+ */
+int d_symbol_table_delete(
+    int lexical_component
+);
+
+
+/**
+ * @brief Destroys the symbol table.
+ *
+ * @details
+ *  Destroys the symbol table, as well as all of its entries.
  *
  * @return 0 if successful, any other value otherwise.
  */
 int d_symbol_table_destroy(
-    struct d_symbol_table **symbol_table
+    void
 );
 
 

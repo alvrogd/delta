@@ -3,44 +3,31 @@
  * @author Álvaro Goldar Dieste
  * @date Oct 2020
  *
- * @brief This file contains the utilities on which the delta compiler relies
- *        to show its error messages.
+ * @brief This file contains the utilities on which delta relies to show its
+ *        error messages.
  *
  * @details
- *  All possible error messages that the delta compiler may show fall into
- *  two categories:
+ *  All possible error messages that delta may show fall into two categories:
  *
  *    - On the one hand, there are the error messages that happen due to
- *      parsing the input source file. They are lexical, syntatic and semantic
+ *      parsing input setences. They are lexical, syntatic and semantic
  *      errors.
  *
- *    - On the other hand, the compiler can also raise internal errors, such
- *      as those that come from failed system calls.
+ *    - On the other hand, delta can also raise internal errors, such as those
+ *      that come from failed system calls.
  *
  *  No matter from where an error comes from, there will be a template for it.
- *
- *  Specifically, in order to raise:
- *
- *    - Parsing error messages: the mandatory argument is the unsigned error
- *                              code which uniquely identifies the error. If
- *                              the template allows one or more custom values
- *                              to be inserted (i.e. to point out to which
- *                              variable the error affects), the compiler may
- *                              also provide those values, and they will be
- *                              printed out just in the right places,
- *                              accordingly to the error template.
- *
-
- *
- *  However, it is worth noting that the functions that are defined in this
- *  file do not have prototypes that match the previous explanation, as they follow 
+ *  Moreover, if a template allows one or more custom values to be inserted
+ *  (i.e. to point out to which variable the error affects), delta may also
+ *  provide those values, and they will be printed out just in the right
+ *  places. Custom values are represented by "[..]" segments in the templates.
  */
 
 
 #ifndef D_ERRORS
 #define D_ERRORS
 
-
+// For functions with a variable amout of arguments
 #include <stdarg.h>
 
 
@@ -57,7 +44,8 @@
 #define D_ERR_INTERN_ARGUMENT_NULL 1102
 
 // Subcategory: syscall errors
-#define D_ERR_INTERN_SYSCALL_FAILED 1200
+#define D_ERR_INTERN_SYSCALL 1200
+#define D_ERR_INTERN_SYSCALL_FAILED 1201
 
 // Subcategory: inner workings' logic errors
 #define D_ERR_INTERN_LOGIC 1300
@@ -65,28 +53,41 @@
 
 /* Category: lexical analysis errors */
 #define D_ERR_LEX 2000
+#define D_ERR_LEX_CHARACTER_NOT_SUPPORTED 2001
 
 // Subcategory: literals errors
 #define D_ERR_LEX_LITERALS 2300
 #define D_ERR_LEX_LITERALS_FLOATS 2310
-#define D_ERR_LEX_LITERALS_FLOATS_BAD 2311 // : ...
+#define D_ERR_LEX_LITERALS_FLOATS_BAD 2311
 #define D_ERR_LEX_INTEGERS 2320
-#define D_ERR_LEX_LITERALS_INTEGERS_BAD 2321 // : ...
-#define D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD 2322 // : ...
-#define D_ERR_LEX_LITERALS_INTEGERS_DECIMAL_BAD 2323 // : ...
+#define D_ERR_LEX_LITERALS_INTEGERS_BAD 2321
+#define D_ERR_LEX_LITERALS_INTEGERS_BINARY_BAD 2322
 #define D_ERR_LEX_LITERALS_STRINGS 2330
 #define D_ERR_LEX_LITERALS_STRING_EMPTY 2331
-#define D_ERR_LEX_LITERALS_STRING_UNSUPPORTED_ESCAPE 2332 // Expected...
-
-// Subcategory: operators errors
-#define D_ERR_LEX_OPERATORS 2400
-#define D_ERR_LEX_OPERATORS_UNSUPPORTED 2401 // Expected ...
 
 
-/* Category: user errors */
-#define D_ERR_USER 3000
+/* Category: lexical analysis errors */
+#define D_ERR_SYN 3000
+#define D_ERR_SYN_WRITE_CONSTANT 3001
+#define D_ERR_SYN_UNMATCHED_PARENTHESIS 3002
 
-#define D_ERR_USER_INPUT_FILE_INACCESSIBLE 3001
+
+/* Category: semantic analysis errors */
+#define D_ERR_SEM 4000
+#define D_ERR_SEM_DIVISION_BY_ZERO 4001
+#define D_ERR_SEM_INCORRECT_ARG_COUNT 4002
+#define D_ERR_SEM_INCORRECT_ARG_TYPE 4003
+
+
+/* Category: other user errors */
+#define D_ERR_USER 5000
+
+// Subcategory: I/O errors
+#define D_ERR_USER_IO 5100
+#define D_ERR_USER_IO_FILE_INACCESSIBLE 5101
+#define D_ERR_USER_IO_FUNCTION_INACCESSIBLE 5102
+#define D_ERR_USER_IO_NO_DYN_LIBRARY_SELECTED 5103
+#define D_ERR_USER_IO_FUNCTION_NAME_TAKEN 5104
 
 
 /**
@@ -95,7 +96,7 @@
  * 
  * @param error_code The error code.
  *
- * @return const char* The string that represents the template.
+ * @return The string that represents the template.
  */
 const char *d_errors_get_template(
     int error_code
@@ -173,4 +174,4 @@ void d_errors_internal_show(
 );
 
 
-#endif
+#endif //D_ERRORS
