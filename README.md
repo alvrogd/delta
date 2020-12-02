@@ -14,6 +14,9 @@ As of now, only **base-10 numbers are supported**.
 ```
 >> 45
    45
+>> 45a
+error[E2321]: malformed integer number, the only letters that may follow after an integer number are 'E' -OR- 'e' for floats (i.e. 10E+15)
+ --> stdin : ln 1 : col 4
 ```
 * **Floating point numbers** can be written in multiple ways, while also supporting scientific notation. They are represented with the `double` data type.
 ```
@@ -29,6 +32,9 @@ As of now, only **base-10 numbers are supported**.
    0.0008
 >> 10E5
    1000000
+>> 10E5bcd
+error[E2311]: malformed floating number, a float's decimal number may only have 'digits' -AND- '_'
+ --> stdin : ln 2 : col 8
 ```
 
 ### Basic operations
@@ -359,6 +365,25 @@ For instance, Delta includes two small dynamic libraries just for testing purpos
 ```
 >> radians(180)
    3.14159265358979
+```
+
+Beware that if a variable or a mathematical function that goes by the same name is already defined, it will result in an error. In any case, when dealing with variables, you can just clear your WorkSpace to be able to load that desired function:
+
+```
+>> degrees = 360
+   360
+>> from("./libdl_degrees.so")
+   Library successfully loaded
+>> import("degrees")
+error[E5104]: a variable that goes by the same name is already defined
+ --> internal file : commands.c : _d_commands_load_function()
+
+>> wsc
+   Workspace successfully cleared
+>> import("degrees")
+   Function successfully loaded
+>> degrees(pi)
+   180
 ```
 
 All loaded libraries are automatically closed by Delta upon exiting.

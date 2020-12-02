@@ -131,6 +131,7 @@ int _d_commands_load_function(
     const char *function
 )
 {
+    struct d_symbol_table_entry *entry_in_table = NULL;
     void *loaded_object = NULL;
 
 
@@ -160,7 +161,7 @@ int _d_commands_load_function(
 
 
     // If the function has not been loaded yet
-    if(d_symbol_table_search(function) == NULL) {
+    if((entry_in_table = d_symbol_table_search(function)) == NULL) {
 
         // If the library is not already loaded, there we go
         if((loaded_object = dlsym(_last_library->library, function))
@@ -188,8 +189,19 @@ int _d_commands_load_function(
     }
 
     else {
-        d_errors_internal_show(3, D_ERR_USER_IO_FUNCTION_NAME_TAKEN,
-                               "commands.c", "_d_commands_load_function");
+
+        if(entry_in_table->lexical_component == D_LC_IDENTIFIER_VARIABLE) {
+            d_errors_internal_show(4, D_ERR_USER_IO_FUNCTION_NAME_TAKEN,
+                                   "commands.c", "_d_commands_load_function",
+                                   "variable");
+        }
+
+        else {
+            d_errors_internal_show(4, D_ERR_USER_IO_FUNCTION_NAME_TAKEN,
+                                   "commands.c", "_d_commands_load_function",
+                                   "mathematical function");
+        }
+
 
         return -1;
     }

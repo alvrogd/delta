@@ -319,7 +319,7 @@ sentence:
                 else {
                     d_errors_parse_show(4,
                                         D_ERR_SEM_INCORRECT_ARG_COUNT,
-                                        @1.last_line, @1.last_column, "0");
+                                        @1.last_line, @1.last_column, "1");
                 }
             }
 
@@ -339,7 +339,7 @@ sentence:
                 }
 
                 else {
-                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @1.last_line, @1.last_column, "0");
+                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @1.last_line, @1.last_column, "1");
                 }
             }
 
@@ -368,7 +368,7 @@ sentence:
                 }
 
                 else {
-                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "1");
+                    d_errors_parse_show(4, D_ERR_SEM_INCORRECT_ARG_COUNT, @3.last_line, @3.last_column, "0");
                 }
             }
     ;

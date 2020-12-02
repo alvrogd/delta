@@ -109,8 +109,7 @@ const char *d_errors_get_template(
                    "specified library has been successfully opened";
 
         case D_ERR_USER_IO_FUNCTION_NAME_TAKEN:
-            return "a mathematical function that goes by the same name is "
-                   "already loaded";
+            return "a [..] that goes by the same name is already loaded";
 
 
         /* No match */
